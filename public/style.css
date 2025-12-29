@@ -1,0 +1,63 @@
+/* Cores personalizadas */
+.bg-bege {
+    background-color: rgb(226, 226, 204);
+}
+
+.bg-azul {
+    background-color: rgb(23, 48, 56);
+    height: 350px; /* altura que preferir */
+}
+
+/* Fonte e cor base */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: rgb(234, 121, 45);
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar */
+nav {
+    background-color: rgb(226, 226, 204);
+    color: #000;
+    padding: 1rem 0;
+}
+
+/* Logo no navbar */
+nav .logo {
+    height: 40px;
+    margin-right: 10px;
+}
+
+/* Container flex para logo + título */
+nav .logo-titulo {
+    display: flex;
+    align-items: center;
+}
+
+nav h1 {
+    font-weight: bold;
+    font-size: 1.125rem;
+}
+
+nav a {
+    color: #000;
+    text-decoration: none;
+}
+
+/* Seção principal */
+.secao-principal {
+    text-align: center;
+    padding-top: 1rem;
+}
+
+.secao-principal h2 {
+    font-size: 2.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.secao-principal p {
+    color: #ddd;
+    margin-top: 0.5rem;
+}
