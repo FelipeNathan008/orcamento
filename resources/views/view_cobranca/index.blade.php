@@ -157,14 +157,12 @@
                                             </div>
                                             @endif
 
-                                            @else
+                                            @endif
                                             {{-- SOMENTE ACORDO --}}
                                             <a href="{{ url('/detalhes_cobranca/' . $item->id_det_cobranca . '/edit') }}"
                                                 class="px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 transition block mx-auto text-center">
                                                 Acordo
                                             </a>
-                                            @endif
-
                                     </td>
 
 

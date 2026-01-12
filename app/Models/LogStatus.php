@@ -8,7 +8,7 @@ class LogStatus extends Model
 {
     protected $table = 'log_status';
     protected $primaryKey = 'id_log_status';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'status_mercadoria_id_status',

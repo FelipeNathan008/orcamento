@@ -12,16 +12,18 @@ class CobrancaController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-{
-    $cobrancas = Cobranca::with([
-        'tipoPagamento',
-        'detalhesCobranca' => function ($query) {
-            $query->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today());
-        }
-    ])->get();
+    {
+        $cobrancas = Cobranca::with([
+            'tipoPagamento',
+            'detalhesCobranca' => function ($query) {
+                $query->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today());
+            }
+        ])
+        ->whereHas('detalhesCobranca')
+        ->get();
 
-    return view('view_cobranca.index', compact('cobrancas'));
-}
+        return view('view_cobranca.index', compact('cobrancas'));
+    }
 
     /**
      * Show the form for creating a new resource.

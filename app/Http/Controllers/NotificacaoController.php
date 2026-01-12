@@ -126,7 +126,7 @@ class NotificacaoController extends Controller
             $notificacao->update($validatedData);
 
             return redirect()
-                ->route('notificacao.show', $notificacao->id_notificacao)
+                ->route('notificacao.index', $notificacao->id_notificacao)
                 ->with('success', 'Notificação atualizada com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()

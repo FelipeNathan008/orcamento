@@ -264,6 +264,8 @@ class OrcamentoController extends Controller
                         'fin_nome_cliente' => $orcamento->clienteOrcamento->clie_orc_nome,
                         'fin_valor_total' => $totalGeral,
                         'fin_status' => $status->status_merc_nome, // Aguardando Pagamento
+                        'created_at' => now(),
+                        'updated_at' => now()
                     ]);
 
 
@@ -281,6 +283,8 @@ class OrcamentoController extends Controller
                             'log_id_cliente'             => $orcamento->cliente_orcamento_id_co,
                             'log_nome_status'            => $status->status_merc_nome,
                             'log_situacao'               => $primeiro ? 1 : 0,
+                            'created_at' => now(),
+                            'updated_at' => now()
                         ]);
 
                         $primeiro = false; // depois do primeiro insert, tudo vira 0

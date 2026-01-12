@@ -8,7 +8,7 @@ class DetalhesCobranca extends Model
 {
     protected $table = 'detalhes_cobranca';
     protected $primaryKey = 'id_det_cobranca';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'cobranca_id',

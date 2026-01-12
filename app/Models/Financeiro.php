@@ -8,7 +8,7 @@ class Financeiro extends Model
 {
     protected $table = 'financeiro';
     protected $primaryKey = 'id_fin';
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'orcamento_id_orcamento',

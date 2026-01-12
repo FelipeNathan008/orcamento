@@ -112,7 +112,8 @@
                 </div>
             </div>
 
-
+            <!-- CONTAINER SOMENTE PARA PARCELAS -->
+            <div id="parcelasHidden"></div>
         </div>
 
 
@@ -200,49 +201,45 @@
         // Função para gerar parcelas
         function gerarParcelas(dataInicialString) {
 
-            // Corrigir conversão da data (TRATAR COMO LOCAL)
-            let partes = dataInicialString.split('-'); // [YYYY, MM, DD]
+            // LIMPA TUDO ANTES (garantia total)
+            $('#listaParcelas').html('');
+            $('#parcelasHidden').html('');
+
+            let partes = dataInicialString.split('-');
             let data = new Date(
                 parseInt(partes[0]),
                 parseInt(partes[1]) - 1,
                 parseInt(partes[2])
             );
 
-            let lista = $('#listaParcelas');
-            lista.html("");
-
             for (let i = 1; i <= qtdParcelas; i++) {
 
-                // Formatar data dd/mm/yyyy
                 let dia = String(data.getDate()).padStart(2, '0');
                 let mes = String(data.getMonth() + 1).padStart(2, '0');
                 let ano = data.getFullYear();
 
                 let dataFormatada = `${dia}/${mes}/${ano}`;
 
-                // Valor formatado
                 let valorBR = valorParcela.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 });
 
-                // Escrever parcela
-                lista.append(`
-                    <div class="p-2 bg-white rounded border border-gray-300">
-                        Parcela ${i}: <strong>${dataFormatada}</strong> — R$ ${valorBR}
-                    </div>
-                `);
+                $('#listaParcelas').append(`
+            <div class="p-2 bg-white rounded border border-gray-300">
+                Parcela ${i}: <strong>${dataFormatada}</strong> — R$ ${valorBR}
+            </div>
+        `);
 
-                    $('#detForm').append(`
-                    <input type="hidden" name="datas_parcelas[]" value="${ano}-${mes}-${dia}">
-                    <input type="hidden" name="valores_parcelas[]" value="${valorParcela}">
-                `);
+                $('#parcelasHidden').append(`
+            <input type="hidden" name="datas_parcelas[]" value="${ano}-${mes}-${dia}">
+            <input type="hidden" name="valores_parcelas[]" value="${valorParcela}">
+        `);
 
-
-                // SOMAR 30 DIAS PARA A PRÓXIMA PARCELA
                 data = add30dias(data);
             }
         }
+
 
 
         // Quando selecionar a data

@@ -168,7 +168,7 @@ class FormaPagamentoController extends Controller
         $parcela = DetalhesFormaPag::findOrFail($id);
 
         // Atualiza a parcela normalmente
-        $parcela->det_situacao = 'Não Pago';
+        $parcela->det_situacao = 'Não pago';
         $parcela->save();
 
         // Determina o tipo da cobrança (mesma lógica do index e do darBaixa)

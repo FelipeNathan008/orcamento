@@ -150,12 +150,10 @@
                             </button>
 
                             {{-- Forma Pagamento --}}
-                            @if($fin->fin_status === 'Aguardando pagamento' || $fin->fin_status === 'Pagamento realizado')
                             <a href="{{ url('/forma_pagamento?' . $fin->id_fin) }}"
                                 class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                 Forma Pagamento
                             </a>
-                            @endif
 
 
                             @php
