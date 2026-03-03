@@ -35,41 +35,58 @@ class OrcamentoController extends Controller
         return view('view_orcamento.orcamento_pdf', compact('orcamento', 'clienteOrcamento'));
     }
 
-    // Index normal
-    public function index()
+    public function index(Request $request)
     {
+        if (!$request->cliente_orcamento_id) {
+            return redirect()->route('cliente_orcamento.index')
+                ->with('error', 'Selecione um cliente para visualizar os orçamentos.');
+        }
+
         $today = Carbon::now()->startOfDay();
 
-        $orcamentos = Orcamento::with('clienteOrcamento')
-            ->where(function ($query) use ($today) {
-                // Todos que não estão vencidos ou não são status pendente/para aprovacao
-                $query->where('orc_data_fim', '>=', $today)
-                    ->orWhereNotIn('orc_status', ['pendente', 'para aprovacao', 'rejeitado']);
-            })
+        $clienteSelecionado = ClienteOrcamento::where(
+            'id_co',
+            $request->cliente_orcamento_id
+        )->firstOrFail();
+
+        $query = Orcamento::with('clienteOrcamento')
+            ->where('cliente_orcamento_id_co', $request->cliente_orcamento_id);
+
+        if ($request->status_query) {
+            $query->where('orc_status', $request->status_query);
+        }
+
+        $filtroVencimento = $request->filtro_vencimento ?? 'ativos';
+
+        if ($filtroVencimento === 'ativos') {
+
+            // Fluxo Ativos
+            $query->where('orc_status', '!=', 'rejeitado')
+                ->where(function ($q) use ($today) {
+                    $q->whereIn('orc_status', ['aprovado', 'finalizado'])
+                        ->orWhere('orc_data_fim', '>=', $today);
+                });
+        } elseif ($filtroVencimento === 'vencidos') {
+
+            // Fluxo Vencidos
+            $query->where(function ($q) use ($today) {
+                $q->where(function ($sub) use ($today) {
+                    $sub->whereIn('orc_status', ['pendente', 'para aprovacao'])
+                        ->where('orc_data_fim', '<', $today);
+                })
+                    ->orWhere('orc_status', 'rejeitado');
+            });
+        }
+
+        $orcamentos = $query
+            ->orderBy('id_orcamento', 'desc')
             ->get();
 
-        return view('view_orcamento.index', compact('orcamentos'));
+        return view('view_orcamento.index', compact(
+            'orcamentos',
+            'clienteSelecionado'
+        ));
     }
-
-    // Tela de Orçamentos Vencidos
-    public function indexfunil()
-    {
-        $today = Carbon::now()->startOfDay();
-
-        $orcamentos = Orcamento::with('clienteOrcamento')
-            ->where(function ($query) use ($today) {
-                // Pendente ou Para Aprovação vencidos
-                $query->whereIn('orc_status', ['pendente', 'para aprovacao'])
-                    ->where('orc_data_fim', '<', $today);
-            })
-            ->orWhere('orc_status', 'rejeitado') // sempre pega rejeitados
-            ->get();
-
-        return view('view_orcamento.index_funil', compact('orcamentos'));
-    }
-
-
-
 
     /**
      * Exibe a view de geração do orçamento.
@@ -120,10 +137,21 @@ class OrcamentoController extends Controller
      */
     public function create(Request $request)
     {
-        $clientesOrcamento = ClienteOrcamento::all();
-        $selectedClienteOrcamentoId = $request->query('cliente_orcamento_id');
 
-        return view('view_orcamento.create', compact('clientesOrcamento', 'selectedClienteOrcamentoId'));
+        if (!$request->cliente_orcamento_id) {
+            return view('view_orcamento.create', compact(
+                'clienteSelecionado'
+            ));
+        }
+
+        $today = Carbon::now()->startOfDay();
+
+        $clienteSelecionado = ClienteOrcamento::where(
+            'id_co',
+            $request->cliente_orcamento_id
+        )->firstOrFail();
+
+        return view('view_orcamento.create', compact('clienteSelecionado'));
     }
 
     /**
@@ -158,8 +186,9 @@ class OrcamentoController extends Controller
                 'orc_anotacao_espec' => $orc_anotacao_espec,
                 'orc_anotacao_geral' => $validatedData['orc_anotacao_geral'] ?? null,
             ]);
-            return redirect()->route('detalhes_orcamento.create', ['orcamento_id' => $orcamento->id_orcamento])
-                ->with('success', 'Orçamento criado com sucesso! Agora adicione os detalhes.');
+            return redirect()->route('orcamento.index', [
+                'cliente_orcamento_id' => $orcamento->cliente_orcamento_id_co
+            ])->with('success', 'Orçamento criado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (Exception $e) {
@@ -190,7 +219,16 @@ class OrcamentoController extends Controller
     {
         $orcamento = Orcamento::findOrFail($id);
         $clientesOrcamento = ClienteOrcamento::all();
-        return view('view_orcamento.edit', compact('orcamento', 'clientesOrcamento'));
+        $clienteSelecionado = $orcamento->clienteOrcamento;
+        $financeiroPendente = DB::table('financeiro')
+            ->where('orcamento_id_orcamento', $orcamento->id_orcamento)
+            ->where('fin_status', '!=', 'entregue')
+            ->exists();
+
+        return view(
+            'view_orcamento.edit',
+            compact('orcamento', 'clientesOrcamento', 'financeiroPendente', 'clienteSelecionado')
+        );
     }
 
     /**
@@ -298,16 +336,15 @@ class OrcamentoController extends Controller
             }
 
             // Se não criou financeiro, redireciona para lista de orçamentos
-            return redirect()->route('orcamento.index')
-                ->with('success', 'Orçamento atualizado com sucesso!');
+            return redirect()->route('orcamento.index', [
+                'cliente_orcamento_id' => $orcamento->cliente_orcamento_id_co
+            ])->with('success', 'Orçamento criado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (Exception $e) {
             return redirect()->back()->with('error', 'Não foi possível atualizar o Orçamento: ' . $e->getMessage())->withInput();
         }
     }
-
-
 
 
     /**
@@ -321,6 +358,8 @@ class OrcamentoController extends Controller
         $orcamento = Orcamento::findOrFail($id);
         $orcamento->delete();
 
-        return redirect()->route('orcamento.index')->with('success', 'Orçamento excluído com sucesso!');
+        return redirect()->route('orcamento.index', [
+            'cliente_orcamento_id' => $orcamento->cliente_orcamento_id_co
+        ])->with('success', 'Orçamento excluído com sucesso!');
     }
 }

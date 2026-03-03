@@ -31,7 +31,8 @@
     @endif
 
     {{-- Campos de busca - ATUALIZADO para 3 campos --}}
-    <div class="relative w-full mb-6">
+    <form method="GET" action="{{ route('cliente_orcamento.index') }}">
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {{-- Campo de busca por Nome --}}
             <div class="relative">
@@ -61,7 +62,7 @@
 
             {{-- Campo de busca por Celular --}}
             <div class="relative">
-                <input type="text" id="searchClientOrcamentoPhone" placeholder="Pesquisar por celular..."
+                <input type="text" id="searchClientOrcamentoCode" placeholder="Pesquisar por código interno..."
                     class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
                                                hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
                 <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20"
@@ -71,8 +72,22 @@
                         clip-rule="evenodd" />
                 </svg>
             </div>
+
+            {{-- Campo de busca por ID do Orçamento --}}
+            <div class="relative">
+                <input type="number" name="id_orcamento" value="{{ request('id_orcamento') }}"
+                    placeholder="Pesquisar por ID do orçamento..."
+                    class="w-full h-9 pl-3 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
+        hover:border-custom-border-hover focus:border-custom-border-focus text-custom-dark-text">
+            </div>
+
         </div>
-    </div>
+        <button type="submit"
+            class="mt-4 px-4 py-2 text-white rounded-md"
+            style="background-color: #EA792D;">
+            Filtrar
+        </button>
+    </form>
 
     @if ($clientesOrcamento->isEmpty())
     {{-- Estilo da mensagem de "nenhum cliente" do Cliente --}}
@@ -86,19 +101,18 @@
                 <tr>
                     <th scope="col"
                         class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Cód.
+                    </th>
+                    <th scope="col"
+                        class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Nome
                     </th>
                     <th scope="col"
                         class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Celular
                     </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                    <th class="w-32 px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         E-mail
-                    </th>
-                    <th scope="col"
-                        class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Documento
                     </th>
                     <th scope="col"
                         class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
@@ -110,34 +124,29 @@
                 @foreach ($clientesOrcamento as $cliente)
                 <tr class="hover:bg-gray-50 transition duration-150">
                     <td class="px-6 py-4 whitespace-normal break-words text-sm font-medium text-gray-900 font-poppins">
+                        {{ $cliente->clie_orc_cod_interno }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-normal break-words text-sm font-medium text-gray-900 font-poppins max-w-[220px]">
                         {{ $cliente->clie_orc_nome }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        {{ $cliente->clie_orc_celular }}
+                        {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $cliente->clie_orc_celular)) }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
+                    <td class="px-6 py-4 whitespace-normal break-words text-sm text-gray-700 font-poppins max-w-[150px]">
                         {{ $cliente->clie_orc_email }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        @if ($cliente->clie_orc_tipo_doc == 'CPF')
-                        {{ $cliente->clie_orc_cpf }}
-                        @elseif ($cliente->clie_orc_tipo_doc == 'CNPJ')
-                        {{ $cliente->clie_orc_cnpj }}
-                        @endif
                     </td>
                     <td class="px-2 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div class="flex items-center justify-center space-x-1 sm:space-x-2">
                             {{-- Botão "Contatos" - AGORA LEVA PARA O INDEX DE CONTATOS COM FILTRO --}}
-                            <a href="{{ route('contato_cliente.index', ['search_query' => $cliente->clie_orc_nome]) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium
-                                                                                    rounded-md shadow-sm text-white bg-button-contact-bg hover:bg-button-contact-hover
-                                                                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-contact-bg transition
-                                                                                    duration-150 ease-in-out">
+                            <a href="{{ route('contato_cliente.index', ['cliente_orcamento' => $cliente->id_co]) }}" class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium
+                                rounded-md shadow-sm text-white bg-button-contact-bg hover:bg-button-contact-hover
+                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-contact-bg transition
+                                duration-150 ease-in-out">
                                 Contatos
                             </a>
 
                             {{-- Botão "Orçamentos" --}}
-                            <a href="{{ route('orcamento.create', ['cliente_orcamento_id' => $cliente->id_co]) }}"
+                            <a href="{{ route('orcamento.index', ['cliente_orcamento_id' => $cliente->id_co]) }}"
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-budget-bg hover:bg-button-budget-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-budget-bg transition duration-150 ease-in-out">
                                 Orçamentos
                             </a>
@@ -181,68 +190,61 @@
 {{-- Script JavaScript para a busca ao vivo - ATUALIZADO para 3 campos --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
         const searchNameInput = document.getElementById('searchClientOrcamentoName');
         const searchEmailInput = document.getElementById('searchClientOrcamentoEmail');
-        const searchPhoneInput = document.getElementById('searchClientOrcamentoPhone');
+        const searchCodeInput = document.getElementById('searchClientOrcamentoCode');
+
         const clientTableBody = document.getElementById('clientOrcamentoTableBody');
         const noClientsMessage = document.getElementById('noClientsOrcamentoMessage');
         const noResultsMessage = document.getElementById('noResultsOrcamentoMessage');
 
         const filterTable = () => {
-            const searchTermName = (searchNameInput.value || '').toLowerCase();
-            const searchTermEmail = (searchEmailInput.value || '').toLowerCase();
-            const searchTermPhone = (searchPhoneInput.value || '').toLowerCase();
+
+            const searchName = (searchNameInput.value || '').toLowerCase();
+            const searchEmail = (searchEmailInput.value || '').toLowerCase();
+            const searchCode = (searchCodeInput.value || '').toLowerCase();
 
             const rows = clientTableBody.querySelectorAll('tr');
-            let foundResults = false;
+            let found = false;
 
             rows.forEach(row => {
-                const nameCell = row.cells[0].textContent.toLowerCase();
-                const emailCell = row.cells[1].textContent.toLowerCase();
-                const phoneCell = row.cells[2].textContent.toLowerCase();
 
-                const matchesName = nameCell.includes(searchTermName);
-                const matchesEmail = emailCell.includes(searchTermEmail);
-                const matchesPhone = phoneCell.includes(searchTermPhone);
+                const code = row.cells[0].textContent.toLowerCase();
+                const name = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[3].textContent.toLowerCase();
 
-                if (matchesName && matchesEmail && matchesPhone) {
+                const matchCode = code.includes(searchCode);
+                const matchName = name.includes(searchName);
+                const matchEmail = email.includes(searchEmail);
+
+                if (matchCode && matchName && matchEmail) {
                     row.style.display = '';
-                    foundResults = true;
+                    found = true;
                 } else {
                     row.style.display = 'none';
                 }
+
             });
 
-            const allSearchFieldsEmpty = !searchTermName && !searchTermEmail && !searchTermPhone;
+            const allEmpty = !searchName && !searchEmail && !searchCode;
 
-            if (allSearchFieldsEmpty) {
-                if (clientTableBody.querySelectorAll('tr').length === 0) {
-                    if (noClientsMessage) noClientsMessage.classList.remove('hidden');
-                } else {
-                    if (noClientsMessage) noClientsMessage.classList.add('hidden');
-                }
-                if (noResultsMessage) noResultsMessage.classList.add('hidden');
+            if (allEmpty) {
+                noResultsMessage.classList.add('hidden');
             } else {
-                if (noClientsMessage) noClientsMessage.classList.add('hidden');
-                if (foundResults) {
-                    if (noResultsMessage) noResultsMessage.classList.add('hidden');
+                if (found) {
+                    noResultsMessage.classList.add('hidden');
                 } else {
-                    if (noResultsMessage) noResultsMessage.classList.remove('hidden');
+                    noResultsMessage.classList.remove('hidden');
                 }
             }
+
         };
 
-        if (searchNameInput && searchEmailInput && searchPhoneInput) {
-            searchNameInput.addEventListener('input', filterTable);
-            searchEmailInput.addEventListener('input', filterTable);
-            searchPhoneInput.addEventListener('input', filterTable);
-        }
+        searchNameInput.addEventListener('input', filterTable);
+        searchEmailInput.addEventListener('input', filterTable);
+        searchCodeInput.addEventListener('input', filterTable);
 
-        if (clientTableBody.querySelectorAll('tr').length === 0) {
-            if (noClientsMessage) noClientsMessage.classList.remove('hidden');
-        } else {
-            if (noClientsMessage) noClientsMessage.classList.add('hidden');
-        }
     });
 </script>
 @endsection

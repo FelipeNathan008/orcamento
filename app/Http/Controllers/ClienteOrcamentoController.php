@@ -16,9 +16,34 @@ class ClienteOrcamentoController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        $clientesOrcamento = ClienteOrcamento::all();
+        $query = ClienteOrcamento::query();
+
+        // Filtro por nome
+        if ($request->filled('nome')) {
+            $query->where('clie_orc_nome', 'like', '%' . $request->nome . '%');
+        }
+
+        // Filtro por email
+        if ($request->filled('email')) {
+            $query->where('clie_orc_email', 'like', '%' . $request->email . '%');
+        }
+
+        // Filtro por código interno
+        if ($request->filled('codigo')) {
+            $query->where('clie_orc_cod_interno', 'like', '%' . $request->codigo . '%');
+        }
+
+        // 🔥 FILTRO PELO ID DO ORÇAMENTO
+        if ($request->filled('id_orcamento')) {
+            $query->whereHas('orcamentos', function ($q) use ($request) {
+                $q->where('id_orcamento', $request->id_orcamento);
+            });
+        }
+
+        $clientesOrcamento = $query->get();
+
         return view('view_cliente_orcamento.index', compact('clientesOrcamento'));
     }
 
@@ -72,9 +97,6 @@ class ClienteOrcamentoController extends Controller
                     Rule::when($request->input('clie_orc_tipo_doc') === 'CNPJ', [
                         Rule::unique('cliente_orcamento', 'clie_orc_cnpj')
                     ]),
-                    Rule::when($request->input('clie_orc_tipo_doc') === 'RG', [
-                        Rule::unique('cliente_orcamento', 'clie_orc_rg')
-                    ]),
                 ],
 
                 'clie_orc_telefone' => 'required_without:clie_orc_celular|nullable|string|max:14',
@@ -82,7 +104,16 @@ class ClienteOrcamentoController extends Controller
                 'clie_orc_cep' => 'required|string|max:9',
                 'clie_orc_cidade' => 'required|string|max:45',
                 'clie_orc_uf' => 'required|string|max:2',
+                'clie_orc_cod_interno' => [
+                    'required',
+                    'string',
+                    'max:60',
+                    Rule::unique('cliente_orcamento', 'clie_orc_cod_interno'),
+                ],
+            ], [
+                'clie_orc_cod_interno.unique' => 'Este código interno já pertence a outro cliente.',
             ]);
+
 
             $docNumeroLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_doc_numero']);
             $celularLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_celular']);
@@ -103,6 +134,7 @@ class ClienteOrcamentoController extends Controller
                 'clie_orc_cpf' => null,
                 'clie_orc_cnpj' => null,
                 'clie_orc_rg' => null,
+                'clie_orc_cod_interno' => $validatedData['clie_orc_cod_interno'] ?? null,
             ];
 
             if ($validatedData['clie_orc_tipo_doc'] === 'CPF') {
@@ -196,6 +228,16 @@ class ClienteOrcamentoController extends Controller
                 'clie_orc_cep' => 'sometimes|required|string|max:9',
                 'clie_orc_cidade' => 'sometimes|required|string|max:45',
                 'clie_orc_uf' => 'sometimes|required|string|max:2',
+                'clie_orc_cod_interno' => [
+                    'sometimes',
+                    'required',
+                    'string',
+                    'max:60',
+                    Rule::unique('cliente_orcamento', 'clie_orc_cod_interno')
+                        ->ignore($clienteOrcamento->id_co, 'id_co'),
+                ],
+            ], [
+                'clie_orc_cod_interno.unique' => 'Este código interno já pertence a outro cliente.',
             ]);
 
             $docNumeroLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_doc_numero'] ?? '');
@@ -217,6 +259,7 @@ class ClienteOrcamentoController extends Controller
                 'clie_orc_cpf' => null,
                 'clie_orc_cnpj' => null,
                 'clie_orc_rg' => null,
+                'clie_orc_cod_interno' => $validatedData['clie_orc_cod_interno'] ?? $clienteOrcamento->clie_orc_cod_interno,
             ];
 
             if ($clienteOrcamentoData['clie_orc_tipo_doc'] === 'CPF') {

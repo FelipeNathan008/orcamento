@@ -97,7 +97,6 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     // ROTAS ORÇAMENTO
     Route::resource('orcamento', OrcamentoController::class);
-    Route::get('/orcamentos/funil', [OrcamentoController::class, 'indexFunil'])->name('orcamento.funil');
 
 
     // ROTAS PRODUTO

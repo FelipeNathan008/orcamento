@@ -21,11 +21,11 @@ class FinanceiroController extends Controller
      */
     public function index()
     {
-        $financeiro = Financeiro::all();
         $financeiro = Financeiro::with(['logs.status'])->get();
 
         return view('view_financeiro.index', compact('financeiro'));
     }
+
 
     /**
      * Show the form for creating a new resource.

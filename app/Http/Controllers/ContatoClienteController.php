@@ -18,41 +18,32 @@ class ContatoClienteController extends Controller
      */
     public function index(Request $request)
     {
-        // Carrega os contatos e eager-loads o relacionamento com clienteOrcamento
-        $query = ContatoCliente::with('clienteOrcamento');
 
-        // Se houver um termo de busca na query string, aplique o filtro
-        if ($request->filled('search_query')) {
-            $searchTerm = $request->input('search_query');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('cont_nome', 'like', "%{$searchTerm}%")
-                    ->orWhere('cont_email', 'like', "%{$searchTerm}%")
-                    // Busca também pelo nome do cliente de orçamento associado
-                    ->orWhereHas('clienteOrcamento', function ($qr) use ($searchTerm) {
-                        $qr->where('clie_orc_nome', 'like', "%{$searchTerm}%");
-                    });
-            });
-        }
+        $clienteId = $request->cliente_orcamento;
 
-        $contatosCliente = $query->get(); // Busca todos os contatos que correspondem à query
+        $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
 
-        return view('view_contato_cliente.index', compact('contatosCliente'));
+        $contatosCliente = ContatoCliente::where('cliente_orcamento_id_co', $clienteId)
+            ->with('clienteOrcamento')
+            ->get();
+
+        return view('view_contato_cliente.index', [
+            'contatosCliente' => $contatosCliente,
+            'clienteSelecionado' => $clienteSelecionado
+        ]);
     }
-
     /**
      * Show the form for creating a new resource.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\View\View
      */
-    public function create(Request $request)
+    public function create($cliente_orcamento)
     {
-        $clientesOrcamento = ClienteOrcamento::all();
-        $preselectedClientId = $request->route('cliente_orcamento'); // Pega o ID da rota com parâmetro
+        $clienteSelecionado = ClienteOrcamento::findOrFail($cliente_orcamento);
 
-        return view('view_contato_cliente.create', compact('clientesOrcamento', 'preselectedClientId'));
+        return view('view_contato_cliente.create', compact('clienteSelecionado'));
     }
-
     /**
      * Store a newly created resource in storage.
      *
@@ -62,29 +53,39 @@ class ContatoClienteController extends Controller
     public function store(Request $request)
     {
         try {
+
             $validatedData = $request->validate([
                 'cliente_orcamento_id_co' => 'required|exists:cliente_orcamento,id_co',
                 'cont_nome' => 'required|string|max:45',
                 'cont_celular' => 'required|string|max:20',
                 'cont_telefone' => 'nullable|string|max:20',
                 'cont_tipo' => 'required|in:administrativo,comercial,financeiro',
-                'cont_email' => 'required|email|max:45', // 'unique' removido aqui
+                'cont_email' => 'required|email|max:45',
                 'cont_descricao' => 'nullable|string|max:500',
             ]);
 
             // Limpar máscaras
             $validatedData['cont_celular'] = preg_replace('/\D/', '', $validatedData['cont_celular']);
-            if (isset($validatedData['cont_telefone'])) {
+
+            if (!empty($validatedData['cont_telefone'])) {
                 $validatedData['cont_telefone'] = preg_replace('/\D/', '', $validatedData['cont_telefone']);
             }
 
             ContatoCliente::create($validatedData);
 
-            return redirect()->route('contato_cliente.index')->with('success', 'Contato de Cliente criado com sucesso!');
+            return redirect()->route('contato_cliente.index', [
+                'cliente_orcamento' => $validatedData['cliente_orcamento_id_co']
+            ])->with('success', 'Contato criado com sucesso!');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Não foi possível criar o Contato de Cliente: ' . $e->getMessage())->withInput();
+
+            return redirect()->back()
+                ->with('error', 'Erro ao salvar contato: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
@@ -126,30 +127,33 @@ class ContatoClienteController extends Controller
             $contatoCliente = ContatoCliente::findOrFail($id);
 
             $validatedData = $request->validate([
-                'cliente_orcamento_id_co' => 'sometimes|required|exists:cliente_orcamento,id_co',
-                'cont_nome' => 'sometimes|required|string|max:45',
-                'cont_celular' => 'sometimes|required|string|max:20',
+                'cliente_orcamento_id_co' => 'required|exists:cliente_orcamento,id_co',
+                'cont_nome' => 'required|string|max:45',
+                'cont_celular' => 'required|string|max:20',
                 'cont_telefone' => 'nullable|string|max:20',
-                'cont_tipo' => 'sometimes|required|in:administrativo,comercial,financeiro',
-                'cont_email' => 'sometimes|required|email|max:45', // A validação 'unique' foi removida
+                'cont_tipo' => 'required|in:administrativo,comercial,financeiro',
+                'cont_email' => 'required|email|max:45',
                 'cont_descricao' => 'nullable|string|max:500',
             ]);
 
             // Limpar máscaras
-            if (isset($validatedData['cont_celular'])) {
-                $validatedData['cont_celular'] = preg_replace('/\D/', '', $validatedData['cont_celular']);
-            }
-            if (isset($validatedData['cont_telefone'])) {
+            $validatedData['cont_celular'] = preg_replace('/\D/', '', $validatedData['cont_celular']);
+
+            if (!empty($validatedData['cont_telefone'])) {
                 $validatedData['cont_telefone'] = preg_replace('/\D/', '', $validatedData['cont_telefone']);
             }
 
             $contatoCliente->update($validatedData);
 
-            return redirect()->route('contato_cliente.index')->with('success', 'Contato de Cliente atualizado com sucesso!');
+            return redirect()->route('contato_cliente.index', [
+                'cliente_orcamento' => $contatoCliente->cliente_orcamento_id_co
+            ])->with('success', 'Contato atualizado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Não foi possível atualizar o Contato de Cliente: ' . $e->getMessage())->withInput();
+            return redirect()->back()
+                ->with('error', 'Não foi possível atualizar o contato: ' . $e->getMessage())
+                ->withInput();
         }
     }
 

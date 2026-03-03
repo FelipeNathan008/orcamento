@@ -28,6 +28,9 @@ class EmpresaController extends Controller
             'emp_cidade' => 'required|max:45',
             'emp_uf' => 'required|max:2',
             'emp_cep' => 'required|max:45',
+        ], [
+            'emp_cnpj.unique' => 'Já existe uma empresa cadastrada com este CNPJ. Verifique os dados informados.',
+            'emp_cnpj.required' => 'O CNPJ é obrigatório.',
         ]);
 
         Empresa::create($request->all());
@@ -59,6 +62,9 @@ class EmpresaController extends Controller
             'emp_cidade' => 'required|max:45',
             'emp_uf' => 'required|max:2',
             'emp_cep' => 'required|max:45',
+        ], [
+            'emp_cnpj.unique' => 'Já existe uma empresa cadastrada com este CNPJ. Verifique os dados informados.',
+            'emp_cnpj.required' => 'O CNPJ é obrigatório.',
         ]);
 
         $empresa->update($request->all());

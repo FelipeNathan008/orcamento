@@ -8,18 +8,18 @@
             <a href="{{ route('contato_cliente.edit', $contatoCliente->id_contato) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Editar Contato
             </a>
-            <a href="{{ route('contato_cliente.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+            <a href="{{ route('contato_cliente.index', ['cliente_orcamento' => $contatoCliente->cliente_orcamento_id_co]) }}"
+                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Voltar para a Lista
             </a>
+            <div class="flex justify-center mb-8">
+
+            </div>
         </div>
     </div>
 
     <div class="bg-white shadow-xl rounded-lg p-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">ID do Contato:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->id_contato }}</p>
-            </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Cliente de Orçamento:</p>
                 <p class="text-gray-900 text-lg font-semibold">
@@ -32,11 +32,33 @@
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Telefone:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->cont_telefone ?? 'N/A' }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @php
+                    $telefone = preg_replace('/\D/', '', $contatoCliente->cont_telefone);
+                    @endphp
+
+                    @if($telefone && strlen($telefone) === 10)
+                    {{ preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $telefone) }}
+                    @elseif($telefone && strlen($telefone) === 11)
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $telefone) }}
+                    @else
+                    {{ $contatoCliente->cont_telefone ?? 'N/A' }}
+                    @endif
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Celular:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->cont_celular }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @php
+                    $celular = preg_replace('/\D/', '', $contatoCliente->cont_celular);
+                    @endphp
+
+                    @if(strlen($celular) === 11)
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celular) }}
+                    @else
+                    {{ $contatoCliente->cont_celular }}
+                    @endif
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Email:</p>

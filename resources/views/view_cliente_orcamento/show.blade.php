@@ -16,10 +16,7 @@
 
     <div class="bg-white shadow-xl rounded-lg p-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">ID:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->id_co }}</p>
-            </div>
+
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Nome:</p>
                 <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_nome }}</p>
@@ -30,11 +27,17 @@
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Telefone:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_telefone ?? 'N/A' }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ $clienteOrcamento->clie_orc_telefone 
+            ? preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_telefone)) 
+            : 'N/A' }}
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Celular:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_celular }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_celular)) }}
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Tipo de Documento:</p>
@@ -43,13 +46,17 @@
             @if ($clienteOrcamento->clie_orc_cpf)
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CPF:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_cpf }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_cpf)) }}
+                </p>
             </div>
             @endif
             @if ($clienteOrcamento->clie_orc_cnpj)
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CNPJ:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_cnpj }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_cnpj)) }}
+                </p>
             </div>
             @endif
             <div class="md:col-span-2 mb-4">
@@ -62,7 +69,9 @@
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CEP:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_cep }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ preg_replace('/(\d{5})(\d{3})/', '$1-$2', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_cep)) }}
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Cidade:</p>
@@ -71,6 +80,10 @@
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">UF:</p>
                 <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_uf }}</p>
+            </div>
+            <div class="mb-4">
+                <p class="text-gray-600 text-sm">Código interno:</p>
+                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_cod_interno }}</p>
             </div>
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Criado em:</p>

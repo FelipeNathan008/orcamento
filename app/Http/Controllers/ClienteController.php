@@ -37,6 +37,10 @@ class ClienteController extends Controller
             'clie_cep' => 'required|string|max:9',
             'clie_cidade' => 'required|string|max:60',
             'clie_uf' => 'required|string|max:2',
+        ], [
+            'clie_email.unique' => 'Este e-mail já está cadastrado em nosso sistema.',
+            'clie_email.required' => 'O e-mail é obrigatório.',
+            'clie_email.email' => 'Por favor, informe um e-mail válido.',
         ]);
 
         // 2. Limpar os dados com máscara (remover caracteres não numéricos)
@@ -69,8 +73,25 @@ class ClienteController extends Controller
         }
 
         // 5. Criar o Cliente no banco de dados
-        Cliente::create($clienteData);
+        $cliente = new Cliente();
+        $cliente->clie_nome = $validatedData['clie_nome'];
+        $cliente->clie_email = $validatedData['clie_email'];
+        $cliente->clie_logradouro = $validatedData['clie_logradouro'];
+        $cliente->clie_bairro = $validatedData['clie_bairro'];
+        $cliente->clie_tipo_doc = $validatedData['clie_tipo_doc'];
+        $cliente->clie_telefone = $telefoneLimpo;
+        $cliente->clie_celular = $celularLimpo;
+        $cliente->clie_cep = $cepLimpo;
+        $cliente->clie_cidade = $validatedData['clie_cidade'];
+        $cliente->clie_uf = $validatedData['clie_uf'];
 
+        if ($validatedData['clie_tipo_doc'] === 'CPF') {
+            $cliente->clie_cpf = $docNumeroLimpo;
+        } else {
+            $cliente->clie_cnpj = $docNumeroLimpo;
+        }
+
+        $cliente->save();
         // 6. Redirecionar com mensagem de sucesso
         return redirect()->route('cliente.index')->with('success', 'Prospecção cadastrado com sucesso!');
     }
@@ -107,17 +128,20 @@ class ClienteController extends Controller
             'clie_logradouro' => 'sometimes|required|string|max:100',
             'clie_bairro' => 'sometimes|required|string|max:80',
             'clie_tipo_doc' => 'sometimes|required|in:CPF,CNPJ',
-            'clie_doc_numero' => [
-                'sometimes',
-                'required',
-                'string',
-                'max:18',
-            ],
+            'clie_doc_numero' => 'sometimes|required|string|max:18',
             'clie_telefone' => 'sometimes|required_without:clie_celular|nullable|string|max:20',
             'clie_celular' => 'sometimes|required_without:clie_telefone|nullable|string|max:45',
             'clie_cep' => 'sometimes|required|string|max:9',
             'clie_cidade' => 'sometimes|required|string|max:60',
             'clie_uf' => 'sometimes|required|string|max:2',
+        ], [
+            'clie_doc_numero.unique' =>
+            $request->clie_tipo_doc === 'CPF'
+                ? 'Este CPF já pertence a outro cliente cadastrado.'
+                : 'Este CNPJ já pertence a outro cliente cadastrado.',
+            'clie_email.unique' => 'Este e-mail já está cadastrado em nosso sistema.',
+            'clie_email.required' => 'O e-mail é obrigatório.',
+            'clie_email.email' => 'Por favor, informe um e-mail válido.',
         ]);
 
         // 2. Limpar os dados com máscara (remover caracteres não numéricos)

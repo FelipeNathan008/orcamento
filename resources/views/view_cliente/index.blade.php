@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Lista de Clientes')
+@section('title', 'Lista de Prospecções')
 
 @section('content')
 
@@ -108,20 +108,33 @@
                         {{ $cliente->clie_nome }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        {{ $cliente->clie_celular }}
+                        {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $cliente->clie_celular)) }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
                         {{ $cliente->clie_email }}
                     </td>
+
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        @if ($cliente->clie_tipo_doc == 'CPF')
-                        {{ $cliente->clie_cpf }}
-                        @elseif ($cliente->clie_tipo_doc == 'CNPJ')
-                        {{ $cliente->clie_cnpj }}
-                        @else
-                        {{ $cliente->clie_rg }}
+                        {{-- CPF --}}
+                        @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
+                        @php
+                        $cpf = preg_replace('/\D/', '', $cliente->clie_cpf);
+                        @endphp
+
+                        {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf) }}
                         @endif
+
+                        {{-- CNPJ --}}
+                        @if ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
+                        @php
+                        $cnpj = preg_replace('/\D/', '', $cliente->clie_cnpj);
+                        @endphp
+
+                        {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
+                        @endif
+
                     </td>
+
                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div class="flex items-center justify-center space-x-1 sm:space-x-2">
                             {{-- Botão "Cliente Orçamento" - Direciona para a tela de clientes de orçamento --}}

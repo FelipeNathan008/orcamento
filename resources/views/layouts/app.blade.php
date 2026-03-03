@@ -193,71 +193,81 @@
     @stack('scripts') {{-- MOVIDO: Apenas um @stack('scripts') no final do body --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+
             const navLinks = document.querySelectorAll('.nav-link');
             const layoutCamisetaNavLink = document.getElementById('layout-camiseta-nav-link');
 
             function highlightCurrentNavLink() {
+
                 let currentPathname = window.location.pathname;
+
                 if (!currentPathname.endsWith('/')) {
                     currentPathname += '/';
                 }
 
                 navLinks.forEach(link => {
-                    // Reseta todos os links para o estado inativo
-                    link.classList.remove('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
-                    link.classList.add('text-gray-300');
 
                     let linkPathname = new URL(link.href).pathname;
+
                     if (!linkPathname.endsWith('/')) {
                         linkPathname += '/';
                     }
 
                     let isActive = false;
 
-                    // Lógica especial para o link "Layout Camiseta"
+                    if (
+                        (
+                            currentPathname.startsWith('/cliente_orcamento/') ||
+                            currentPathname.startsWith('/contato_cliente/')
+                        ) &&
+                        linkPathname === '/cliente_orcamento/'
+                    ) {
+                        isActive = true;
+                    }
+
                     if (link.id === 'layout-camiseta-nav-link') {
-                        if (window.location.pathname.startsWith('/camisa/show_layout')) {
+                        if (currentPathname.startsWith('/camisa/show_layout/')) {
                             link.classList.remove('hidden');
                             isActive = true;
                             link.href = window.location.href;
                         } else {
                             link.classList.add('hidden');
                         }
-                    } else {
-                        // Lógica geral para os outros links de navegação
+                    }
+
+                    // RESET VISUAL PADRÃO
+                    link.classList.remove('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
+                    link.classList.add('text-gray-300');
+
+                    // 🔥 USERS (azul fixo)
+                    if (linkPathname === '/users/') {
+                        if (currentPathname.startsWith('/users/')) {
+                            link.classList.remove('text-gray-300');
+                            link.classList.add('text-white', 'bg-blue-700', 'font-semibold', 'shadow-md');
+                        } else {
+                            link.classList.remove('bg-teal-700', 'font-semibold', 'shadow-md');
+                            link.classList.add('text-white', 'bg-blue-700', 'hover:bg-blue-800');
+                        }
+                        return;
+                    }
+
+                    // 🔹 REGRA NORMAL (outros links)
+                    if (!isActive) {
                         if (linkPathname === '/') {
                             isActive = (currentPathname === '/');
                         } else {
                             isActive = currentPathname.startsWith(linkPathname);
 
-                            // Exceção para 'cliente' vs 'cliente_orcamento'
+                            // evita conflito cliente vs cliente_orcamento
                             if (linkPathname === '/cliente/' && currentPathname.startsWith('/cliente_orcamento/')) {
                                 isActive = false;
                             }
                         }
                     }
 
-                    // Adicionado tratamento para o novo link "Preço Customização"
-                    if (linkPathname === '/preco_customizacao/' && currentPathname.startsWith('/preco_customizacao/')) {
-                        isActive = true;
-                    }
-
-                    // Adicionado tratamento ESPECIAL para o link de USUÁRIOS
-                    if (linkPathname === '/users/') {
-                        if (currentPathname.startsWith('/users/')) {
-                            // Se a URL começa com /users/, o link fica ativo e com a cor azul
-                            link.classList.remove('text-gray-300');
-                            link.classList.add('text-white', 'bg-blue-700', 'font-semibold', 'shadow-md');
-                            isActive = true;
-                        } else {
-                            // Se não estiver na URL de users, reseta o estilo para o padrão azul sem seleção
-                            link.classList.remove('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
-                            link.classList.add('text-white', 'bg-blue-700', 'hover:bg-blue-800');
-                        }
-                    } else if (isActive) {
-                        // Aplica as classes de ativo se o link for o correspondente (que não seja o 'users')
-                        link.classList.add('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
+                    if (isActive) {
                         link.classList.remove('text-gray-300');
+                        link.classList.add('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
                     }
                 });
             }
@@ -265,10 +275,11 @@
             highlightCurrentNavLink();
 
             navLinks.forEach(link => {
-                link.addEventListener('click', function(event) {
+                link.addEventListener('click', function() {
                     setTimeout(highlightCurrentNavLink, 50);
                 });
             });
+
         });
     </script>
 </body>

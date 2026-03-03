@@ -218,7 +218,7 @@
                                             </form>
                                             @endif
                                             
-                                            @if($parcela->det_situacao === 'Não pago' || $parcela->det_situacao === 'Acordo' && $diasAtraso<= 3 )
+                                            @if($parcela->det_situacao === 'Não pago' || $parcela->det_situacao === 'Acordo')
 
                                             <form action="{{ route('parcelas.darBaixa', $parcela->id_det_forma) }}" method="POST">
                                                 @csrf

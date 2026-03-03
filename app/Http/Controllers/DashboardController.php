@@ -22,8 +22,8 @@ class DashboardController extends Controller
                 '=',
                 'd.det_cod'
             )
-            ->whereMonth('o.created_at', now()->month)
-            ->whereYear('o.created_at', now()->year)
+            ->whereMonth('o.orc_data_inicio', now()->month)
+            ->whereYear('o.orc_data_inicio', now()->year)
             ->select(
                 'p.prod_familia',
                 DB::raw('SUM(d.det_quantidade) as total_vendido')
@@ -35,8 +35,8 @@ class DashboardController extends Controller
 
 
         $orcamentosMes = DB::table('orcamento')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereMonth('orc_data_inicio', now()->month)
+            ->whereYear('orc_data_inicio', now()->year)
             ->count();
 
         $orcamentoParaAprovacao = DB::table('orcamento')
@@ -44,27 +44,31 @@ class DashboardController extends Controller
             ->count();
 
         $orcamentoAprovado = DB::table('orcamento')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereMonth('orc_data_inicio', now()->month)
+            ->whereYear('orc_data_inicio', now()->year)
             ->where('orc_status', 'aprovado')
             ->count();
 
         $orcamentoFinalizado = DB::table('orcamento')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
             ->where('orc_status', 'finalizado')
             ->count();
 
         $orcamentoRejeitado = DB::table('orcamento')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
+            ->whereMonth('updated_at', now()->month)
+            ->whereYear('updated_at', now()->year)
             ->where('orc_status', 'rejeitado')
             ->count();
 
-        $orcamentoAtrasado = DB::table('orcamento')
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->where('orc_status', 'rejeitado')
+        $orcamentoAtrasado = DB::table('orcamento') //pega qualquer pendente vencido independente da data de incio 
+            ->where('orc_status', 'pendente')
+            ->where('orc_data_fim', '<', now()->startOfDay())
+            ->count();
+
+
+        $orcamentoPendente = DB::table('orcamento')
+            ->where('orc_status', 'pendente')
             ->count();
 
         $totalMes = 0;
@@ -90,6 +94,34 @@ class DashboardController extends Controller
             }
         }
 
+        //Fluxo dos Status
+        $statusUm = DB::table('financeiro')
+            ->where('fin_status', 'Aguardando pagamento')
+            ->count();
+
+        $statusDois = DB::table('financeiro')
+            ->where('fin_status', 'Pagamento realizado')
+            ->count();
+
+        $statusTres = DB::table('financeiro')
+            ->where('fin_status', 'Análise pedido')
+            ->count();
+
+        $statusQuatro = DB::table('financeiro')
+            ->where('fin_status', 'Pedido fábrica')
+            ->count();
+
+        $statusCinco = DB::table('financeiro')
+            ->where('fin_status', 'Transportadora')
+            ->count();
+
+        $statusSeis = DB::table('financeiro')
+            ->where('fin_status', 'Entregue')
+            ->count();
+
+
+
+        //Financeiro
         $mesAtual = now()->month;
         $anoAtual = now()->year;
 
@@ -100,10 +132,10 @@ class DashboardController extends Controller
             ->count();
 
         $financeiroAtraso = DB::table('detalhes_forma_pag')
-            ->where('det_situacao', 'Não pago')
-            ->whereMonth('det_forma_data_venc', $mesAtual)
-            ->whereYear('det_forma_data_venc', $anoAtual)
+            ->whereIn('det_situacao', ['Não pago', 'Inadimplencia'])
+            ->where('det_forma_data_venc', '<', now()->startOfDay())
             ->count();
+
 
         $financeiroPago = DB::table('detalhes_forma_pag')
             ->where('det_situacao', 'Pago')
@@ -120,6 +152,7 @@ class DashboardController extends Controller
         $hoje = now()->format('Y-m-d'); // formato yyyy-mm-dd
 
         $previsaoDoDia = DB::table('detalhes_forma_pag')
+            ->whereIn('det_situacao', ['Não pago', 'Inadimplencia', 'Acordo'])
             ->whereDate('det_forma_data_venc', $hoje)
             ->sum('det_forma_valor_parcela');
 
@@ -135,6 +168,17 @@ class DashboardController extends Controller
             ->whereDate('det_forma_data_venc', $hoje)
             ->sum('det_forma_valor_parcela');
 
+        $valorAtrasoNaoPago = DB::table('detalhes_forma_pag')
+            ->whereIn('det_situacao', ['Não pago', 'Inadimplencia'])
+            ->where('det_forma_data_venc', '<', now()->startOfDay())
+            ->sum('det_forma_valor_parcela');
+
+        $valorTotalMes = DB::table('detalhes_forma_pag')
+            ->whereIn('det_situacao', ['Pago', 'Quitado'])
+            ->whereMonth('det_forma_data_venc', $mesAtual)
+            ->whereYear('det_forma_data_venc', $anoAtual)
+            ->sum('det_forma_valor_parcela');
+
         return view('dashboard', compact(
             'familiaMaisVendida',
             'orcamentosMes',
@@ -143,14 +187,23 @@ class DashboardController extends Controller
             'orcamentoFinalizado',
             'orcamentoRejeitado',
             'orcamentoAtrasado',
+            'orcamentoPendente',
             'totalMes',
+            'statusUm',
+            'statusDois',
+            'statusTres',
+            'statusQuatro',
+            'statusCinco',
+            'statusSeis',
             'financeiroPagar',
             'financeiroAtraso',
             'financeiroPago',
             'financeiroQuitado',
             'previsaoDoDia',
             'previsaoDoDiaPago',
-            'previsaoDoDiaNaoPago'
+            'previsaoDoDiaNaoPago',
+            'valorAtrasoNaoPago',
+            'valorTotalMes'
         ));
     }
 }

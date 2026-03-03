@@ -11,12 +11,6 @@
         <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Registros Financeiros
         </h1>
-
-        {{-- Botão para tela de Cobranças --}}
-        <a href="{{ route('cobranca.index') }}"
-            class="px-4 py-2 text-sm font-medium rounded-md text-white shadow-sm"
-            style="background-color: #EA792D;"> Cobranças
-        </a>
     </div>
 
     {{-- Sucesso --}}
@@ -27,67 +21,39 @@
     </div>
     @endif
 
-    {{-- FILTROS --}}
-    <form action="{{ route('financeiro.index') }}" method="GET" class="w-full mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+    {{-- Filtros --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
-            {{-- Nome --}}
-            <div class="relative">
-                <input type="text" name="search_nome" placeholder="Pesquisar por Nome..."
-                    value="{{ request('search_nome') }}"
-                    class="w-full h-9 pl-10 pr-3 text-sm bg-white border border-custom-border-light rounded-md outline-none hover:border-custom-border-hover focus:border-custom-border-focus">
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4" viewBox="0 0 20 20">
-                    <path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414L11.05 12.89A6 6 0 012 8z" />
-                </svg>
-            </div>
-
-            {{-- STATUS CORRIGIDOS --}}
-            <div class="relative">
-                <select name="search_status"
-                    class="w-full h-9 pl-3 pr-3 text-sm bg-white border border-custom-border-light rounded-md outline-none hover:border-custom-border-hover focus:border-custom-border-focus">
-
-                    <option value="">Status...</option>
-
-                    @php
-                    $statusLista = [
-                    'Aguardando pagamento',
-                    'Pagamento realizado',
-                    'Análise pedido',
-                    'Pedido fábrica',
-                    'Transportadora',
-                    'Entregue'
-                    ];
-                    @endphp
-
-                    @foreach ($statusLista as $st)
-                    <option value="{{ $st }}" {{ request('search_status') == $st ? 'selected' : '' }}>
-                        {{ $st }}
-                    </option>
-                    @endforeach
-
-                </select>
-            </div>
-
-            {{-- Valor --}}
-            <div class="relative">
-                <input type="text" name="search_valor" placeholder="Pesquisar por Valor..."
-                    value="{{ request('search_valor') }}"
-                    class="w-full h-9 pl-10 pr-3 text-sm bg-white border border-custom-border-light rounded-md outline-none hover:border-custom-border-hover focus:border-custom-border-focus">
-
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4" viewBox="0 0 20 20">
-                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16z" />
-                </svg>
-            </div>
-
-            {{-- Botão limpar --}}
-            @if(request()->filled('search_nome') || request()->filled('search_status') || request()->filled('search_valor'))
-            <a href="{{ route('financeiro.index') }}"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 hover:text-gray-700">
-                Limpar
-            </a>
-            @endif
+        {{-- Buscar por Cliente --}}
+        <div class="relative w-full">
+            <input type="text"
+                id="searchFinanceiroInput"
+                placeholder="Pesquisar por nome do cliente..."
+                class="w-full h-9 pl-3 pr-3 text-sm bg-white border border-gray-300 rounded-md outline-none">
         </div>
-    </form>
+
+        {{-- Filtro por Status --}}
+        <select id="searchFinanceiroStatus"
+            class="w-full h-9 pl-3 pr-3 text-sm bg-white border border-gray-300 rounded-md outline-none">
+            <option value="">Filtrar por status...</option>
+            <option value="Aguardando pagamento">Aguardando pagamento</option>
+            <option value="Pagamento realizado">Pagamento realizado</option>
+            <option value="Análise pedido">Análise pedido</option>
+            <option value="Pedido fábrica">Pedido fábrica</option>
+            <option value="Transportadora">Transportadora</option>
+            <option value="Entregue">Entregue</option>
+        </select>
+
+
+        {{-- Botão Limpar --}}
+        <div class="flex items-end">
+            <button id="clearFiltersBtn"
+                class="w-full h-9 text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 transition duration-150">
+                Limpar Filtros
+            </button>
+        </div>
+
+    </div>
 
 
     {{-- SE ESTIVER VAZIO --}}
@@ -119,10 +85,11 @@
                 </tr>
             </thead>
 
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white divide-y divide-gray-200" id="financeiroTableBody">
 
                 @foreach ($financeiro as $fin)
-                <tr class="hover:bg-gray-50 transition duration-150">
+                <tr class="hover:bg-gray-50 transition duration-150"
+                    data-status="{{ strtolower($fin->fin_status) }}">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
                         {{ $fin->orcamento_id_orcamento }}
                     </td>
@@ -134,9 +101,55 @@
                         R$ {{ number_format($fin->fin_valor_total, 2, ',', '.') }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700">
-                        {{ $fin->fin_status }}
+                    <td class="px-6 py-4 text-sm text-gray-700 font-poppins">
+                        @php
+                        $normalizedStatus = strtolower(str_replace(' ', '_', $fin->fin_status));
+
+                        switch ($normalizedStatus) {
+                        case 'aguardando_pagamento':
+                        $statusClass = 'bg-yellow-400';
+                        break;
+
+                        case 'pagamento_realizado':
+                        $statusClass = 'bg-green-400';
+                        break;
+
+                        case 'análise_pedido':
+                        case 'analise_pedido':
+                        $statusClass = 'bg-blue-400';
+                        break;
+
+                        case 'pedido_fábrica':
+                        case 'pedido_fabrica':
+                        $statusClass = 'bg-purple-400';
+                        break;
+
+                        case 'transportadora':
+                        $statusClass = 'bg-indigo-400';
+                        break;
+
+                        case 'entregue':
+                        $statusClass = 'bg-gray-400';
+                        break;
+
+                        default:
+                        $statusClass = 'bg-indigo-400';
+                        break;
+                        }
+
+                        // Quebra linha automática se tiver espaço
+                        $formattedStatus = str_replace(' ', '<br>', ucfirst($fin->fin_status));
+                        @endphp
+
+                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-gray-900 text-center">
+                            <span aria-hidden="true"
+                                class="absolute inset-0 opacity-50 rounded-full {{ $statusClass }}"></span>
+                            <span class="relative leading-tight">
+                                {!! $formattedStatus !!}
+                            </span>
+                        </span>
                     </td>
+
 
                     <td class="px-6 py-4 text-center text-sm font-medium">
                         <div class="flex items-center justify-center space-x-2">
@@ -150,11 +163,14 @@
                             </button>
 
                             {{-- Forma Pagamento --}}
+                            @if(
+                            $fin->fin_status !== 'Entregue'
+                            )
                             <a href="{{ url('/forma_pagamento?' . $fin->id_fin) }}"
                                 class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                 Forma Pagamento
                             </a>
-
+                            @endif
 
                             @php
                             // Verifica se tem algum log com log_situacao = 0
@@ -164,7 +180,10 @@
                             @endphp
 
                             {{-- Prosseguir Status --}}
-                            @if($fin->fin_status !== 'Aguardando pagamento')
+                            @if(
+                            $fin->fin_status !== 'Aguardando pagamento' &&
+                            $fin->fin_status !== 'Entregue'
+                            )
                             <form action="{{ route('financeiro.prosseguir', $fin->id_fin) }}"
                                 method="POST"
                                 onsubmit="return confirm('Tem certeza que deseja prosseguir o status?');">
@@ -178,26 +197,6 @@
                                 </button>
                             </form>
                             @endif
-
-
-
-
-                            {{-- Ver 
-                            <a href="{{ route('financeiro.show', $fin->id_fin) }}"
-                            class="px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                            Ver
-                            </a>
-
-                            {{-- Excluir
-                            <form action="{{ route('financeiro.destroy', $fin->id_fin) }}" method="POST"
-                            onsubmit="return confirm('Tem certeza que deseja excluir este registro?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                                Excluir
-                            </button>
-                            </form> --}}
 
                         </div>
                     </td>
@@ -256,34 +255,66 @@
         });
 
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.querySelector('form');
 
-            document.querySelector('input[name="search_nome"]').addEventListener('input', function() {
-                form.submit();
+            const searchInput = document.getElementById('searchFinanceiroInput');
+            const searchStatusSelect = document.getElementById('searchFinanceiroStatus');
+            const clearBtn = document.getElementById('clearFiltersBtn');
+            const tableBody = document.getElementById('financeiroTableBody');
+
+            const filterTable = () => {
+
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedStatus = searchStatusSelect.value.toLowerCase().trim();
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+
+                    // Ignora linha oculta de status
+                    if (row.id && row.id.startsWith('status-')) return;
+
+                    const clienteNome = row.children[1]?.textContent.toLowerCase().trim() ?? '';
+                    const statusText = row.dataset.status ?? '';
+
+                    const matchClient = clienteNome.includes(searchTerm);
+                    const matchStatus =
+                        selectedStatus === '' ||
+                        statusText === selectedStatus;
+
+                    if (matchClient && matchStatus) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+
+                        // Fecha linha de status aberta
+                        const id = row.querySelector('.status-btn')?.dataset.id;
+                        const statusRow = document.getElementById('status-' + id);
+                        if (statusRow) statusRow.classList.add('hidden');
+                    }
+                });
+            };
+
+            // Eventos filtro
+            searchInput.addEventListener('input', filterTable);
+            searchStatusSelect.addEventListener('change', filterTable);
+
+            // Botão limpar filtros
+            clearBtn.addEventListener('click', function() {
+
+                searchInput.value = '';
+                searchStatusSelect.value = '';
+
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    row.style.display = '';
+
+                    // Fecha todas linhas de status
+                    if (row.id && row.id.startsWith('status-')) {
+                        row.classList.add('hidden');
+                    }
+                });
             });
 
-            document.querySelector('select[name="search_status"]').addEventListener('change', function() {
-                form.submit();
-            });
-
-            document.querySelector('input[name="search_valor"]').addEventListener('input', function() {
-                form.submit();
-            });
-        });
-
-        //validar se há outro status para desabilitar button
-        document.addEventListener("DOMContentLoaded", function() {
-            const botoes = document.querySelectorAll("button[id^='prosseguirBtn-']");
-
-            botoes.forEach(btn => {
-                const pendente = btn.getAttribute("data-pendente");
-
-                if (pendente === "0") {
-                    btn.disabled = true;
-                    btn.classList.remove("bg-red-600", "hover:bg-red-700");
-                    btn.classList.add("bg-gray-400", "cursor-not-allowed");
-                }
-            });
         });
     </script>
 

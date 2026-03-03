@@ -55,6 +55,7 @@ class ClienteOrcamento extends Model
         'clie_orc_cep',
         'clie_orc_cidade',
         'clie_orc_uf',
+        'clie_orc_cod_interno',
     ];
 
     /**

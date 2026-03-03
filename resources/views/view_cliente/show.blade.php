@@ -16,10 +16,6 @@
 
     <div class="bg-white shadow-xl rounded-lg p-8">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">ID:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $cliente->id_cliente }}</p>
-            </div>
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Nome:</p>
                 <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_nome }}</p>
@@ -30,11 +26,33 @@
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Telefone:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_telefone ?? 'N/A' }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @php
+                    $telefone = preg_replace('/\D/', '', $cliente->clie_telefone ?? '');
+                    @endphp
+
+                    @if(strlen($telefone) === 11)
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $telefone) }}
+                    @elseif(strlen($telefone) === 10)
+                    {{ preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $telefone) }}
+                    @else
+                    N/A
+                    @endif
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Celular:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_celular ?? 'N/A'}}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @php
+                    $celular = preg_replace('/\D/', '', $cliente->clie_celular ?? '');
+                    @endphp
+
+                    @if($celular)
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celular) }}
+                    @else
+                    N/A
+                    @endif
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Tipo de Documento:</p>
@@ -42,14 +60,32 @@
             </div>
             @if ($cliente->clie_cpf)
             <div class="mb-4">
-                <p class="text-gray-600 text-sm">CPF:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_cpf }}</p>
+                @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
+                <div class="mb-4">
+                    <p class="text-gray-600 text-sm">CPF:</p>
+                    <p class="text-gray-900 text-lg font-semibold">
+                        @php
+                        $cpf = preg_replace('/\D/', '', $cliente->clie_cpf);
+                        @endphp
+                        {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf) }}
+                    </p>
+                </div>
+                @endif
             </div>
             @endif
             @if ($cliente->clie_cnpj)
             <div class="mb-4">
-                <p class="text-gray-600 text-sm">CNPJ:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_cnpj }}</p>
+                @if ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
+                <div class="mb-4">
+                    <p class="text-gray-600 text-sm">CNPJ:</p>
+                    <p class="text-gray-900 text-lg font-semibold">
+                        @php
+                        $cnpj = preg_replace('/\D/', '', $cliente->clie_cnpj);
+                        @endphp
+                        {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
+                    </p>
+                </div>
+                @endif
             </div>
             @endif
             <div class="md:col-span-2 mb-4">
@@ -62,7 +98,12 @@
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CEP:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_cep }}</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @php
+                    $cep = preg_replace('/\D/', '', $cliente->clie_cep ?? '');
+                    @endphp
+                    {{ preg_replace('/(\d{5})(\d{3})/', '$1-$2', $cep) }}
+                </p>
             </div>
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Cidade:</p>

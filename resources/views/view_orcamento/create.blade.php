@@ -7,6 +7,40 @@
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Criar Novo Orçamento</h1>
 
+    @if(isset($clienteSelecionado))
+    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+
+        <h2 class="text-lg font-bold text-orange-700 mb-4">
+            Informações do Cliente
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+            <div>
+                <p class="text-gray-600">Nome</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $clienteSelecionado->clie_orc_nome }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">E-mail</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $clienteSelecionado->clie_orc_email }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">Celular</p>
+                <p class="font-semibold text-gray-900">
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteSelecionado->clie_orc_celular)) }}
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+
     @if (session('success'))
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
         <strong class="font-bold">Sucesso!</strong>
@@ -29,35 +63,15 @@
     <div>
         <form action="{{ route('orcamento.store') }}" method="POST" class="space-y-6">
             @csrf
+            {{-- Campo hidden para salvar o id --}}
+            <input type="hidden" name="cliente_orcamento_id_co"
+                value="{{ $clienteSelecionado->id_co }}">
+            @endif
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 
                 {{-- PRIMEIRA COLUNA --}}
                 <div class="space-y-6">
-                    <!-- Campo Cliente de Orçamento -->
-                    <div>
-                        <label for="cliente_orcamento_search"
-                            class="block text-sm font-medium text-custom-dark-text mb-1">Cliente de Orçamento</label>
-                        <div class="relative">
-                            <input type="text" id="cliente_orcamento_search" placeholder="Buscar cliente..." class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none 
-                                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out 
-                                               border border-gray-300">
-
-                            <!-- Lista de resultados da busca -->
-                            <div id="cliente_orcamento_results" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg 
-                                               max-h-60 overflow-y-auto hidden">
-                                {{-- Resultados via JS --}}
-                            </div>
-                        </div>
-
-                        <!-- Campo escondido que guarda o ID do cliente -->
-                        <input type="hidden" name="cliente_orcamento_id_co" id="selected_client_id_hidden"
-                            value="{{ old('cliente_orcamento_id_co') }}" required>
-
-                        @error('cliente_orcamento_id_co')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
 
                     <!-- Campo Data Início -->
                     <div>
@@ -123,8 +137,7 @@
                                 Para Aprovação</option>
                             <option value="rejeitado" {{ old('orc_status') == 'rejeitado' ? 'selected' : '' }}>Rejeitado
                             </option>
-                            <option value="finalizado" {{ old('orc_status') == 'finalizado' ? 'selected' : '' }}>
-                                Finalizado</option>
+
                         </select>
                         @error('orc_status')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -156,23 +169,27 @@
                         @enderror
                     </div>
 
-
-
-                </div> {{-- Fim grid --}}
-
-                <!-- Botões -->
-                <div class="flex justify-center pt-8 space-x-4">
-                    <button type="submit"
-                        class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
-                        SALVAR
-                    </button>
-                    <a href="{{ route('orcamento.index') }}"
-                        class="inline-flex items-center justify-center py-3 px-8 border border-gray-300 shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                        VOLTAR
-                    </a>
                 </div>
+
+
+            </div>
+            {{-- BOTÕES --}}
+            <div class="flex justify-center mt-8">
+                <button type="submit"
+                    class="py-3 px-8 rounded-md text-white bg-button-save-bg hover:bg-button-save-hover">
+                    SALVAR
+                </button>
+            </div>
+            <div class="flex justify-center mb-8">
+
+                <a href="{{ route('orcamento.index', ['cliente_orcamento_id' => $clienteSelecionado->id_co]) }}"
+                    class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                    VOLTAR PARA A LISTA
+                </a>
+            </div>
         </form>
     </div>
+
 </div>
 @endsection
 
@@ -198,44 +215,6 @@
                 }
             });
         }
-
-        // --- Lógica de busca e seleção de cliente ---
-        const clientesOrcamento = @json($clientesOrcamento); //erro apenas do VsCode
-        const searchInput = document.getElementById('cliente_orcamento_search');
-        const resultsDiv = document.getElementById('cliente_orcamento_results');
-        const hiddenInput = document.getElementById('selected_client_id_hidden');
-
-        function renderResults(clientes) {
-            resultsDiv.innerHTML = '';
-            if (clientes.length > 0) {
-                clientes.forEach(cliente => {
-                    const item = document.createElement('div');
-                    item.className = 'px-4 py-2 cursor-pointer hover:bg-gray-100';
-                    item.textContent = cliente.clie_orc_nome;
-                    item.dataset.id = cliente.id_co;
-                    item.addEventListener('click', function() {
-                        searchInput.value = cliente.clie_orc_nome;
-                        hiddenInput.value = cliente.id_co;
-                        resultsDiv.classList.add('hidden');
-                        searchInput.classList.remove('border-red-500'); // Remove destaque de erro
-                    });
-                    resultsDiv.appendChild(item);
-                });
-                resultsDiv.classList.remove('hidden');
-            } else {
-                resultsDiv.classList.add('hidden');
-            }
-        }
-
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const filteredClients = clientesOrcamento.filter(cliente =>
-                cliente.clie_orc_nome.toLowerCase().includes(searchTerm)
-            );
-            renderResults(filteredClients);
-            hiddenInput.value = ''; // Sempre limpa o ID ao digitar
-        });
-
 
         // --- Mostrar/ocultar o campo "Motivo da Rejeição" ---
         const statusSelect = document.getElementById('orc_status');
