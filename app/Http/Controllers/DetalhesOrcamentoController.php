@@ -9,6 +9,8 @@ use App\Models\ClienteOrcamento;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class DetalhesOrcamentoController extends Controller
 {
@@ -19,33 +21,25 @@ class DetalhesOrcamentoController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\View\View
      */
-    public function index(Request $request)
+    public function index(Request $request): View|RedirectResponse
     {
-        // Eager loading das relações
-        $query = DetalhesOrcamento::with(['produto', 'orcamento.clienteOrcamento']);
-
-        // Filtro por 'Orçamento Ref.' (orcamento_id_orcamento)
-        if ($request->filled('search_orcamento_id')) {
-            $query->where('orcamento_id_orcamento', 'like', '%' . $request->input('search_orcamento_id') . '%');
+        if (!$request->orcamento_id) {
+            return redirect()->route('cliente_orcamento.index')
+                ->with('error', 'Selecione um cliente para visualizar os orçamentos.');
         }
 
-        // Filtro por 'Cliente' (nome do cliente no relacionamento)
-        if ($request->filled('search_cliente_nome')) {
-            $query->whereHas('orcamento.clienteOrcamento', function ($q) use ($request) {
-                $q->where('clie_orc_nome', 'like', '%' . $request->input('search_cliente_nome') . '%');
-            });
-        }
+        $orcamento = Orcamento::with('clienteOrcamento')
+            ->where('id_orcamento', $request->orcamento_id)
+            ->firstOrFail();
 
-        // Filtro por 'Cód. Detalhe' (det_cod)
-        // Código CORRETO
-        if ($request->filled('search_detalhe_cod')) {
-            $query->where('id_det', 'like', '%' . $request->input('search_detalhe_cod') . '%');
-        }
-        // Obtém os resultados
-        $detalhesOrcamento = $query->get();
+        $detalhesOrcamento = DetalhesOrcamento::with(['produto'])
+            ->where('orcamento_id_orcamento', $orcamento->id_orcamento)
+            ->get();
 
-        // Retorna a view com os resultados filtrados
-        return view('view_detalhes_orcamento.index', compact('detalhesOrcamento'));
+        return view('view_detalhes_orcamento.index', compact(
+            'detalhesOrcamento',
+            'orcamento'
+        ));
     }
 
     /**
@@ -57,12 +51,13 @@ class DetalhesOrcamentoController extends Controller
      */
     public function create(Request $request, $orcamento_id = null)
     {
-        $orcamentos = Orcamento::with('clienteOrcamento')->get(); // Carrega orçamentos com os clientes
-        $produtos = Produto::all(); // Carrega todos os produtos
-        // Prioriza o parâmetro de rota, depois o query parameter, depois null
+        $orcamento = Orcamento::with('clienteOrcamento')
+            ->where('id_orcamento', $request->orcamento_id)
+            ->firstOrFail();
+        $produtos = Produto::all();
         $selectedOrcamentoId = $orcamento_id ?? $request->query('orcamento_id');
 
-        return view('view_detalhes_orcamento.create', compact('orcamentos', 'produtos', 'selectedOrcamentoId'));
+        return view('view_detalhes_orcamento.create', compact('orcamento', 'produtos', 'selectedOrcamentoId'));
     }
 
     /**
@@ -104,38 +99,17 @@ class DetalhesOrcamentoController extends Controller
             $validatedData['orcamento_cliente_orcamento_id_co'] = $orcamento->cliente_orcamento_id_co;
             $validatedData['orcamento_cliente_id_cliente'] = $orcamento->cliente_orcamento_id_co; // Se for a mesma coluna, ok
 
-            // IMPORTANTE: Certifique-se de que todas as chaves em $validatedData (incluindo
-            // 'orcamento_cliente_orcamento_id_co' e 'orcamento_cliente_id_cliente')
-            // estão listadas na propriedade $fillable do seu modelo DetalhesOrcamento.
-            // Exemplo no modelo DetalhesOrcamento.php:
-            // protected $fillable = [
-            //     'orcamento_id_orcamento',
-            //     'produto_id_produto',
-            //     'det_cod',
-            //     'det_categoria',
-            //     'det_modelo',
-            //     'det_cor',
-            //     'det_tamanho',
-            //     'det_quantidade',
-            //     'det_valor_unit',
-            //     'det_genero',
-            //     'det_caract',
-            //     'det_observacao',
-            //     'det_anotacao',
-            //     'orcamento_cliente_orcamento_id_co', // Adicione esta linha
-            //     'orcamento_cliente_id_cliente',      // E esta linha
-            // ];
+
 
             DetalhesOrcamento::create($validatedData);
 
-            return redirect()->route('detalhes_orcamento.index')->with('success', 'Detalhe de orçamento adicionado com sucesso!');
+            return redirect()->route(
+                'detalhes_orcamento.index',
+                ['orcamento_id' => $request->orcamento_id_orcamento]
+            )->with('success', 'Detalhe de orçamento adicionado com sucesso!');
         } catch (ValidationException $e) {
-            // Se cair aqui, a validação falhou. Os erros devem ser exibidos no frontend.
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            // Se cair aqui, ocorreu um erro inesperado após a validação.
-            // A mensagem de erro será exibida no frontend.
-            // Removendo dd($e->getMessage()) para que o erro seja exibido no frontend.
             return redirect()->back()->with('error', 'Não foi possível adicionar o Detalhe de Orçamento: ' . $e->getMessage())->withInput();
         }
     }
@@ -164,7 +138,9 @@ class DetalhesOrcamentoController extends Controller
         $detalheOrcamento = DetalhesOrcamento::findOrFail($id);
         $orcamentos = Orcamento::with('clienteOrcamento')->get();
         $produtos = Produto::all();
-        return view('view_detalhes_orcamento.edit', compact('detalheOrcamento', 'orcamentos', 'produtos'));
+        $orcamento = Orcamento::with('clienteOrcamento')
+            ->find($detalheOrcamento->orcamento_id_orcamento);
+        return view('view_detalhes_orcamento.edit', compact('detalheOrcamento', 'orcamentos', 'produtos','orcamento'));
     }
 
     /**
@@ -211,7 +187,10 @@ class DetalhesOrcamentoController extends Controller
 
             $detalheOrcamento->update($validatedData);
 
-            return redirect()->route('detalhes_orcamento.index')->with('success', 'Detalhe de orçamento atualizado com sucesso!');
+            return redirect()->route(
+                'detalhes_orcamento.index',
+                ['orcamento_id' => $request->orcamento_id_orcamento]
+            )->with('success', 'Detalhe de orçamento editado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
@@ -228,8 +207,11 @@ class DetalhesOrcamentoController extends Controller
     public function destroy($id)
     {
         $detalheOrcamento = DetalhesOrcamento::findOrFail($id);
+
         $detalheOrcamento->delete();
 
-        return redirect()->route('detalhes_orcamento.index')->with('success', 'Detalhe de orçamento excluído com sucesso!');
+        return redirect()->route('detalhes_orcamento.index', [
+            'orcamento_id' => $detalheOrcamento->orcamento_id_orcamento
+        ])->with('success', 'Detalhe de orçamento atualizado com sucesso!');
     }
 }

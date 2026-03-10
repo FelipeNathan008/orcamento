@@ -8,15 +8,27 @@
 
     {{-- Cabeçalho --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
+
+        <h1
+            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Tipos de Pagamentos Cadastrados
         </h1>
-        <a href="{{ route('tipo_pagamento.create') }}"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
-            style="background-color: #EA792D;">
-            Novo Tipo de Pagamento
-        </a>
+        <div class="flex items-center gap-3">
+
+            <a href="{{ route('dashboard') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                HOME
+            </a>
+
+            <a href="{{ route('tipo_pagamento.create') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
+                style="background-color: #EA792D;">
+                Novo Pagamento
+            </a>
+        </div>
+
     </div>
+
 
     {{-- Alerta de sucesso --}}
     @if (session('success'))
@@ -26,16 +38,45 @@
     </div>
     @endif
 
-    {{-- Campo de busca --}}
-    <div class="relative w-full mb-6">
-        <input type="text" id="searchTipoPagInput" placeholder="Pesquisar Tipo de Pagamento..."
-            class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-                              hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-        <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                clip-rule="evenodd" />
-        </svg>
+    {{-- Formulário de Busca --}}
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+
+            {{-- Buscar por Tipo de Pagamento --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Tipo de Pagamento
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchTipoPagInput"
+                        placeholder="Tipo de pagamento..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+
+            {{-- Botão limpar --}}
+            <div class="flex md:justify-end items-end">
+                <button
+                    type="button"
+                    id="clearFiltersTipoPag"
+                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                    Limpar Busca
+                </button>
+            </div>
+
+        </div>
     </div>
 
     {{-- Sem tipos cadastrados --}}
@@ -94,39 +135,48 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
         const searchInput = document.getElementById('searchTipoPagInput');
         const tableBody = document.getElementById('tipoPagTableBody');
         const noTiposMessage = document.getElementById('noTiposMessage');
         const noResultsMessage = document.getElementById('noResultsMessage');
+        const clearBtn = document.getElementById('clearFiltersTipoPag');
 
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = tableBody.querySelectorAll('tr');
+        if (!tableBody) return;
+
+        const rows = tableBody.querySelectorAll('tr');
+
+        const filterTable = () => {
+
+            const searchTerm = searchInput.value.toLowerCase();
             let foundResults = false;
 
             rows.forEach(row => {
-                const rowText = row.textContent.toLowerCase();
 
-                if (rowText.includes(searchTerm)) {
+                const nameCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+
+                if (!searchTerm || nameCell.includes(searchTerm)) {
                     row.style.display = '';
                     foundResults = true;
                 } else {
                     row.style.display = 'none';
                 }
+
             });
 
-            if (searchTerm === '') {
-                if (tableBody.querySelectorAll('tr').length === 0) {
-                    noTiposMessage?.classList.remove('hidden');
-                } else {
-                    noTiposMessage?.classList.add('hidden');
-                }
-                noResultsMessage?.classList.add('hidden');
-            } else {
-                noTiposMessage?.classList.add('hidden');
-                foundResults ? noResultsMessage?.classList.add('hidden') : noResultsMessage?.classList.remove('hidden');
+            if (noResultsMessage) {
+                noResultsMessage.classList.toggle('hidden', foundResults);
             }
-        });
+        };
+
+        function clearFilters() {
+            searchInput.value = '';
+            filterTable();
+        }
+
+        searchInput.addEventListener('input', filterTable);
+        clearBtn.addEventListener('click', clearFilters);
+
     });
 </script>
 @endpush

@@ -97,57 +97,59 @@
     <nav class="bg-azul-confianca p-4 shadow-xl sticky top-0 z-50 overflow-x-auto">
         <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
 
-            {{-- Links de Navegação Principal --}}
             <div class="flex flex-wrap gap-2">
+
                 <a href="{{ route('empresa.index') }}"
-                    class="nav-link px-4 py-2 rounded-lg transition
-                    {{ request()->routeIs('empresa.*') ? 'bg-laranja-seguranca text-white' : 'text-bege-construcao hover:bg-laranja-seguranca hover:text-white' }}">
+                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
                     Empresas
                 </a>
 
                 <a href="{{ route('cliente_orcamento.index') }}"
-                    class="nav-link px-4 py-2 rounded-lg transition
-                    {{ request()->routeIs('cliente_orcamento.*') ? 'bg-laranja-seguranca text-white' : 'text-bege-construcao hover:bg-laranja-seguranca hover:text-white' }}">
+                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
                     Clientes
                 </a>
 
-                <a href="{{ route('tipo_pagamento.index') }}"
-                    class="nav-link px-4 py-2 rounded-lg transition
-                    {{ request()->routeIs('tipo_pagamento.*') ? 'bg-laranja-seguranca text-white' : 'text-bege-construcao hover:bg-laranja-seguranca hover:text-white' }}">
-                    Tipo Pagamento
-                </a>
-
                 <a href="{{ route('financeiro.index') }}"
-                    class="nav-link px-4 py-2 rounded-lg transition
-                    {{ request()->routeIs('financeiro.*') ? 'bg-laranja-seguranca text-white' : 'text-bege-construcao hover:bg-laranja-seguranca hover:text-white' }}">
+                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
                     Financeiro
                 </a>
 
                 <a href="{{ route('cobranca.index') }}"
-                    class="nav-link px-4 py-2 rounded-lg transition
-                    {{ request()->routeIs('cobranca.*') ? 'bg-laranja-seguranca text-white' : 'text-bege-construcao hover:bg-laranja-seguranca hover:text-white' }}">
+                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
                     Cobrança
                 </a>
-               
 
+                 <a href="{{ route('notificacao.index') }}"
+                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
+                    Notificação
+                </a>
+                <a href="{{ route('tipo_pagamento.index') }}"
+                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
+                    Tipo Pagamento
+                </a>
 
-
-                {{-- Bloco da direita --}}
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('logout') }}"
-                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                        class="nav-link text-white bg-laranja-seguranca hover:bg-[#c75a20] px-4 py-2 rounded-lg transition">
-                        Logout
-                    </a>
-                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
-
-                    {{-- Link de Usuários (em verde principal) --}}
-                    <a href="{{ route('users.index') }}"
-                        class="nav-link text-white bg-verde-principal hover:bg-[#149085] px-4 py-2 rounded-lg transition">
-                        Usuários
-                    </a>
-                </div>
             </div>
+
+            <div class="flex items-center gap-2">
+
+                <a href="{{ route('logout') }}"
+                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                    class="nav-link text-white bg-laranja-seguranca hover:bg-[#c75a20] px-4 py-2 rounded-lg transition">
+                    Logout
+                </a>
+
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                    @csrf
+                </form>
+
+                <a href="{{ route('users.index') }}"
+                    class="nav-link text-white bg-verde-principal hover:bg-[#149085] px-4 py-2 rounded-lg transition">
+                    Usuários
+                </a>
+
+            </div>
+
+        </div>
     </nav>
 
     {{-- Conteúdo Principal --}}
@@ -162,5 +164,81 @@
 
     @stack('scripts')
 </body>
+@stack('script')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        function highlightCurrentNavLink() {
+
+            let currentPathname = window.location.pathname;
+
+            if (!currentPathname.endsWith('/')) {
+                currentPathname += '/';
+            }
+
+            navLinks.forEach(link => {
+
+                let linkPathname = new URL(link.href).pathname;
+
+                if (!linkPathname.endsWith('/')) {
+                    linkPathname += '/';
+                }
+
+                let isActive = false;
+
+                // Financeiro inclui forma_pagamento
+                if (
+                    (
+                        currentPathname.startsWith('/financeiro/') ||
+                        currentPathname.startsWith('/forma_pagamento/')) &&
+                    linkPathname === '/financeiro/'
+                ) {
+                    isActive = true;
+                }
+
+                if (
+                    (
+                        currentPathname.startsWith('/cobranca/') ||
+                        currentPathname.startsWith('/detalhes_cobranca/')
+                    ) &&
+                    linkPathname === '/cobranca/'
+                ) {
+                    isActive = true;
+                }
+
+                if (!isActive) {
+
+                    if (linkPathname === '/') {
+                        isActive = (currentPathname === '/');
+                    } else {
+                        isActive = currentPathname.startsWith(linkPathname);
+                    }
+
+                }
+
+                link.classList.remove('bg-laranja-seguranca', 'text-white', 'font-semibold', 'shadow-md');
+                link.classList.add('text-bege-construcao');
+
+                if (isActive) {
+                    link.classList.remove('text-bege-construcao');
+                    link.classList.add('bg-laranja-seguranca', 'text-white', 'font-semibold', 'shadow-md');
+                }
+
+            });
+
+        }
+
+        highlightCurrentNavLink();
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                setTimeout(highlightCurrentNavLink, 50);
+            });
+        });
+
+    });
+</script>
 
 </html>

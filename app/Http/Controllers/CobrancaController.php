@@ -16,11 +16,20 @@ class CobrancaController extends Controller
         $cobrancas = Cobranca::with([
             'tipoPagamento',
             'detalhesCobranca' => function ($query) {
-                $query->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today());
+                $query->where(function ($q) {
+                    $q->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today())
+                        ->orWhere('det_cobr_status', 'Acordo');
+                });
             }
         ])
-        ->whereHas('detalhesCobranca')
-        ->get();
+            ->where('cobr_status', '!=', 'Quitado')
+            ->whereHas('detalhesCobranca', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today())
+                        ->orWhere('det_cobr_status', 'Acordo');
+                });
+            })
+            ->get();
 
         return view('view_cobranca.index', compact('cobrancas'));
     }

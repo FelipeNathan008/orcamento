@@ -122,24 +122,14 @@
                 <a href="{{ route('cliente.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Prospecções</a>
                 <a href="{{ route('cliente_orcamento.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Clientes</a>
-                <!-- <a href="{{ route('contato_cliente.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Contatos
-                    de Clientes</a> -->
-                <a href="{{ route('orcamento.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Orçamentos</a>
-                <!-- <a href="{{ route('detalhes_orcamento.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Detalhes
-                    do Orçamento</a> -->
-                <!-- <a href="{{ route('customizacao.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Customização</a> -->
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Clientes/Orçamentos</a>
                 <a href="{{ route('produto.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Produtos</a>
 
                 <a href="{{ route('preco_customizacao.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Preço
                     Customização</a>
-                <a href="{{ route('tipo_pagamento.index') }}"
+                <a href="{{ route('financeiro.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
                     Financeiro</a>
 
@@ -218,12 +208,16 @@
                     if (
                         (
                             currentPathname.startsWith('/cliente_orcamento/') ||
-                            currentPathname.startsWith('/contato_cliente/')
+                            currentPathname.startsWith('/orcamento/') ||
+                            currentPathname.startsWith('/detalhes_orcamento/') ||
+                            currentPathname.startsWith('/customizacao/') ||
+                            currentPathname.startsWith('/contato')
                         ) &&
                         linkPathname === '/cliente_orcamento/'
                     ) {
                         isActive = true;
                     }
+
 
                     if (link.id === 'layout-camiseta-nav-link') {
                         if (currentPathname.startsWith('/camisa/show_layout/')) {
@@ -239,7 +233,7 @@
                     link.classList.remove('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
                     link.classList.add('text-gray-300');
 
-                    // 🔥 USERS (azul fixo)
+                    // USERS (azul fixo)
                     if (linkPathname === '/users/') {
                         if (currentPathname.startsWith('/users/')) {
                             link.classList.remove('text-gray-300');

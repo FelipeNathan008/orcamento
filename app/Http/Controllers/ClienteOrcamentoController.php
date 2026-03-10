@@ -20,22 +20,6 @@ class ClienteOrcamentoController extends Controller
     {
         $query = ClienteOrcamento::query();
 
-        // Filtro por nome
-        if ($request->filled('nome')) {
-            $query->where('clie_orc_nome', 'like', '%' . $request->nome . '%');
-        }
-
-        // Filtro por email
-        if ($request->filled('email')) {
-            $query->where('clie_orc_email', 'like', '%' . $request->email . '%');
-        }
-
-        // Filtro por código interno
-        if ($request->filled('codigo')) {
-            $query->where('clie_orc_cod_interno', 'like', '%' . $request->codigo . '%');
-        }
-
-        // 🔥 FILTRO PELO ID DO ORÇAMENTO
         if ($request->filled('id_orcamento')) {
             $query->whereHas('orcamentos', function ($q) use ($request) {
                 $q->where('id_orcamento', $request->id_orcamento);

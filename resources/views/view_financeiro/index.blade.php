@@ -6,11 +6,18 @@
 
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
-    {{-- Cabeçalho --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
+        <h1
+            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Registros Financeiros
         </h1>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('dashboard') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                HOME
+            </a>
+        </div>
+
     </div>
 
     {{-- Sucesso --}}
@@ -21,38 +28,78 @@
     </div>
     @endif
 
-    {{-- Filtros --}}
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    {{-- Formulário de Filtros --}}
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 
-        {{-- Buscar por Cliente --}}
-        <div class="relative w-full">
-            <input type="text"
-                id="searchFinanceiroInput"
-                placeholder="Pesquisar por nome do cliente..."
-                class="w-full h-9 pl-3 pr-3 text-sm bg-white border border-gray-300 rounded-md outline-none">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+
+            {{-- Buscar Orçamento --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Buscar Orçamento
+                </label>
+
+                <input
+                    type="text"
+                    id="searchFinanceiroOrcamento"
+                    placeholder="ID do orçamento..."
+                    class="w-full h-10 pl-3 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            {{-- Buscar Cliente --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Cliente
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchFinanceiroInput"
+                        placeholder="Nome do cliente..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+
+            {{-- Filtro Status --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Filtrar Status
+                </label>
+
+                <select
+                    id="searchFinanceiroStatus"
+                    class="w-full h-10 pl-3 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <option value="">Todos</option>
+                    <option value="Aguardando pagamento">Aguardando pagamento</option>
+                    <option value="Pagamento realizado">Pagamento realizado</option>
+                    <option value="Análise pedido">Análise pedido</option>
+                    <option value="Pedido fábrica">Pedido fábrica</option>
+                    <option value="Transportadora">Transportadora</option>
+                    <option value="Entregue">Entregue</option>
+
+                </select>
+            </div>
+
+            {{-- Botão limpar --}}
+            <div class="flex md:justify-end items-end">
+                <button
+                    type="button"
+                    id="clearFiltersBtn"
+                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                    Limpar Busca
+                </button>
+            </div>
+
         </div>
-
-        {{-- Filtro por Status --}}
-        <select id="searchFinanceiroStatus"
-            class="w-full h-9 pl-3 pr-3 text-sm bg-white border border-gray-300 rounded-md outline-none">
-            <option value="">Filtrar por status...</option>
-            <option value="Aguardando pagamento">Aguardando pagamento</option>
-            <option value="Pagamento realizado">Pagamento realizado</option>
-            <option value="Análise pedido">Análise pedido</option>
-            <option value="Pedido fábrica">Pedido fábrica</option>
-            <option value="Transportadora">Transportadora</option>
-            <option value="Entregue">Entregue</option>
-        </select>
-
-
-        {{-- Botão Limpar --}}
-        <div class="flex items-end">
-            <button id="clearFiltersBtn"
-                class="w-full h-9 text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 transition duration-150">
-                Limpar Filtros
-            </button>
-        </div>
-
     </div>
 
 
@@ -67,6 +114,9 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-table-header-bg">
                 <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                        ID FINANCEIRO
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                         ORÇAMENTO
                     </th>
@@ -90,6 +140,10 @@
                 @foreach ($financeiro as $fin)
                 <tr class="hover:bg-gray-50 transition duration-150"
                     data-status="{{ strtolower($fin->fin_status) }}">
+
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                        {{ $fin->id_fin }}
+                    </td>
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
                         {{ $fin->orcamento_id_orcamento }}
                     </td>
@@ -258,6 +312,7 @@
 
             const searchInput = document.getElementById('searchFinanceiroInput');
             const searchStatusSelect = document.getElementById('searchFinanceiroStatus');
+            const searchOrcamentoInput = document.getElementById('searchFinanceiroOrcamento');
             const clearBtn = document.getElementById('clearFiltersBtn');
             const tableBody = document.getElementById('financeiroTableBody');
 
@@ -265,6 +320,7 @@
 
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedStatus = searchStatusSelect.value.toLowerCase().trim();
+                const searchOrcamento = searchOrcamentoInput.value.toLowerCase().trim();
                 const rows = tableBody.querySelectorAll('tr');
 
                 rows.forEach(row => {
@@ -274,13 +330,17 @@
 
                     const clienteNome = row.children[1]?.textContent.toLowerCase().trim() ?? '';
                     const statusText = row.dataset.status ?? '';
-
+                    const orcamentoId = row.children[0]?.textContent.toLowerCase().trim() ?? '';
                     const matchClient = clienteNome.includes(searchTerm);
                     const matchStatus =
                         selectedStatus === '' ||
                         statusText === selectedStatus;
 
-                    if (matchClient && matchStatus) {
+                    const matchOrcamento =
+                        searchOrcamento === '' ||
+                        orcamentoId.includes(searchOrcamento);
+
+                    if (matchClient && matchStatus && matchOrcamento) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -296,12 +356,14 @@
             // Eventos filtro
             searchInput.addEventListener('input', filterTable);
             searchStatusSelect.addEventListener('change', filterTable);
+            searchOrcamentoInput.addEventListener('input', filterTable);
 
             // Botão limpar filtros
             clearBtn.addEventListener('click', function() {
 
                 searchInput.value = '';
                 searchStatusSelect.value = '';
+                searchOrcamentoInput.value = '';
 
                 const rows = tableBody.querySelectorAll('tr');
 

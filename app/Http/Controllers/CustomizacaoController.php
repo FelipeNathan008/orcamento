@@ -10,73 +10,83 @@ use Illuminate\View\View;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\RedirectResponse;
 
 class CustomizacaoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
+
+    public function index(Request $request): View|RedirectResponse
     {
-        $query = Customizacao::with('detalhesOrcamento.orcamento.clienteOrcamento');
-
-        // Filtro por ID do Orçamento (mantém busca por contenção)
-        if ($request->filled('search_orcamento_id')) {
-            $searchTerm = $request->input('search_orcamento_id');
-            $query->whereHas('detalhesOrcamento.orcamento', function ($q) use ($searchTerm) {
-                // Usar 'like' com curingas para buscar IDs que contenham o termo
-                $q->where('id_orcamento', 'like', "%{$searchTerm}%");
-            });
+        if (!$request->id_det) {
+            return redirect()->route('cliente_orcamento.index')
+                ->with('error', 'Selecione um produto para visualizar as customizações.');
         }
 
-        // Filtro por Nome do Cliente (mantém LIKE com curingas)
-        if ($request->filled('search_cliente_nome')) {
-            $searchTerm = $request->input('search_cliente_nome');
-            $query->whereHas('detalhesOrcamento.orcamento.clienteOrcamento', function ($q) use ($searchTerm) {
-                $q->where('clie_orc_nome', 'like', "%{$searchTerm}%");
-            });
-        }
+        $detalhe = DetalhesOrcamento::with([
+            'produto',
+            'orcamento.clienteOrcamento'
+        ])->findOrFail($request->id_det);
 
-        // Filtro por ID do Detalhe do Orçamento (AGORA BUSCA EXATA)
-        if ($request->filled('search_detalhes_id')) {
-            $searchTerm = $request->input('search_detalhes_id');
-            $query->whereHas('detalhesOrcamento', function ($q) use ($searchTerm) {
-                // ALTERADO: Usar '=' para buscar o ID exato
-                $q->where('id_det', $searchTerm);
-            });
-        }
+        $customizacoes = Customizacao::with([
+            'detalhesOrcamento.produto',
+            'detalhesOrcamento.orcamento.clienteOrcamento'
+        ])
+            ->where('detalhes_orcamento_id_det', $request->id_det)
+            ->get();
 
-        $customizacoes = $query->get();
-
-        // Carrega todos os detalhes de orçamento para popular o select na view index
-        $detalhesOrcamento = DetalhesOrcamento::with(['produto', 'orcamento.clienteOrcamento'])->get();
-
-        // Passa ambas as variáveis para a view
-        return view('view_customizacao.index', compact('customizacoes', 'detalhesOrcamento'));
+        return view('view_customizacao.index', [
+            'customizacoes' => $customizacoes,
+            'detalhe' => $detalhe,
+            'orcamento' => $detalhe->orcamento,
+            'cliente' => $detalhe->orcamento->clienteOrcamento
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    public function camisa($id)
+    {
+        $customizacao = Customizacao::with([
+            'detalhesOrcamento.produto',
+            'detalhesOrcamento.orcamento.clienteOrcamento'
+        ])->findOrFail($id);
+
+        // ID do detalhe do orçamento
+        $detalheId = $customizacao->detalhes_orcamento_id_det;
+
+        // Todas as customizações desse detalhe
+        $allCustomizacoesForDetail = Customizacao::where(
+            'detalhes_orcamento_id_det',
+            $detalheId
+        )->get();
+
+        return view(
+            'view_customizacao.camisa',
+            compact('customizacao', 'allCustomizacoesForDetail')
+        );
+    }
+
     public function create(Request $request): View
     {
-        // Busca todos os preços de customização.
-        $precos = PrecoCustomizacao::all();
-
-        // Busca todos os detalhes de orçamento com os respectivos produtos e clientes.
-        $detalhesOrcamento = DetalhesOrcamento::with(['produto', 'orcamento.clienteOrcamento', 'customizacoes'])->get();
-
-        // Busca todas as customizações para que o JavaScript possa filtrar.
-        $customizacoes = Customizacao::all();
-
         $detalheId = $request->query('detalhe_id');
 
-        return view('view_customizacao.create', compact('detalhesOrcamento', 'precos', 'customizacoes', 'detalheId'));
+        // Impede acessar sem detalhe
+        if (!$detalheId) {
+            abort(404);
+        }
+
+        // Busca somente o detalhe específico
+        $detalhe = DetalhesOrcamento::with([
+            'produto',
+            'orcamento.clienteOrcamento',
+            'customizacoes'
+        ])->findOrFail($detalheId);
+
+        $precos = PrecoCustomizacao::all();
+        $customizacoes = Customizacao::all();
+
+        return view('view_customizacao.create', compact('detalhe', 'precos', 'customizacoes'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
         try {
@@ -108,7 +118,11 @@ class CustomizacaoController extends Controller
 
             Customizacao::create($customizacaoData);
 
-            return redirect()->route('customizacao.index')->with('success', 'Customização criada com sucesso!');
+            return redirect()
+                ->route('customizacao.index', [
+                    'id_det' => $customizacaoData['detalhes_orcamento_id_det']
+                ])
+                ->with('success', 'Customização criada com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
@@ -131,15 +145,27 @@ class CustomizacaoController extends Controller
      */
     public function edit($id): View
     {
-        $customizacao = Customizacao::findOrFail($id);
-        // Garante que os relacionamentos necessários para o select de detalhes de orçamento
-        // e para a exibição do produto estejam carregados.
-        $detalhesOrcamento = DetalhesOrcamento::with(['produto', 'orcamento.clienteOrcamento'])->get();
-        
-        // BUSCA TODOS OS PREÇOS DE CUSTOMIZAÇÃO PARA PASSAR PARA A VIEW
+        $customizacao = Customizacao::with([
+            'detalhesOrcamento.produto',
+            'detalhesOrcamento.orcamento.clienteOrcamento'
+        ])->findOrFail($id);
+
+        // pega o detalhe a partir da customização
+        $detalhe = $customizacao->detalhesOrcamento;
+
+        // preços de customização
         $precos = PrecoCustomizacao::all();
 
-        return view('view_customizacao.edit', compact('customizacao', 'detalhesOrcamento', 'precos'));
+        // customizações desse mesmo detalhe (igual create)
+        $customizacoes = Customizacao::where(
+            'detalhes_orcamento_id_det',
+            $detalhe->id_det
+        )->get();
+
+        return view(
+            'view_customizacao.edit',
+            compact('customizacao', 'detalhe', 'precos', 'customizacoes')
+        );
     }
 
     /**
@@ -164,7 +190,7 @@ class CustomizacaoController extends Controller
             ]);
 
             $customizacaoData = $validatedData;
-            
+
             // Tratamento do valor da moeda para remover máscara e converter para decimal
             if (isset($customizacaoData['cust_valor'])) {
                 $valorLimpo = str_replace(['.', ','], ['', '.'], $customizacaoData['cust_valor']);
@@ -181,7 +207,11 @@ class CustomizacaoController extends Controller
 
             $customizacao->update($customizacaoData);
 
-            return redirect()->route('customizacao.index', ['search_detalhes_id' => $customizacao->detalhes_orcamento_id_det])->with('success', 'Customização atualizada com sucesso!');
+            return redirect()
+                ->route('customizacao.index', [
+                    'id_det' => $customizacao->detalhes_orcamento_id_det
+                ])
+                ->with('success', 'Customização atualizada com sucesso!');
         } catch (ValidationException $e) {
             Log::error('Erro de validação ao atualizar customização: ' . $e->getMessage(), ['errors' => $e->errors()]);
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -198,25 +228,19 @@ class CustomizacaoController extends Controller
     {
         try {
             $customizacao = Customizacao::findOrFail($id);
+
+            $idDet = $customizacao->detalhes_orcamento_id_det;
+
             $customizacao->delete();
-            return redirect()->route('customizacao.index')->with('success', 'Customização excluída com sucesso!');
+
+            return redirect()
+                ->route('customizacao.index', [
+                    'id_det' => $idDet
+                ])
+                ->with('success', 'Customização excluída com sucesso!');
         } catch (\Exception $e) {
             Log::error('Erro ao excluir customização: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->back()->with('error', 'Não foi possível excluir a Customização: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Retorna customizações para um dado detalhes_orcamento_id_det via API.
-     */
-    public function getCustomizacoesPorDetalhe($detalhes_orcamento_id_det)
-    {
-        // Busca as customizações associadas ao detalhe do orçamento,
-        // incluindo os relacionamentos necessários para a tabela.
-        $customizacoes = Customizacao::where('detalhes_orcamento_id_det', $detalhes_orcamento_id_det)
-            ->with('detalhesOrcamento.orcamento.clienteOrcamento', 'detalhesOrcamento.produto')
-            ->get();
-
-        return response()->json($customizacoes);
     }
 }

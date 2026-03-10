@@ -9,14 +9,24 @@
 
     {{-- Cabeçalho da Seção (Título e Botão) --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
-            Prospecções Cadastradas
+
+        <h1
+            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
+            Prospecções Cadastrados
         </h1>
-        <a href="{{ route('cliente.create') }}"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
-            style="background-color: #EA792D;">
-            Nova Prospecção
-        </a>
+        <div class="flex items-center gap-3">
+
+            <a href="{{ route('dashboard') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                HOME
+            </a>    
+
+            <a href="{{ route('cliente.create') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
+                style="background-color: #EA792D;">
+                Nova Prospecção
+            </a>
+        </div>
 
     </div>
 
@@ -28,53 +38,91 @@
     @endif
 
     {{-- Formulário de Busca com campos separados --}}
-    <form id="filtroClientesForm" action="{{ route('cliente.index') }}" method="GET" class="w-full mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
-            {{-- Campo para pesquisa por Nome --}}
-            <div class="relative">
-                <input type="text" name="search_nome" id="searchNameInput"
-                    placeholder="Pesquisar por Nome..."
-                    value="{{ request('search_nome') }}"
-                    class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-                {{-- Ícone de pesquisa --}}
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                </svg>
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+
+            {{-- Buscar por Nome --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Nome
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchNameInput"
+                        placeholder="Nome do cliente..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
-            {{-- Campo para pesquisa por Telefone --}}
-            <div class="relative">
-                <input type="text" name="search_telefone" id="searchPhoneInput"
-                    placeholder="Pesquisar por Telefone..."
-                    value="{{ request('search_telefone') }}"
-                    class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-                {{-- Ícone de pesquisa --}}
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                </svg>
+            {{-- Buscar por Telefone --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Telefone
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchPhoneInput"
+                        placeholder="Telefone..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
-            {{-- Campo para pesquisa por E-mail --}}
-            <div class="relative">
-                <input type="text" name="search_email" id="searchEmailInput"
-                    placeholder="Pesquisar por E-mail..."
-                    value="{{ request('search_email') }}"
-                    class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-                {{-- Ícone de pesquisa --}}
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                </svg>
+            {{-- Buscar por Email --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Email
+                </label>
+
+                <div class="relative">
+
+                    <input
+                        type="text"
+                        id="searchEmailInput"
+                        placeholder="Email..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
-            {{-- Botão Limpar Filtro - Visível apenas se houver termo de busca --}}
-            @if(request('search_nome') || request('search_telefone') || request('search_email'))
-            <a href="{{ route('cliente.index') }}"
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 hover:text-gray-700 font-medium hidden md:block">
-                Limpar
-            </a>
-            @endif
+            {{-- Botão limpar --}}
+            <div class="flex md:justify-end items-end">
+                <button
+                    type="button"
+                    id="clearFiltersClients"
+                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                    Limpar Busca
+                </button>
+            </div>
         </div>
-    </form>
+    </div>
 
     @if ($clientes->isEmpty())
     <p class="text-gray-600 text-center py-8" id="noClientsMessage">Nenhum cliente cadastrado ainda.</p>
@@ -181,77 +229,67 @@
 {{-- Script JavaScript para a busca ao vivo --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
         const searchNameInput = document.getElementById('searchNameInput');
         const searchPhoneInput = document.getElementById('searchPhoneInput');
         const searchEmailInput = document.getElementById('searchEmailInput');
         const clientTableBody = document.getElementById('clientTableBody');
         const noClientsMessage = document.getElementById('noClientsMessage');
         const noResultsMessage = document.getElementById('noResultsMessage');
+        const clearBtn = document.getElementById('clearFiltersClients');
 
-        // Verifica se a tabela de clientes está vazia desde o início
-        if (clientTableBody && clientTableBody.querySelectorAll('tr').length === 0) {
-            if (noClientsMessage) noClientsMessage.classList.remove('hidden');
-        } else {
-            if (noClientsMessage) noClientsMessage.classList.add('hidden');
-        }
+        if (!clientTableBody) return;
 
-        if (searchNameInput && searchPhoneInput && searchEmailInput && clientTableBody) {
-            // Função de filtragem genérica
-            const filterTable = () => {
-                const searchNameTerm = searchNameInput.value.toLowerCase();
-                const searchPhoneTerm = searchPhoneInput.value.toLowerCase();
-                const searchEmailTerm = searchEmailInput.value.toLowerCase();
-                const rows = clientTableBody.querySelectorAll('tr');
-                let foundResults = false;
-                let hasSearchTerm = searchNameTerm !== '' || searchPhoneTerm !== '' || searchEmailTerm !== '';
+        const rows = clientTableBody.querySelectorAll('tr');
 
-                rows.forEach(row => {
-                    // Obtém o texto de cada célula da linha para a busca
-                    const nameCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-                    const phoneCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                    const emailCell = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+        const filterTable = () => {
 
-                    // Condição de visibilidade: a linha deve corresponder a todos os campos preenchidos
-                    const matchesName = searchNameTerm === '' || nameCell.includes(searchNameTerm);
-                    const matchesPhone = searchPhoneTerm === '' || phoneCell.includes(searchPhoneTerm);
-                    const matchesEmail = searchEmailTerm === '' || emailCell.includes(searchEmailTerm);
+            const searchNameTerm = searchNameInput.value.toLowerCase();
+            const searchPhoneTerm = searchPhoneInput.value.toLowerCase();
+            const searchEmailTerm = searchEmailInput.value.toLowerCase();
 
-                    if (matchesName && matchesPhone && matchesEmail) {
-                        row.style.display = '';
-                        foundResults = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+            let foundResults = false;
 
-                // Lógica para exibir/ocultar mensagens
-                if (!hasSearchTerm) {
-                    if (clientTableBody.querySelectorAll('tr').length === 0) {
-                        if (noClientsMessage) noClientsMessage.classList.remove('hidden');
-                    } else {
-                        if (noClientsMessage) noClientsMessage.classList.add('hidden');
-                    }
-                    if (noResultsMessage) noResultsMessage.classList.add('hidden');
+            rows.forEach(row => {
+
+                const nameCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                const phoneCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const emailCell = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+
+                const matchesName = !searchNameTerm || nameCell.includes(searchNameTerm);
+                const matchesPhone = !searchPhoneTerm || phoneCell.includes(searchPhoneTerm);
+                const matchesEmail = !searchEmailTerm || emailCell.includes(searchEmailTerm);
+
+                if (matchesName && matchesPhone && matchesEmail) {
+                    row.style.display = '';
+                    foundResults = true;
                 } else {
-                    if (noClientsMessage) noClientsMessage.classList.add('hidden');
-                    if (foundResults) {
-                        if (noResultsMessage) noResultsMessage.classList.add('hidden');
-                    } else {
-                        if (noResultsMessage) noResultsMessage.classList.remove('hidden');
-                    }
+                    row.style.display = 'none';
                 }
-            };
 
-            // Adiciona o evento de input a todos os campos de busca
-            searchNameInput.addEventListener('input', filterTable);
-            searchPhoneInput.addEventListener('input', filterTable);
-            searchEmailInput.addEventListener('input', filterTable);
-
-            // Aplica as máscaras de input
-            $(document).ready(function() {
-                $('#searchPhoneInput').mask('(00) 00000-0000');
             });
+
+            if (noResultsMessage) {
+                noResultsMessage.classList.toggle('hidden', foundResults);
+            }
+
+        };
+
+        function clearFilters() {
+            searchNameInput.value = '';
+            searchPhoneInput.value = '';
+            searchEmailInput.value = '';
+            filterTable();
         }
+
+        searchNameInput.addEventListener('input', filterTable);
+        searchPhoneInput.addEventListener('input', filterTable);
+        searchEmailInput.addEventListener('input', filterTable);
+
+        clearBtn.addEventListener('click', clearFilters);
+
+        $('#searchPhoneInput').mask('(00) 00000-0000');
+
     });
 </script>
 @endsection

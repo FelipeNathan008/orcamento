@@ -157,6 +157,18 @@ class FormaPagamentoController extends Controller
                 ->update([
                     'det_cobr_status' => 'Quitado'
                 ]);
+
+            // Verifica se ainda existe parcela em débito ou inadimplência
+            $existePendente = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
+                ->whereIn('det_cobr_status', ['Débito', 'Inadimplencia'])
+                ->exists();
+
+            // Só marca cobrança como quitada se NÃO existir pendente
+            if (!$existePendente) {
+                $cobranca->update([
+                    'cobr_status' => 'Quitado'
+                ]);
+            }
         }
 
         return back()->with('success', 'Parcela baixada com sucesso!');
@@ -167,37 +179,50 @@ class FormaPagamentoController extends Controller
     {
         $parcela = DetalhesFormaPag::findOrFail($id);
 
-        // Atualiza a parcela normalmente
+        // Atualiza parcela
         $parcela->det_situacao = 'Não pago';
         $parcela->save();
 
-        // Determina o tipo da cobrança (mesma lógica do index e do darBaixa)
+        // Tipo cobrança
         $tipo = $parcela->formaPagamento->tipo_pagamento_id_tipo;
 
         $tipoCobranca = match ($tipo) {
-            1 => 1, // Pix
-            2 => 2, // Boleto
-            3 => 3, // Cartão Crédito
-            4 => 4, // Cartão Débito
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 4,
             default => 1
         };
 
-        // Buscar a cobrança correta (por financeiro + tipo)
+        // Busca cobrança
         $cobranca = Cobranca::where('cobr_id_fin', $parcela->formaPagamento->financeiro_id_fin)
             ->where('cobr_id_tipo', $tipoCobranca)
             ->first();
 
-        // Se existir, atualiza o status da parcela dentro da cobrança
         if ($cobranca) {
+
+            // Atualiza detalhe da cobrança
             DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
-                ->where('det_cobr_valor_parcela', $parcela->det_forma_valor_parcela)
-                ->where('det_cobr_data_venc', $parcela->det_forma_data_venc)
-                ->update(['det_cobr_status' => 'Débito']);
+                ->where('id_det_forma', $parcela->id_det_forma)
+                ->update([
+                    'det_cobr_status' => 'Débito'
+                ]);
+
+            // Se existir parcela em débito ou inadimplência
+            $existePendente = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
+                ->whereIn('det_cobr_status', ['Débito', 'Inadimplencia'])
+                ->exists();
+
+            // Volta a cobrança para Débito
+            if ($existePendente) {
+                $cobranca->update([
+                    'cobr_status' => 'Débito'
+                ]);
+            }
         }
 
         return back()->with('success', 'Parcela marcada como NÃO paga.');
     }
-
 
 
     public function create(Request $request)

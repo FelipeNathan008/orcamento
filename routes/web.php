@@ -69,8 +69,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         ->name('financeiro.prosseguir');
     Route::post('/parcelas/{id}/dar-baixa', [FormaPagamentoController::class, 'darBaixa'])
         ->name('parcelas.darBaixa');
-        Route::post('/parcelas/{id}/voltar-nao-pago', [FormaPagamentoController::class, 'voltarNaoPago'])
-    ->name('parcelas.voltarNaoPago');
+    Route::post('/parcelas/{id}/voltar-nao-pago', [FormaPagamentoController::class, 'voltarNaoPago'])
+        ->name('parcelas.voltarNaoPago');
     Route::resource('notificacao', NotificacaoController::class);
 
 
@@ -109,11 +109,8 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     // ROTAS CUSTOMIZAÇÃO
     Route::resource('customizacao', CustomizacaoController::class);
-
-    // --- ROTAS API ---
-
-    // ROTA API PARA CUSTOMIZAÇÕES POR DETALHE (já existia)
-    Route::get('/api/customizacoes-por-detalhe/{detalheId}', [CustomizacaoController::class, 'getCustomizacoesPorDetalhe']);
+    Route::get('/customizacao/{id}/layout', [CustomizacaoController::class, 'camisa'])
+        ->name('customizacao.camisa');
 
     // ROTA API ADICIONADA PARA PEGAR OS TAMANHOS POR TIPO DE PREÇO
     // A rota aceita um parâmetro 'tipo' na query string (e.g., /api/tamanhos-por-tipo?tipo=Bordado Padrão)

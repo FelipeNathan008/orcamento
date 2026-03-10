@@ -9,15 +9,26 @@
 
     {{-- Cabeçalho da Seção (Título e Botão) --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+
         <h1
             class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
-            Preços de Customização Cadastrados
+            Preços Customizações Cadastrados
         </h1>
-        <a href="{{ route('preco_customizacao.create') }}"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
-            style="background-color: #EA792D;">
-            Novo Preço de Customização
-        </a>
+
+        <div class="flex items-center gap-3">
+
+            <a href="{{ route('dashboard') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                HOME
+            </a>
+
+            <a href="{{ route('preco_customizacao.create') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
+                style="background-color: #EA792D;">
+                Novo Preço
+            </a>
+
+        </div>
 
     </div>
 
@@ -30,18 +41,49 @@
     </div>
     @endif
 
-    {{-- Textbox (Campo de busca) --}}
-    <div class="relative w-full mb-6">
-        <input type="text" id="searchPrecoCustomizacaoInput" placeholder="Pesquisar preços de customização..."
-            class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-                                         hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-        {{-- Ícone de pesquisa --}}
-        <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20"
-            fill="currentColor">
-            <path fill-rule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                clip-rule="evenodd" />
-        </svg>
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Customização
+                </label>
+
+                <div class="relative">
+
+                    <input
+                        type="text"
+                        id="searchPrecoInput"
+                        placeholder="Tipo ou tamanho..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+
+                </div>
+            </div>
+
+            <div class="flex md:justify-end items-end">
+
+                <button
+                    type="button"
+                    id="clearFiltersPreco"
+                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+
+                    Limpar Busca
+
+                </button>
+
+            </div>
+
+        </div>
+
     </div>
 
     @if ($precosCustomizacao->isEmpty())
@@ -53,10 +95,7 @@
         <table class="min-w-full w-full divide-y divide-gray-200">
             <thead class="bg-table-header-bg">
                 <tr>
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        ID Preço
-                    </th>
+
                     <th scope="col"
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Tipo
@@ -77,10 +116,10 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200" id="precoCustomizacaoTableBody">
                 @foreach ($precosCustomizacao as $preco)
-                <tr class="hover:bg-gray-50 transition duration-150">
-                    <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 font-poppins">
-                        {{ $preco->id_preco }}
-                    </td>
+                <tr
+                    class="hover:bg-gray-50 transition duration-150"
+                    data-preco-tipo="{{ $preco->preco_tipo }}"
+                    data-preco-tamanho="{{ $preco->preco_tamanho }}">
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
                         {{ $preco->preco_tipo }}
                     </td>
@@ -121,57 +160,49 @@
     @endif
 </div>
 
-{{-- Script JavaScript para a busca ao vivo --}}
+@push('scripts')
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchPrecoCustomizacaoInput');
-        const precoTableBody = document.getElementById('precoCustomizacaoTableBody');
-        const noPrecosMessage = document.getElementById('noPrecosCustomizacaoMessage');
+
+        const searchInput = document.getElementById('searchPrecoInput');
+        const clearBtn = document.getElementById('clearFiltersPreco');
+
+        const tableBody = document.getElementById('precoCustomizacaoTableBody');
         const noResultsMessage = document.getElementById('noResultsPrecoCustomizacaoMessage');
 
-        // Verifica se a tabela de preços de customização está vazia desde o início
-        if (precoTableBody.querySelectorAll('tr').length === 0) {
-            if (noPrecosMessage) noPrecosMessage.classList.remove('hidden');
-        } else {
-            if (noPrecosMessage) noPrecosMessage.classList.add('hidden');
-        }
+        const allRows = tableBody ? Array.from(tableBody.querySelectorAll('tr')) : [];
 
-        if (searchInput && precoTableBody) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = precoTableBody.querySelectorAll('tr');
-                let foundResults = false;
+        function filterPrecos() {
 
-                rows.forEach(row => {
-                    const rowText = row.textContent.toLowerCase();
+            const searchTerm = searchInput.value.toLowerCase();
+            let foundResults = false;
 
-                    if (rowText.includes(searchTerm)) {
-                        row.style.display = '';
-                        foundResults = true;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Lógica para exibir/ocultar mensagens de "nenhum resultado"
-                if (searchTerm === '') {
-                    // Se a busca está vazia, verifica se não há clientes na tabela original
-                    if (precoTableBody.querySelectorAll('tr').length === 0) {
-                        if (noPrecosMessage) noPrecosMessage.classList.remove('hidden');
-                    } else {
-                        if (noPrecosMessage) noPrecosMessage.classList.add('hidden');
-                    }
-                    if (noResultsMessage) noResultsMessage.classList.add('hidden');
+            allRows.forEach(row => {
+                const tipo = row.dataset.precoTipo.toLowerCase();
+                const tamanho = row.dataset.precoTamanho.toLowerCase();
+                const matchesSearch =
+                    tipo.includes(searchTerm) ||
+                    tamanho.includes(searchTerm);
+                if (matchesSearch) {
+                    row.style.display = '';
+                    foundResults = true;
                 } else {
-                    if (noPrecosMessage) noPrecosMessage.classList.add('hidden'); // Esconde a mensagem inicial
-                    if (foundResults) {
-                        if (noResultsMessage) noResultsMessage.classList.add('hidden');
-                    } else {
-                        if (noResultsMessage) noResultsMessage.classList.remove('hidden');
-                    }
+                    row.style.display = 'none';
                 }
             });
+            noResultsMessage.classList.toggle('hidden', foundResults);
         }
+
+        function clearFilters() {
+            searchInput.value = '';
+            filterPrecos();
+        }
+        searchInput.addEventListener('input', filterPrecos);
+        clearBtn.addEventListener('click', clearFilters);
+
     });
 </script>
+
+@endpush
 @endsection

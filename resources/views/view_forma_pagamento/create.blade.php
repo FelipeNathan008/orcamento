@@ -40,27 +40,44 @@
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {{-- Select Financeiro --}}
-            <div class="md:col-span-2">
-                <label for="financeiro_id_fin" class="block text-sm font-medium text-custom-dark-text mb-1">Financeiro</label>
-                <input type="hidden" name="financeiro_id_fin" value="{{ request('financeiro_id') }}">
+            {{-- Card Financeiro --}}
+            @if($financeiroSelecionado)
+            <div class="md:col-span-2 bg-orange-50 border border-orange-200 rounded-lg p-6 shadow-sm">
 
-                <select id="financeiro_id_fin_fake" disabled
-                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300">
-                    @foreach ($financeiros as $fin)
-                    <option value="{{ $fin->id_fin }}"
-                        {{ (request('financeiro_id') == $fin->id_fin ? 'selected' : '') }}>
-                        {{ $fin->fin_nome_cliente }} |
-                        Valor: R$ {{ number_format($fin->fin_valor_total, 2, ',', '.') }} |
-                        Status: {{ $fin->fin_status }}
-                    </option>
-                    @endforeach
-                </select>
+                <h2 class="text-lg font-bold text-orange-700 mb-4">
+                    Informações do Financeiro
+                </h2>
 
-                @error('financeiro_id_fin')
-                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                @enderror
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+                    <div>
+                        <p class="text-gray-600">Cliente</p>
+                        <p class="font-semibold text-gray-900">
+                            {{ $financeiroSelecionado->fin_nome_cliente }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Valor Total</p>
+                        <p class="font-semibold text-gray-900">
+                            R$ {{ number_format($financeiroSelecionado->fin_valor_total, 2, ',', '.') }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Status</p>
+                        <p class="font-semibold text-gray-900">
+                            {{ $financeiroSelecionado->fin_status }}
+                        </p>
+                    </div>
+
+                </div>
+
             </div>
+
+            {{-- ID oculto para envio no form --}}
+            <input type="hidden" name="financeiro_id_fin" value="{{ $financeiroSelecionado->id_fin }}">
+            @endif
 
             {{-- Select Tipo de Pagamento --}}
             <div class="md:col-span-1">
@@ -204,25 +221,19 @@
             });
         </script>
 
-
-
-        {{-- Botão de envio --}}
         <div class="flex justify-center mt-8">
             <button type="submit"
-                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                CADASTRAR FORMA DE PAGAMENTO
+                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
+                SALVAR
             </button>
+        </div>
+        {{-- Botão Voltar unificado e movido para fora do formulário --}}
+        <div class="flex justify-center mb-8">
+            <a href="{{ url('/forma_pagamento?' . (int) request()->query('financeiro_id')) }}"
+                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                VOLTAR PARA A LISTA
+            </a>
         </div>
     </form>
 </div>
-
-<div class="flex justify-center mb-2">
-    <a href="{{ url('/forma_pagamento?' . (int) request()->query('financeiro_id')) }}"
-        class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out mt-0.5">
-        VOLTAR PARA A LISTA
-    </a>
-</div>
-
-
-
 @endsection

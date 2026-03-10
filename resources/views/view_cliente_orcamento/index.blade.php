@@ -9,16 +9,24 @@
 
     {{-- Cabeçalho da Seção (Título e Botão) - Estilo do Cliente --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+
         <h1
             class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Clientes Cadastrados
         </h1>
-        <a href="{{ route('cliente_orcamento.create') }}"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
-            style="background-color: #EA792D;">
-            Novo Cliente
-        </a>
+        <div class="flex items-center gap-3">
 
+           <a href="{{ route('dashboard') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                HOME
+            </a>
+
+            <a href="{{ route('cliente_orcamento.create') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
+                style="background-color: #EA792D;">
+                Novo Cliente
+            </a>
+        </div>
 
     </div>
 
@@ -31,64 +39,104 @@
     @endif
 
     {{-- Campos de busca - ATUALIZADO para 3 campos --}}
-    <form method="GET" action="{{ route('cliente_orcamento.index') }}">
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {{-- Campo de busca por Nome --}}
-            <div class="relative">
-                <input type="text" id="searchClientOrcamentoName" placeholder="Pesquisar por nome..."
-                    class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-                                               hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20"
-                    fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                        clip-rule="evenodd" />
-                </svg>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+
+            {{-- Buscar Nome --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Nome
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchClientOrcamentoName"
+                        placeholder="Nome do cliente..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
-            {{-- Campo de busca por E-mail --}}
-            <div class="relative">
-                <input type="text" id="searchClientOrcamentoEmail" placeholder="Pesquisar por e-mail..."
-                    class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-                                               hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20"
-                    fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                        clip-rule="evenodd" />
-                </svg>
+            {{-- Buscar Email --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Email
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchClientOrcamentoEmail"
+                        placeholder="Email..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
-            {{-- Campo de busca por Celular --}}
-            <div class="relative">
-                <input type="text" id="searchClientOrcamentoCode" placeholder="Pesquisar por código interno..."
-                    class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-                                               hover:border-custom-border-hover focus:border-custom-border-focus disabled:border-custom-border-light disabled:text-custom-border-light disabled:bg-white text-custom-dark-text">
-                <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20"
-                    fill="currentColor">
-                    <path fill-rule="evenodd"
-                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                        clip-rule="evenodd" />
-                </svg>
+            {{-- Buscar Código --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Código
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="text"
+                        id="searchClientOrcamentoCode"
+                        placeholder="Código interno..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
-            {{-- Campo de busca por ID do Orçamento --}}
-            <div class="relative">
-                <input type="number" name="id_orcamento" value="{{ request('id_orcamento') }}"
-                    placeholder="Pesquisar por ID do orçamento..."
-                    class="w-full h-9 pl-3 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-        hover:border-custom-border-hover focus:border-custom-border-focus text-custom-dark-text">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pesquisar Código
+                </label>
+
+                <div class="relative">
+                    <input
+                        type="number"
+                        id="searchClientOrcamentoBudget"
+                        placeholder="ID do orçamento..."
+                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
             </div>
 
+            {{-- Botão limpar --}}
+            <div class="flex md:justify-end items-end">
+                <button
+                    type="button"
+                    id="clearFiltersOrcamento"
+                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                    Limpar Busca
+                </button>
+            </div>
         </div>
-        <button type="submit"
-            class="mt-4 px-4 py-2 text-white rounded-md"
-            style="background-color: #EA792D;">
-            Filtrar
-        </button>
-    </form>
 
+    </div>
     @if ($clientesOrcamento->isEmpty())
     {{-- Estilo da mensagem de "nenhum cliente" do Cliente --}}
     <p class="text-gray-600 text-center py-8" id="noClientsOrcamentoMessage">Nenhum cliente de orçamento cadastrado
@@ -122,7 +170,9 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200" id="clientOrcamentoTableBody">
                 @foreach ($clientesOrcamento as $cliente)
-                <tr class="hover:bg-gray-50 transition duration-150">
+                <tr
+                    class="hover:bg-gray-50 transition duration-150"
+                    data-orcamentos="{{ $cliente->orcamentos->pluck('id_orcamento')->implode(',') }}">
                     <td class="px-6 py-4 whitespace-normal break-words text-sm font-medium text-gray-900 font-poppins">
                         {{ $cliente->clie_orc_cod_interno }}
                     </td>
@@ -194,18 +244,23 @@
         const searchNameInput = document.getElementById('searchClientOrcamentoName');
         const searchEmailInput = document.getElementById('searchClientOrcamentoEmail');
         const searchCodeInput = document.getElementById('searchClientOrcamentoCode');
+        const searchBudgetInput = document.getElementById('searchClientOrcamentoBudget');
+        const clearBtn = document.getElementById('clearFiltersOrcamento');
 
         const clientTableBody = document.getElementById('clientOrcamentoTableBody');
-        const noClientsMessage = document.getElementById('noClientsOrcamentoMessage');
         const noResultsMessage = document.getElementById('noResultsOrcamentoMessage');
+
+        if (!clientTableBody) return;
+
+        const rows = clientTableBody.querySelectorAll('tr');
 
         const filterTable = () => {
 
-            const searchName = (searchNameInput.value || '').toLowerCase();
-            const searchEmail = (searchEmailInput.value || '').toLowerCase();
-            const searchCode = (searchCodeInput.value || '').toLowerCase();
+            const searchName = searchNameInput.value.toLowerCase();
+            const searchEmail = searchEmailInput.value.toLowerCase();
+            const searchCode = searchCodeInput.value.toLowerCase();
+            const searchBudget = searchBudgetInput.value;
 
-            const rows = clientTableBody.querySelectorAll('tr');
             let found = false;
 
             rows.forEach(row => {
@@ -214,11 +269,14 @@
                 const name = row.cells[1].textContent.toLowerCase();
                 const email = row.cells[3].textContent.toLowerCase();
 
-                const matchCode = code.includes(searchCode);
-                const matchName = name.includes(searchName);
-                const matchEmail = email.includes(searchEmail);
+                const budgets = row.dataset.orcamentos ? row.dataset.orcamentos.split(',') : [];
 
-                if (matchCode && matchName && matchEmail) {
+                const matchCode = !searchCode || code.includes(searchCode);
+                const matchName = !searchName || name.includes(searchName);
+                const matchEmail = !searchEmail || email.includes(searchEmail);
+                const matchBudget = !searchBudget || budgets.includes(searchBudget);
+
+                if (matchCode && matchName && matchEmail && matchBudget) {
                     row.style.display = '';
                     found = true;
                 } else {
@@ -227,23 +285,28 @@
 
             });
 
-            const allEmpty = !searchName && !searchEmail && !searchCode;
-
-            if (allEmpty) {
-                noResultsMessage.classList.add('hidden');
-            } else {
-                if (found) {
-                    noResultsMessage.classList.add('hidden');
-                } else {
-                    noResultsMessage.classList.remove('hidden');
-                }
+            if (noResultsMessage) {
+                noResultsMessage.classList.toggle('hidden', found);
             }
 
         };
 
+        function clearFilters() {
+
+            searchNameInput.value = '';
+            searchEmailInput.value = '';
+            searchCodeInput.value = '';
+            searchBudgetInput.value = '';
+
+            filterTable();
+        }
+
         searchNameInput.addEventListener('input', filterTable);
         searchEmailInput.addEventListener('input', filterTable);
         searchCodeInput.addEventListener('input', filterTable);
+        searchBudgetInput.addEventListener('input', filterTable);
+
+        clearBtn.addEventListener('click', clearFilters);
 
     });
 </script>

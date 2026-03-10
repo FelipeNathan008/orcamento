@@ -1,45 +1,40 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Alphamega</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGO - Alphamega</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="{{ asset('style.css') }}" />
 </head>
 
-<body class="bg-bege">
+<body
+    class="h-screen flex items-center justify-center bg-cover bg-center"
+    style="background-image: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('/images/uniforme.jpg');">
+    <div class="bg-black/80 p-10 rounded-2xl text-center max-w-xl w-full shadow-2xl text-white">
 
-    <!-- Navbar -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto flex justify-between items-center py-4 px-6">
-            <div class="flex items-center space-x-4">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-20 h-20 object-contain" />
-                <h1 class="text-azul text-3xl font-semibold">Alphamega</h1>
-            </div>
-            <div>
-                <a href="{{ route('login') }}"
-                    class="bg-azul text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition duration-300">Login</a>
-            </div>
-            
-        </div>
-    </nav>
+        <img src="{{ asset('images/logo.png') }}" class="mx-auto w-80 mb-4">
 
+        <h1 class="text-3xl font-bold mb-4">
+            Sistema Integrado Gerador de Orçamentos
+        </h1>
 
-    <!-- Seção principal -->
-    <div class="bg-azul w-full py-6">
-        <div class="container mx-auto text-center">
-            <h2 class="text-white text-3xl font-bold">Bem-vindo à Alphamega Uniformes</h2>
-            <img src="{{ asset('images/logo_laranja.png') }}" alt="Logo" class="w-20 h-20 object-contain" />
-            <h1 class="text-azul text-3xl font-semibold">Alphamega</h1>
-            <p class="text-white mt-2">SIGO - Sistema Integrado Gerador de Orçamentos.</p>
-        </div>
-    </div>
+        <p class="text-gray-300 mb-8 leading-relaxed">
+            Bem-vindo ao sistema da <b>Alphamega Uniformes</b>.
+            Gerencie clientes, orçamentos, customizações e o módulo financeiro
+            de forma simples, organizada e eficiente.
+        </p>
 
-    <!-- Imagem de destaque -->
-    <div class="container mx-auto mt-8">
-        <img src="{{ asset('images/uniforme.jpg') }}" class="rounded-lg shadow-lg mx-auto">
+        <a href="{{ route('login') }}"
+            class="inline-block bg-orange-500 hover:bg-orange-600 px-8 py-3 rounded-lg font-semibold transition shadow-lg">
+            Entrar no Sistema
+        </a>
+
+        <footer class="mt-6 text-sm text-gray-400">
+            © {{ date('Y') }} Alphamega Uniformes
+        </footer>
+
     </div>
 
 </body>

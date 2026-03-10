@@ -127,7 +127,7 @@ class ProdutoController extends Controller
 
             $produto->update($validatedData);
 
-            return redirect()->route('produto.show', $produto->id_produto)->with('success', 'Produto atualizado com sucesso!');
+            return redirect()->route('produto.index')->with('success', 'Produto atualizado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {

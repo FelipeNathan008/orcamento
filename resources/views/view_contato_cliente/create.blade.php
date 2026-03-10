@@ -8,10 +8,40 @@
         Novo Contato
     </h1>
 
-    <p class="text-center text-gray-600 mb-8">
-        Cliente: <strong>{{ $clienteSelecionado->clie_orc_nome }}</strong>
-    </p>
+    @if(isset($clienteSelecionado))
+    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
+        <h2 class="text-lg font-bold text-orange-700 mb-4">
+            Informações do Cliente
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+            <div>
+                <p class="text-gray-600">Nome</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $clienteSelecionado->clie_orc_nome }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">E-mail</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $clienteSelecionado->clie_orc_email }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">Celular</p>
+                <p class="font-semibold text-gray-900">
+                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteSelecionado->clie_orc_celular)) }}
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+    @endif
     <form action="{{ route('contato_cliente.store') }}" method="POST" class="space-y-6">
         @csrf
 

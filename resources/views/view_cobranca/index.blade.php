@@ -8,9 +8,16 @@
 
     {{-- Cabeçalho --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
+        <h1
+            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Cobranças
         </h1>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('dashboard') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                HOME
+            </a>
+        </div>
 
     </div>
 
@@ -22,16 +29,75 @@
     </div>
     @endif
 
-    {{-- Campo de busca --}}
-    <div class="relative w-full mb-6">
-        <input type="text" id="searchCobrancaInput" placeholder="Pesquisar cobrança..."
-            class="w-full h-9 pl-10 pr-3 font-poppins text-sm leading-tight font-normal bg-white border border-custom-border-light rounded-md outline-none
-                   hover:border-custom-border-hover focus:border-custom-border-focus text-custom-dark-text">
-        <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 fill-custom-dark-text" viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                clip-rule="evenodd" />
-        </svg>
+    {{-- Filtros --}}
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
+
+            {{-- ID Fin --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    ID Fin
+                </label>
+
+                <input
+                    type="text"
+                    id="searchFinInput"
+                    placeholder="ID financeiro..."
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            {{-- ID Orçamento --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    ID Orçamento
+                </label>
+
+                <input
+                    type="text"
+                    id="searchOrcInput"
+                    placeholder="ID orçamento..."
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            {{-- Cliente --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Cliente
+                </label>
+
+                <input
+                    type="text"
+                    id="searchClienteInput"
+                    placeholder="Nome do cliente..."
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            {{-- Tipo --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Tipo
+                </label>
+
+                <input
+                    type="text"
+                    id="searchTipoInput"
+                    placeholder="Tipo pagamento..."
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            {{-- Botão limpar --}}
+            <div class="flex items-end">
+                <button
+                    type="button"
+                    id="clearFiltersCobranca"
+                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                    Limpar
+                </button>
+            </div>
+
+        </div>
+
     </div>
 
     {{-- Nenhuma cobrança --}}
@@ -72,8 +138,41 @@
                         {{ $cobranca->tipoPagamento->tipo_plano_fin ?? 'Não informado' }}
                     </td>
 
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $cobranca->cobr_status }}
+                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
+
+                        @php
+                        $normalizedStatus = strtolower(str_replace(' ', '_', $cobranca->cobr_status));
+
+                        switch ($normalizedStatus) {
+                        case 'inadimplencia':
+                        $statusClass = 'bg-red-400';
+                        break;
+
+                        case 'débito':
+                        case 'debito':
+                        $statusClass = 'bg-yellow-400';
+                        break;
+
+                        case 'quitado':
+                        $statusClass = 'bg-green-400';
+                        break;
+
+                        default:
+                        $statusClass = 'bg-gray-400';
+                        break;
+                        }
+                        @endphp
+
+                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-gray-900">
+                            <span aria-hidden="true"
+                                class="absolute inset-0 opacity-50 rounded-full {{ $statusClass }}">
+                            </span>
+
+                            <span class="relative">
+                                {{ ucfirst($cobranca->cobr_status) }}
+                            </span>
+                        </span>
+
                     </td>
 
                     <td class="px-2 py-4 text-center">
@@ -124,9 +223,43 @@
                                         {{ \Carbon\Carbon::parse($item->det_cobr_data_venc)->format('d/m/Y') }}
                                     </td>
 
-                                    <td class="px-4 py-2 text-sm">
-                                        {{ $item->det_cobr_status }}
+                                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
+
+                                        @php
+                                        $normalizedStatus = strtolower(str_replace(' ', '_', $item->det_cobr_status));
+
+                                        switch ($normalizedStatus) {
+                                        case 'inadimplencia':
+                                        $statusClass = 'bg-red-400';
+                                        break;
+
+                                        case 'débito':
+                                        case 'debito':
+                                        $statusClass = 'bg-yellow-400';
+                                        break;
+
+                                        case 'quitado':
+                                        $statusClass = 'bg-green-400';
+                                        break;
+
+                                        default:
+                                        $statusClass = 'bg-gray-400';
+                                        break;
+                                        }
+                                        @endphp
+
+                                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-gray-900">
+                                            <span aria-hidden="true"
+                                                class="absolute inset-0 opacity-50 rounded-full {{ $statusClass }}">
+                                            </span>
+
+                                            <span class="relative">
+                                                {{ ucfirst($item->det_cobr_status) }}
+                                            </span>
+                                        </span>
+
                                     </td>
+
                                     <td class="px-4 py-2 text-center">
 
                                         @if ($item->det_cobr_status === 'Inadimplencia')
@@ -158,14 +291,13 @@
                                             @endif
 
                                             @endif
-                                            {{-- SOMENTE ACORDO --}}
+                                            @if ($item->det_cobr_status != 'Quitado')
                                             <a href="{{ url('/detalhes_cobranca/' . $item->id_det_cobranca . '/edit') }}"
                                                 class="px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 transition block mx-auto text-center">
                                                 Acordo
                                             </a>
+                                            @endif
                                     </td>
-
-
 
                                 </tr>
                                 @endforeach
@@ -215,33 +347,79 @@
             });
         });
 
-        // FILTRO DE BUSCA
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = tableBody.querySelectorAll('tr');
+        const searchFinInput = document.getElementById('searchFinInput');
+        const searchOrcInput = document.getElementById('searchOrcInput');
+        const searchClienteInput = document.getElementById('searchClienteInput');
+        const searchTipoInput = document.getElementById('searchTipoInput');
+        const searchStatusInput = document.getElementById('searchStatusInput');
+
+        const clearBtn = document.getElementById('clearFiltersCobranca');
+
+        if (!tableBody) return;
+
+        const rows = tableBody.querySelectorAll('tr');
+
+        const filterTable = () => {
+
+            const fin = searchFinInput.value.toLowerCase();
+            const orc = searchOrcInput.value.toLowerCase();
+            const cliente = searchClienteInput.value.toLowerCase();
+            const tipo = searchTipoInput.value.toLowerCase();
+            const status = searchStatusInput.value.toLowerCase();
+
             let found = false;
 
             rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
 
-                if (text.includes(searchTerm)) {
+                const cells = row.querySelectorAll('td');
+
+                if (cells.length < 5) return;
+
+                const finCell = cells[0].textContent.toLowerCase();
+                const orcCell = cells[1].textContent.toLowerCase();
+                const clienteCell = cells[2].textContent.toLowerCase();
+                const tipoCell = cells[3].textContent.toLowerCase();
+                const statusCell = cells[4].textContent.toLowerCase();
+
+                const matchFin = !fin || finCell.includes(fin);
+                const matchOrc = !orc || orcCell.includes(orc);
+                const matchCliente = !cliente || clienteCell.includes(cliente);
+                const matchTipo = !tipo || tipoCell.includes(tipo);
+                const matchStatus = !status || statusCell.includes(status);
+
+                if (matchFin && matchOrc && matchCliente && matchTipo && matchStatus) {
                     row.style.display = '';
                     found = true;
                 } else {
                     row.style.display = 'none';
                 }
+
             });
 
-            if (!searchTerm) {
-                noResultsMessage.classList.add('hidden');
-                return;
+            if (noResultsMessage) {
+                noResultsMessage.classList.toggle('hidden', found);
             }
 
-            found ? noResultsMessage.classList.add('hidden') : noResultsMessage.classList.remove('hidden');
-        });
+        };
+
+        function clearFilters() {
+            searchFinInput.value = '';
+            searchOrcInput.value = '';
+            searchClienteInput.value = '';
+            searchTipoInput.value = '';
+            searchStatusInput.value = '';
+            filterTable();
+        }
+
+        searchFinInput.addEventListener('input', filterTable);
+        searchOrcInput.addEventListener('input', filterTable);
+        searchClienteInput.addEventListener('input', filterTable);
+        searchTipoInput.addEventListener('input', filterTable);
+        searchStatusInput.addEventListener('change', filterTable);
+
+        clearBtn.addEventListener('click', clearFilters);
+
     });
 </script>
 @endpush
-
-
 @endsection

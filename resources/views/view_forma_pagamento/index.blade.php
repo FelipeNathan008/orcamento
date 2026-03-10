@@ -19,9 +19,8 @@
         <div class="flex space-x-2">
             {{-- VOLTAR --}}
             <a href="{{ route('financeiro.index') }}"
-                class="px-4 py-2 text-sm font-medium rounded-md text-white shadow-sm"
-                style="background-color: #6B7280;">
-                ← Voltar
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                VOLTAR
             </a>
 
             {{-- NOVA FORMA --}}
@@ -33,6 +32,8 @@
         </div>
     </div>
 
+
+
     {{-- RESUMO FINANCEIRO --}}
     @if($idFin)
     @php
@@ -42,7 +43,40 @@
     $valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
     $valorFaltante = max($valorTotal - $valorPago, 0);
     @endphp
+    @if($idFin && isset($financeiroSelecionado))
+    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
+        <h2 class="text-lg font-bold text-orange-700 mb-3">
+            Informações do Financeiro Selecionado
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+            <div>
+                <p class="text-gray-600">ID do Financeiro</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $financeiroSelecionado->id_fin }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">Cliente</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $financeiroSelecionado->fin_nome_cliente }}
+                </p>
+            </div>
+
+
+             <div>
+                <p class="text-gray-600">ID Orçamento</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $financeiroSelecionado->orcamento_id_orcamento}}
+                </p>
+            </div>
+        </div>
+
+    </div>
+    @endif
     <div class="mb-6 p-4 bg-gray-100 rounded-lg flex justify-around text-center">
         <div>
             <span class="font-bold text-lg text-red-600">Valor Total</span>
@@ -76,8 +110,7 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-table-header-bg">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">ID Financeiro</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Cliente</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">ID Forma Pag</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Tipo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Prazo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Parcelas</th>
@@ -92,8 +125,7 @@
 
                 @foreach ($formasPagamento as $forma)
                 <tr>
-                    <td class="px-4 py-4 text-sm">{{ $forma->financeiro_id_fin }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $forma->financeiro->fin_nome_cliente }}</td>
+                    <td class="px-4 py-4 text-sm">{{ $forma->id_forma_pag }}</td>
                     <td class="px-4 py-4 text-sm">{{ $forma->tipoPagamento?->tipo_plano_fin ?? '—' }}</td>
                     <td class="px-4 py-4 text-sm">{{ $forma->forma_prazo }}</td>
                     <td class="px-4 py-4 text-sm">{{ $forma->forma_qtd_parcela }}</td>
@@ -217,7 +249,7 @@
                                                 </button>
                                             </form>
                                             @endif
-                                            
+
                                             @if($parcela->det_situacao === 'Não pago' || $parcela->det_situacao === 'Acordo')
 
                                             <form action="{{ route('parcelas.darBaixa', $parcela->id_det_forma) }}" method="POST">

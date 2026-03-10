@@ -8,19 +8,27 @@
 
     {{-- Cabeçalho com título e botões --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+
         <h1
             class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Orçamentos Cadastrados
         </h1>
-        <div class="flex space-x-2">
 
-            {{-- Botão Novo Orçamento --}}
+        <div class="flex items-center gap-3">
+
+            <a href="{{ route('cliente_orcamento.index') }}"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                VOLTAR
+            </a>
+
             <a href="{{ route('orcamento.create', ['cliente_orcamento_id' => $clienteSelecionado->id_co]) }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
                 style="background-color: #EA792D;">
                 Novo Orçamento
             </a>
+
         </div>
+
     </div>
 
     @if(request('cliente_orcamento_id') && isset($clienteSelecionado))
@@ -214,13 +222,16 @@
                             @if ($orcamento->orc_status !== 'finalizado')
 
                             {{-- Visualizar Detalhes --}}
-                            <a href="{{ route('detalhes_orcamento.index', ['search_orcamento_id' => $orcamento->id_orcamento]) }}"
+                            <a href="{{ route('detalhes_orcamento.index', ['orcamento_id' => $orcamento->id_orcamento]) }}"
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
                                 Visualizar Detalhes
                             </a>
 
                             @if (in_array($orcamento->orc_status, ['aprovado', 'para aprovacao']))
-                            <a href="{{ route('gerar_orcamento', $orcamento->id_orcamento) }}"
+                            <a href="{{ route('gerar_orcamento', [
+                                    'id' => $orcamento->id_orcamento,
+                                    'cliente_orcamento_id' => $clienteSelecionado->id_co
+                                ]) }}"
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
                                 style="background-color: #EA792D;">
                                 Gerar Orçamento

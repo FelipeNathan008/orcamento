@@ -94,16 +94,21 @@ class OrcamentoController extends Controller
      * @param int $id
      * @return \Illuminate\View\View
      */
-    public function gerarOrcamento($id)
+    public function gerarOrcamento(Request $request, $id)
     {
-        // Carrega o orçamento e suas relações
-        $orcamento = Orcamento::with('detalhesOrcamento.customizacoes', 'clienteOrcamento')->findOrFail($id);
+        $orcamento = Orcamento::with(
+            'detalhesOrcamento.customizacoes',
+            'clienteOrcamento'
+        )->findOrFail($id);
 
-        // Acessa a relação diretamente do modelo carregado, evitando uma nova consulta
         $clienteOrcamento = $orcamento->clienteOrcamento;
 
-        // Passa as duas variáveis para a view
-        return view('view_orcamento.gerar_orcamento', compact('orcamento', 'clienteOrcamento'));
+        $cliente_orcamento_id = $request->cliente_orcamento_id;
+
+        return view(
+            'view_orcamento.gerar_orcamento',
+            compact('orcamento', 'clienteOrcamento', 'cliente_orcamento_id')
+        );
     }
 
     /**

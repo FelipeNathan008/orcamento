@@ -67,5 +67,8 @@ class ClienteOrcamento extends Model
         // Adicione casts aqui se houver campos de data, JSON, etc.
         // 'data_campo' => 'date',
     ];
+    public function orcamentos()
+    {
+        return $this->hasMany(Orcamento::class, 'cliente_orcamento_id_co', 'id_co');
+    }
 }
-
