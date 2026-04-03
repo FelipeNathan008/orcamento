@@ -99,9 +99,10 @@
             {{-- Valor --}}
             <div class="md:col-span-1">
                 <label for="forma_valor" class="block text-sm font-medium text-custom-dark-text mb-1">Valor Total</label>
-                <input type="number" step="0.01" name="forma_valor" id="forma_valor" value="{{ old('forma_valor') }}" required
+                <input type="text" name="forma_valor" id="forma_valor"
+                    value="{{ old('forma_valor') }}" required
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="R$ 120,00">
+                    placeholder="R$ 0,00">
                 @error('forma_valor')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -110,9 +111,13 @@
             {{-- Competência --}}
             <div class="md:col-span-1">
                 <label for="forma_mes" class="block text-sm font-medium text-custom-dark-text mb-1">Competência (Mês)</label>
-                <input type="number" name="forma_mes" id="forma_mes" value="{{ old('forma_mes') }}" required
+                <input type="number" name="forma_mes" id="forma_mes"
+                    value="{{ old('forma_mes') }}"
+                    min="1"
+                    max="12"
+                    required
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="11, 12...">
+                    placeholder="1 até 12">
                 @error('forma_mes')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -139,9 +144,10 @@
             {{-- Quantidade de Parcelas --}}
             <div class="md:col-span-1">
                 <label for="forma_qtd_parcela" class="block text-sm font-medium text-custom-dark-text mb-1">Qtd Parcelas</label>
-                <input type="number" name="forma_qtd_parcela" id="forma_qtd_parcela" value="{{ old('forma_qtd_parcela') }}" required
+                <input type="number" name="forma_qtd_parcela" id="forma_qtd_parcela"
+                    value="{{ old('forma_qtd_parcela') }}" required
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
-               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                     placeholder="1, 2, 3...">
                 @error('forma_qtd_parcela')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -236,4 +242,65 @@
         </div>
     </form>
 </div>
+
+
+<script>
+    const selectPrazo = document.getElementById('forma_prazo');
+    const inputParcelas = document.getElementById('forma_qtd_parcela');
+
+    function controlarParcelas() {
+
+        if (selectPrazo.value === 'À vista') {
+            inputParcelas.value = 1;
+            inputParcelas.readOnly = true;
+            inputParcelas.classList.add('bg-gray-200');
+
+        } else if (selectPrazo.value === 'Parcelado') {
+            inputParcelas.readOnly = false;
+            inputParcelas.value = '';
+            inputParcelas.classList.remove('bg-gray-200');
+        } else {
+            inputParcelas.readOnly = false;
+            inputParcelas.value = '';
+            inputParcelas.classList.remove('bg-gray-200');
+        }
+    }
+    selectPrazo.addEventListener('change', controlarParcelas);
+
+    window.addEventListener('DOMContentLoaded', controlarParcelas);
+
+    // Mascara
+    const campoValor = document.getElementById('forma_valor');
+
+    campoValor.addEventListener('input', function(e) {
+
+        let valor = e.target.value.replace(/\D/g, '');
+
+        valor = (valor / 100).toFixed(2) + '';
+
+        valor = valor.replace(".", ",");
+
+        valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+        e.target.value = "R$ " + valor;
+
+    });
+
+    //validar 1-12 competencia
+    const campoCompetencia = document.getElementById('forma_mes');
+
+    campoCompetencia.addEventListener('input', function() {
+
+        let valor = parseInt(this.value);
+
+        if (valor > 12) {
+            this.value = 12;
+        }
+
+        if (valor < 1) {
+            this.value = 1;
+        }
+
+    });
+</script>
 @endsection

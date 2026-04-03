@@ -21,6 +21,45 @@
     </div>
     @endif
 
+    @php
+    $formaSelecionada = $formas->where('id_forma_pag', request('id_forma_pag'))->first();
+    @endphp
+
+    @if($formaSelecionada)
+    <div class="md:col-span-2 bg-orange-50 border border-orange-200 rounded-lg p-6 shadow-sm mb-6">
+
+        <h2 class="text-lg font-bold text-orange-700 mb-4">
+            Informações do Financeiro
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+            <div>
+                <p class="text-gray-600">Cliente</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $formaSelecionada->financeiro->fin_nome_cliente }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">Valor Total</p>
+                <p class="font-semibold text-gray-900">
+                    R$ {{ number_format($formaSelecionada->financeiro->fin_valor_total, 2, ',', '.') }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">Status</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $formaSelecionada->financeiro->fin_status }}
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+    @endif
+
     <form action="{{ route('detalhes_forma_pag.store') }}" method="POST" id="detForm" class="space-y-6">
         @csrf
 
@@ -44,20 +83,7 @@
                 {{-- INPUT HIDDEN PARA ENVIAR O VALOR --}}
                 <input type="hidden" name="id_forma_pag" value="{{ request('id_forma_pag') }}">
 
-                <select id="id_forma_pag_disabled"
-                    class="block w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md shadow-sm outline-none 
-               cursor-not-allowed border border-gray-300"
-                    disabled>
-                    @foreach ($formas->where('id_forma_pag', request('id_forma_pag')) as $forma)
-                    <option>
-                        {{ $forma->financeiro->fin_nome_cliente }} -
-                        Total Débito: R$ {{ number_format($forma->forma_valor, 2, ',', '.') }} -
-                        {{ $forma->tipoPagamento->tipo_plano_fin }} -
-                        {{ $forma->forma_qtd_parcela }}x | {{ $forma->forma_prazo }}
-                    </option>
-                    @endforeach
-                </select>
-
+               
                 <input type="hidden" id="total_debito" value="{{ $formaSelecionada->forma_valor }}">
                 <input type="hidden" id="qtd_parcela" value="{{ $formaSelecionada->forma_qtd_parcela }}">
 
@@ -120,23 +146,12 @@
         {{-- Botão Salvar --}}
         <div class="flex justify-center mt-8">
             <button type="submit"
-                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium 
-                           rounded-md text-white bg-button-save-bg hover:bg-button-save-hover 
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition">
+                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
         </div>
+        {{-- Botão Voltar unificado e movido para fora do formulário --}}
     </form>
-</div>
-
-{{-- Botão Voltar --}}
-<div class="flex justify-center mb-8">
-    <a href="{{ route('detalhes_forma_pag.index') }}"
-        class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm 
-                   text-base font-medium rounded-md text-custom-dark-text bg-gray-300 
-                   hover:bg-gray-400 transition">
-        VOLTAR PARA A LISTA
-    </a>
 </div>
 
 @push('scripts')

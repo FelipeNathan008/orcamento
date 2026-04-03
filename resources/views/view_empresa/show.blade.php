@@ -11,12 +11,12 @@
 
         <div class="flex space-x-3">
             <a href="{{ route('empresa.edit', $empresa->id_emp) }}"
-               class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Editar Empresa
             </a>
 
             <a href="{{ route('empresa.index') }}"
-               class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Voltar para a Lista
             </a>
         </div>
@@ -34,14 +34,10 @@
                     {{ $empresa->emp_nome }}
                 </p>
             </div>
-
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CNPJ:</p>
                 <p class="text-gray-900 text-lg font-semibold">
-                    @php
-                        $cnpj = preg_replace('/\D/', '', $empresa->emp_cnpj ?? '');
-                    @endphp
-                    {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
+                    {{ $empresa->emp_cnpj }}
                 </p>
             </div>
 
@@ -49,7 +45,7 @@
                 <p class="text-gray-600 text-sm">CEP:</p>
                 <p class="text-gray-900 text-lg font-semibold">
                     @php
-                        $cep = preg_replace('/\D/', '', $empresa->emp_cep ?? '');
+                    $cep = preg_replace('/\D/', '', $empresa->emp_cep ?? '');
                     @endphp
                     {{ preg_replace('/(\d{5})(\d{3})/', '$1-$2', $cep) }}
                 </p>

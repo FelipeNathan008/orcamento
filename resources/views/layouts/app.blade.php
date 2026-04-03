@@ -129,6 +129,12 @@
                 <a href="{{ route('preco_customizacao.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Preço
                     Customização</a>
+                <a href="{{ route('tipo_fluxo_caixa.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Tipo Fluxo Caixa</a>
+                <a href="{{ route('fluxo_caixa.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Fluxo Caixa</a>
                 <a href="{{ route('financeiro.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
                     Financeiro</a>

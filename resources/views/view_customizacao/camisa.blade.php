@@ -184,14 +184,17 @@
 
         // Prioriza a imagem se ela existir.
         if (!empty($cust->cust_imagem)) {
+
+        $imagePath = asset('images_customizacoes/' . $cust->cust_imagem);
+
         if ($isFrente) {
-        // Frente: 150x160
-        $content = '<img src="data:image/jpeg;base64,' . base64_encode($cust->cust_imagem) . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:230px; height:110px; object-fit:contain;" />';
+        $content = '<img src="' . $imagePath . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:230px; height:110px; object-fit:contain;" />';
         } elseif ($isCosta) {
-        // Costa: 150x100
-        $content = '<img src="data:image/jpeg;base64,' . base64_encode($cust->cust_imagem) . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:250px; height:100px; object-fit:contain;" />';
+        $content = '<img src="' . $imagePath . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:250px; height:100px; object-fit:contain;" />';
         }
-        } else {
+
+        }
+         else {
         // Se NÃO há imagem e a posição é o Rodapé, mostra APENAS o ID da customização.
         if ($isRodapePosition) {
         $content = '<span class="text-xs text-gray-700">' . $cust->id_customizacao . '</span>';

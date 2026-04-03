@@ -19,7 +19,7 @@
             <a href="{{ route('dashboard') }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
                 HOME
-            </a>    
+            </a>
 
             <a href="{{ route('cliente.create') }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
@@ -163,6 +163,7 @@
                     </td>
 
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
+
                         {{-- CPF --}}
                         @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
                         @php
@@ -175,10 +176,10 @@
                         {{-- CNPJ --}}
                         @if ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
                         @php
-                        $cnpj = preg_replace('/\D/', '', $cliente->clie_cnpj);
+                        $cnpj = $cliente->clie_cnpj;
                         @endphp
 
-                        {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
+                        {{ preg_replace('/([A-Za-z0-9]{2})([A-Za-z0-9]{3})([A-Za-z0-9]{3})([A-Za-z0-9]{4})([A-Za-z0-9]{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
                         @endif
 
                     </td>

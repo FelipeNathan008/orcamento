@@ -148,8 +148,8 @@
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
-            </div> 
-        </div> 
+            </div>
+        </div>
 
         <div class="flex justify-center mt-8">
             <button type="submit"
@@ -173,8 +173,13 @@
 <script>
     $(document).ready(function() {
         // Máscara para CNPJ
-        $('#emp_cnpj').mask('00.000.000/0000-00');
-
+        $('#emp_cnpj').mask('AA.AAA.AAA/AAAA-AA', {
+            translation: {
+                'A': {
+                    pattern: /[A-Za-z0-9]/
+                }
+            }
+        });
         // Máscara para CEP
         $('#emp_cep').mask('00000-000');
     });

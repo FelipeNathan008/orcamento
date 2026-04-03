@@ -28,6 +28,8 @@ use App\Http\Controllers\CobrancaController;
 use App\Http\Controllers\DetalhesCobrancaController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FluxoCaixaController;
+use App\Http\Controllers\TipoFluxoCaixaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -166,6 +168,12 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     // ROTA PARA PREÇO CUSTOMIZAÇÃO
     Route::resource('preco_customizacao', PrecoCustomizacaoController::class);
+
+    //ROTA PARA TIPO FLUXO CAIXA
+    Route::resource('tipo_fluxo_caixa', TipoFluxoCaixaController::class);
+
+    //ROTA PARA FLUXO CAIXA
+    Route::resource('fluxo_caixa', FluxoCaixaController::class);
 });
 
 require __DIR__ . '/auth.php';

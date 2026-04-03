@@ -23,24 +23,11 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">ID</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $tipoFluxo->id_tipo_fluxo }}
-                </p>
-            </div>
 
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Nome</p>
                 <p class="text-gray-900 text-lg font-semibold">
                     {{ $tipoFluxo->tipo_flu_nome }}
-                </p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Movimentação</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $tipoFluxo->movimentacao->mov_nome ?? 'N/A' }}
                 </p>
             </div>
 
@@ -55,20 +42,6 @@
                 <p class="text-gray-600 text-sm">Descrição</p>
                 <p class="text-gray-900 text-lg font-semibold">
                     {{ $tipoFluxo->tipo_desc }}
-                </p>
-            </div>
-
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Criado em</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $tipoFluxo->created_at?->format('d/m/Y H:i') ?? '—' }}
-                </p>
-            </div>
-
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Última Atualização</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $tipoFluxo->updated_at?->format('d/m/Y H:i') ?? '—' }}
                 </p>
             </div>
 

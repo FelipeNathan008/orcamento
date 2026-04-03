@@ -58,34 +58,25 @@
                 <p class="text-gray-600 text-sm">Tipo de Documento:</p>
                 <p class="text-gray-900 text-lg font-semibold">{{ $cliente->clie_tipo_doc }}</p>
             </div>
-            @if ($cliente->clie_cpf)
+            @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
             <div class="mb-4">
-                @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
-                <div class="mb-4">
-                    <p class="text-gray-600 text-sm">CPF:</p>
-                    <p class="text-gray-900 text-lg font-semibold">
-                        @php
-                        $cpf = preg_replace('/\D/', '', $cliente->clie_cpf);
-                        @endphp
-                        {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf) }}
-                    </p>
-                </div>
-                @endif
+                <p class="text-gray-600 text-sm">CPF:</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @php
+                    $cpf = preg_replace('/\D/', '', $cliente->clie_cpf);
+                    @endphp
+                    {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf) }}
+                </p>
             </div>
             @endif
-            @if ($cliente->clie_cnpj)
+
+
+            @if ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
             <div class="mb-4">
-                @if ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
-                <div class="mb-4">
-                    <p class="text-gray-600 text-sm">CNPJ:</p>
-                    <p class="text-gray-900 text-lg font-semibold">
-                        @php
-                        $cnpj = preg_replace('/\D/', '', $cliente->clie_cnpj);
-                        @endphp
-                        {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
-                    </p>
-                </div>
-                @endif
+                <p class="text-gray-600 text-sm">CNPJ:</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ preg_replace('/([A-Za-z0-9]{2})([A-Za-z0-9]{3})([A-Za-z0-9]{3})([A-Za-z0-9]{4})([A-Za-z0-9]{2})/', '$1.$2.$3/$4-$5', $cliente->clie_cnpj) }}
+                </p>
             </div>
             @endif
             <div class="md:col-span-2 mb-4">

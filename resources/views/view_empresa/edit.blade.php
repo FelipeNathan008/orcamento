@@ -176,8 +176,13 @@
 <script>
     $(document).ready(function() {
         // Máscara para CNPJ
-        $('#emp_cnpj').mask('00.000.000/0000-00');
-        // Certifica-se de que o valor já existente seja mascarado
+        $('#emp_cnpj').mask('AA.AAA.AAA/AAAA-AA', {
+            translation: {
+                'A': {
+                    pattern: /[A-Za-z0-9]/
+                }
+            }
+        }); // Certifica-se de que o valor já existente seja mascarado
         $('#emp_cnpj').val($('#emp_cnpj').val());
 
         // Máscara para CEP

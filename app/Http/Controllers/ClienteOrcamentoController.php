@@ -99,7 +99,7 @@ class ClienteOrcamentoController extends Controller
             ]);
 
 
-            $docNumeroLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_doc_numero']);
+            $docNumeroLimpo = preg_replace('/[.\-\/]/', '', $validatedData['clie_orc_doc_numero'] ?? '');
             $celularLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_celular']);
             $telefoneLimpo = preg_replace('/\D/', '', $request->input('clie_orc_telefone'));
             $cepLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_cep']);
@@ -224,7 +224,7 @@ class ClienteOrcamentoController extends Controller
                 'clie_orc_cod_interno.unique' => 'Este código interno já pertence a outro cliente.',
             ]);
 
-            $docNumeroLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_doc_numero'] ?? '');
+            $docNumeroLimpo = preg_replace('/[.\-\/]/', '', $validatedData['clie_orc_doc_numero'] ?? '');
             $celularLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_celular'] ?? '');
             $telefoneLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_telefone'] ?? '');
             $cepLimpo = preg_replace('/\D/', '', $validatedData['clie_orc_cep'] ?? '');
@@ -256,7 +256,7 @@ class ClienteOrcamentoController extends Controller
 
             $clienteOrcamento->update($clienteOrcamentoData);
 
-            return redirect()->route('cliente_orcamento.show', $clienteOrcamento->id_co)->with('success', 'Cliente de Orçamento atualizado com sucesso!');
+            return redirect()->route('cliente_orcamento.index')->with('success', 'Cliente de Orçamento atualizado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {

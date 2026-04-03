@@ -108,7 +108,7 @@
 
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Código
+                    Pesquisar por Orçamentos
                 </label>
 
                 <div class="relative">

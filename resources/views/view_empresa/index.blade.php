@@ -25,15 +25,15 @@
                 Nova Empresa
             </a>
         </div>
-        {{-- Alerta de sucesso --}}
-        @if (session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-            <strong class="font-bold">Sucesso!</strong>
-            <span class="block sm:inline">{{ session('success') }}</span>
-        </div>
-        @endif
-    </div>
 
+    </div>
+    {{-- Alerta de sucesso --}}
+    @if (session('success'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
+        <strong class="font-bold">Sucesso!</strong>
+        <span class="block sm:inline">{{ session('success') }}</span>
+    </div>
+    @endif
     {{-- Formulário de Busca com campos separados --}}
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 
@@ -49,7 +49,7 @@
                     <input
                         type="text"
                         id="searchNameInput"
-                        placeholder="Nome do cliente..."
+                        placeholder="Nome da empresa..."
                         class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
 
                     <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"

@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\File;
 
 class CustomizacaoController extends Controller
 {
@@ -112,8 +113,14 @@ class CustomizacaoController extends Controller
             }
 
             if ($request->hasFile('cust_imagem')) {
+
                 $image = $request->file('cust_imagem');
-                $customizacaoData['cust_imagem'] = file_get_contents($image->getRealPath()); // Salva como BINARY/BLOB
+
+                $nomeImagem = time() . '_' . $image->getClientOriginalName();
+
+                $image->move(public_path('images_customizacoes'), $nomeImagem);
+
+                $customizacaoData['cust_imagem'] = $nomeImagem;
             }
 
             Customizacao::create($customizacaoData);
@@ -198,10 +205,27 @@ class CustomizacaoController extends Controller
             }
 
             if ($request->hasFile('cust_imagem')) {
+
                 $image = $request->file('cust_imagem');
-                $customizacaoData['cust_imagem'] = file_get_contents($image->getRealPath());
+
+                // apagar imagem antiga
+                if ($customizacao->cust_imagem) {
+
+                    $caminhoAntigo = public_path('images_customizacoes/' . $customizacao->cust_imagem);
+
+                    if (File::exists($caminhoAntigo)) {
+                        File::delete($caminhoAntigo);
+                    }
+                }
+
+                // salvar nova imagem
+                $nomeImagem = time() . '_' . $image->getClientOriginalName();
+
+                $image->move(public_path('images_customizacoes'), $nomeImagem);
+
+                $customizacaoData['cust_imagem'] = $nomeImagem;
             } else {
-                // Se nenhum novo arquivo foi enviado, mantenha a imagem existente
+
                 unset($customizacaoData['cust_imagem']);
             }
 
@@ -227,9 +251,20 @@ class CustomizacaoController extends Controller
     public function destroy($id)
     {
         try {
+
             $customizacao = Customizacao::findOrFail($id);
 
             $idDet = $customizacao->detalhes_orcamento_id_det;
+
+            // apagar imagem
+            if ($customizacao->cust_imagem) {
+
+                $caminhoImagem = public_path('images_customizacoes/' . $customizacao->cust_imagem);
+
+                if (File::exists($caminhoImagem)) {
+                    File::delete($caminhoImagem);
+                }
+            }
 
             $customizacao->delete();
 
@@ -239,7 +274,9 @@ class CustomizacaoController extends Controller
                 ])
                 ->with('success', 'Customização excluída com sucesso!');
         } catch (\Exception $e) {
+
             Log::error('Erro ao excluir customização: ' . $e->getMessage(), ['exception' => $e]);
+
             return redirect()->back()->with('error', 'Não foi possível excluir a Customização: ' . $e->getMessage());
         }
     }

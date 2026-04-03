@@ -44,7 +44,7 @@ class ClienteController extends Controller
         ]);
 
         // 2. Limpar os dados com máscara (remover caracteres não numéricos)
-        $docNumeroLimpo = preg_replace('/\D/', '', $validatedData['clie_doc_numero']);
+        $docNumeroLimpo = preg_replace('/[.\-\/]/', '', $validatedData['clie_doc_numero']);
         $telefoneLimpo = preg_replace('/\D/', '', $validatedData['clie_telefone']);
         $celularLimpo = preg_replace('/\D/', '', $validatedData['clie_celular']);
         $cepLimpo = preg_replace('/\D/', '', $validatedData['clie_cep']);
@@ -145,7 +145,7 @@ class ClienteController extends Controller
         ]);
 
         // 2. Limpar os dados com máscara (remover caracteres não numéricos)
-        $docNumeroLimpo = preg_replace('/\D/', '', $validatedData['clie_doc_numero'] ?? '');
+        $docNumeroLimpo = preg_replace('/[.\-\/]/', '', $validatedData['clie_doc_numero'] ?? '');
         $telefoneLimpo = preg_replace('/\D/', '', $validatedData['clie_telefone'] ?? '');
         $celularLimpo = preg_replace('/\D/', '', $validatedData['clie_celular'] ?? '');
         $cepLimpo = preg_replace('/\D/', '', $validatedData['clie_cep'] ?? '');

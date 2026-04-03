@@ -18,9 +18,9 @@ use Carbon\Carbon;
 
 class FormaPagamentoController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View|RedirectResponse
     {
-        // pega id da URL  /forma_pagamento?13
+        // Captura o ID no formato ?13
         $id = array_key_first($request->query());
 
         if (!$id) {
@@ -34,8 +34,6 @@ class FormaPagamentoController extends Controller
             ->get();
 
         foreach ($formasPagamento as $forma) {
-
-            // 1 verificar atraso e atualizar inadimplência
             foreach ($forma->detalhes as $parcela) {
 
                 $diasAtraso = Carbon::parse($parcela->det_forma_data_venc)
@@ -43,11 +41,13 @@ class FormaPagamentoController extends Controller
 
                 if ($diasAtraso > 3 && $parcela->det_situacao === 'Acordo') {
 
+                    // Atualiza a parcela
                     DetalhesFormaPag::where('id_det_forma', $parcela->id_det_forma)
                         ->update([
                             'det_situacao' => 'Inadimplencia'
                         ]);
 
+                    // Atualiza o detalhe da cobrança (se existir)
                     DetalhesCobranca::where('id_det_forma', $parcela->id_det_forma)
                         ->update([
                             'det_cobr_status' => 'Inadimplencia'
@@ -55,10 +55,10 @@ class FormaPagamentoController extends Controller
                 }
             }
 
-            // 2 parcelas elegíveis para cobrança
-            $parcelasElegiveis = $forma->detalhes->filter(function ($parcela) {
 
-                $diasAtraso = Carbon::parse($parcela->det_forma_data_venc)
+            // 2) Parcelas elegíveis para cobrança
+            $parcelasElegiveis = $forma->detalhes->filter(function ($parcela) {
+                $diasAtraso = \Carbon\Carbon::parse($parcela->det_forma_data_venc)
                     ->diffInDays(now(), false);
 
                 return $diasAtraso > 3
@@ -69,7 +69,7 @@ class FormaPagamentoController extends Controller
                 continue;
             }
 
-            // 3 definir tipo cobrança
+            // 3) Tipo de cobrança
             $tipo = $forma->tipo_pagamento_id_tipo;
 
             $tipoCobranca = match ($tipo) {
@@ -80,56 +80,41 @@ class FormaPagamentoController extends Controller
                 default => 1
             };
 
-            // 4 criar ou buscar cobrança
-            $cobranca = Cobranca::where('cobr_id_fin', $forma->financeiro_id_fin)
-                ->where('cobr_id_tipo', $tipoCobranca)
-                ->first();
-
-            if (!$cobranca) {
-
-                $cobranca = Cobranca::create([
-                    'cobr_id_fin' => $forma->financeiro_id_fin,
+            // 4) Busca ou cria cobrança
+            $cobranca = Cobranca::firstOrCreate(
+                [
+                    'cobr_id_fin'  => $forma->financeiro_id_fin,
                     'cobr_id_tipo' => $tipoCobranca,
+                ],
+                [
                     'cobr_cliente' => $forma->financeiro->fin_nome_cliente,
-                    'cobr_id_orc' => $forma->financeiro->orcamento_id_orcamento,
-                    'cobr_status' => 'Débito',
-                ]);
-            } else {
+                    'cobr_id_orc'  => $forma->financeiro->orcamento_id_orcamento,
+                    'cobr_status'  => 'Débito',
+                ]
+            );
 
-                // Se já existe cobrança quitada, volta para débito
-                if ($cobranca->cobr_status === 'Quitado') {
-                    $cobranca->update([
-                        'cobr_status' => 'Débito'
-                    ]);
-                }
-            }
-
-            // 5 criar detalhes da cobrança
+            // 5) Cria detalhes da cobrança
             foreach ($parcelasElegiveis as $parcela) {
 
-                $existe = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
+                $existeDetalhe = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
                     ->where('id_det_forma', $parcela->id_det_forma)
                     ->exists();
 
-                if (!$existe) {
-
+                if (!$existeDetalhe) {
                     DetalhesCobranca::create([
-                        'cobranca_id' => $cobranca->id_cobranca,
+                        'cobranca_id'            => $cobranca->id_cobranca,
                         'det_cobr_valor_parcela' => $parcela->det_forma_valor_parcela,
-                        'det_cobr_data_venc' => $parcela->det_forma_data_venc,
-                        'det_cobr_status' => 'Débito',
-                        'id_det_forma' => $parcela->id_det_forma
+                        'det_cobr_data_venc'     => $parcela->det_forma_data_venc,
+                        'det_cobr_status'        => 'Débito',
+                        'id_det_forma'           => $parcela->id_det_forma
                     ]);
                 }
             }
         }
 
-        return view('view_forma_pagamento.index', compact(
-            'formasPagamento',
-            'financeiros',
-            'id'
-        ));
+        return view('view_forma_pagamento.index', compact('formasPagamento', 'financeiros', 'id'));
     }
+
 
 
     public function darBaixa($id)
@@ -141,11 +126,9 @@ class FormaPagamentoController extends Controller
         }
 
         // 🔹 Define o novo status conforme a situação atual
-        if (in_array($parcela->det_situacao, ['Acordo', 'Inadimplencia'])) {
-            $novoStatus = 'Quitado';
-        } else {
-            $novoStatus = 'Pago';
-        }
+        $novoStatus = ($parcela->det_situacao === 'Acordo')
+            ? 'Quitado'
+            : 'Pago';
 
         // 🔹 Atualiza a parcela
         $parcela->det_situacao = $novoStatus;
@@ -167,18 +150,20 @@ class FormaPagamentoController extends Controller
             ->where('cobr_id_tipo', $tipoCobranca)
             ->first();
 
+        // 🔹 Atualiza o detalhe da cobrança apenas se existir
         if ($cobranca) {
-
             DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
                 ->where('id_det_forma', $parcela->id_det_forma)
                 ->update([
                     'det_cobr_status' => 'Quitado'
                 ]);
 
+            // Verifica se ainda existe parcela em débito ou inadimplência
             $existePendente = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
                 ->whereIn('det_cobr_status', ['Débito', 'Inadimplencia'])
                 ->exists();
 
+            // Só marca cobrança como quitada se NÃO existir pendente
             if (!$existePendente) {
                 $cobranca->update([
                     'cobr_status' => 'Quitado'
@@ -194,15 +179,11 @@ class FormaPagamentoController extends Controller
     {
         $parcela = DetalhesFormaPag::findOrFail($id);
 
-        // 🔹 regra de retorno
-        if ($parcela->det_situacao === 'Quitado') {
-            $parcela->det_situacao = 'Acordo';
-        } else {
-            $parcela->det_situacao = 'Não pago';
-        }
-
+        // Atualiza parcela
+        $parcela->det_situacao = 'Não pago';
         $parcela->save();
 
+        // Tipo cobrança
         $tipo = $parcela->formaPagamento->tipo_pagamento_id_tipo;
 
         $tipoCobranca = match ($tipo) {
@@ -213,22 +194,26 @@ class FormaPagamentoController extends Controller
             default => 1
         };
 
+        // Busca cobrança
         $cobranca = Cobranca::where('cobr_id_fin', $parcela->formaPagamento->financeiro_id_fin)
             ->where('cobr_id_tipo', $tipoCobranca)
             ->first();
 
         if ($cobranca) {
 
+            // Atualiza detalhe da cobrança
             DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
                 ->where('id_det_forma', $parcela->id_det_forma)
                 ->update([
                     'det_cobr_status' => 'Débito'
                 ]);
 
+            // Se existir parcela em débito ou inadimplência
             $existePendente = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
                 ->whereIn('det_cobr_status', ['Débito', 'Inadimplencia'])
                 ->exists();
 
+            // Volta a cobrança para Débito
             if ($existePendente) {
                 $cobranca->update([
                     'cobr_status' => 'Débito'
@@ -236,8 +221,9 @@ class FormaPagamentoController extends Controller
             }
         }
 
-        return back()->with('success', 'Parcela atualizada com sucesso!');
+        return back()->with('success', 'Parcela marcada como NÃO paga.');
     }
+
 
     public function create(Request $request)
     {
@@ -256,12 +242,6 @@ class FormaPagamentoController extends Controller
     public function store(Request $request)
     {
         try {
-
-            $request->merge([
-                'forma_valor' => str_replace(['R$', '.', ','], ['', '', '.'], $request->forma_valor)
-            ]);
-
-
             $validatedData = $request->validate([
                 'financeiro_id_fin' => 'required|exists:financeiro,id_fin',
                 'tipo_pagamento_id_tipo' => 'required|exists:tipo_pagamento,id_tipo_pagamento',
@@ -327,6 +307,90 @@ class FormaPagamentoController extends Controller
     }
 
 
+    public function edit($id)
+    {
+        $formaPagamento = FormaPagamento::findOrFail($id);
+
+        $financeiros = Financeiro::all();
+        $tiposPagamento = TipoPagamento::all();
+        $formasPagamento = FormaPagamento::all();
+
+        return view('view_forma_pagamento.edit', compact(
+            'formasPagamento',
+            'formaPagamento',
+            'financeiros',
+            'tiposPagamento'
+        ));
+    }
+
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $formaPagamento = FormaPagamento::findOrFail($id);
+            $financeiro = Financeiro::findOrFail($request->financeiro_id_fin);
+
+            $valorTotal = $financeiro->fin_valor_total;
+
+            $valorPagoOutros = FormaPagamento::where('financeiro_id_fin', $request->financeiro_id_fin)
+                ->where('id_forma_pag', '!=', $id)
+                ->sum('forma_valor');
+
+            $valorMaximo = $valorTotal - $valorPagoOutros;
+
+            $request->validate(
+                [
+                    'financeiro_id_fin' => 'required|exists:financeiro,id_fin',
+                    'tipo_pagamento_id_tipo' => 'required|exists:tipo_pagamento,id_tipo_pagamento',
+                    'forma_valor' => "required|numeric|min:0|max:$valorMaximo",
+                    'forma_mes' => 'required|integer|min:1|max:12',
+                    'forma_descricao' => 'required|string|max:120',
+                    'forma_prazo' => 'required|string|max:45',
+                    'forma_qtd_parcela' => 'required|integer|min:1',
+                ],
+                [
+                    'forma_valor.max' => "O valor deve ser menor ou igual ao valor faltante: R$ " . number_format($valorMaximo, 2, ',', '.')
+                ]
+            );
+
+            $formaPagamento->update($request->all());
+
+            $valorPagoTotal = FormaPagamento::where('financeiro_id_fin', $request->financeiro_id_fin)
+                ->sum('forma_valor');
+
+            // Buscar status reais
+            $aguardando = DB::table('status_mercadoria')->where('id_status_merc', 1)->value('status_merc_nome');
+            $realizado  = DB::table('status_mercadoria')->where('id_status_merc', 2)->value('status_merc_nome');
+
+            // Atualizar status
+            $financeiro->fin_status = ($valorPagoTotal >= $valorTotal) ? $realizado : $aguardando;
+            $financeiro->save();
+
+            // ATUALIZAR LOG_STATUS
+            if ($valorPagoTotal >= $valorTotal) {
+                DB::table('log_status')
+                    ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
+                    ->where('status_mercadoria_id_status', 2)        // Onde status atual é 2
+                    ->update([
+                        'log_situacao' => 1
+                    ]);
+            } else {
+                DB::table('log_status')
+                    ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
+                    ->where('status_mercadoria_id_status', 2)        // Onde status atual é 2
+                    ->update([
+                        'log_situacao' => 0
+                    ]);
+            }
+
+
+            return redirect()->route('forma_pagamento.index', ['search' => $formaPagamento->financeiro_id_fin])
+                ->with('success', 'Forma de Pagamento atualizada com sucesso!');
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->errors())->withInput();
+        }
+    }
+
 
     public function destroy($id)
     {
@@ -388,6 +452,12 @@ class FormaPagamentoController extends Controller
             ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
             ->where('status_mercadoria_id_status', 2)
             ->update(['log_situacao' => ($valorPagoTotal >= $valorTotal) ? 1 : 0]);
+
+        // Redirecionamento
+        if (!FormaPagamento::where('financeiro_id_fin', $financeiroId)->exists()) {
+            return redirect('/forma_pagamento')
+                ->with('success', 'Forma de Pagamento removida com sucesso!');
+        }
 
         return redirect('/forma_pagamento?' . $financeiroId)
             ->with('success', 'Forma de Pagamento removida com sucesso!');

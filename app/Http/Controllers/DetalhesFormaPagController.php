@@ -48,7 +48,6 @@ class DetalhesFormaPagController extends Controller
     {
         try {
 
-            // Validação do primeiro campo
             $validated = $request->validate([
                 'id_forma_pag' => 'required|exists:forma_pagamento,id_forma_pag',
                 'datas_parcelas' => 'required|array|min:1',
@@ -59,7 +58,6 @@ class DetalhesFormaPagController extends Controller
             $datas = $request->datas_parcelas;
             $valores = $request->valores_parcelas;
 
-            // Salvar cada parcela separadamente
             foreach ($datas as $index => $data) {
                 DetalhesFormaPag::create([
                     'id_forma_pag' => $idForma,
@@ -68,13 +66,18 @@ class DetalhesFormaPagController extends Controller
                 ]);
             }
 
-            return redirect()
-                ->route('detalhes_forma_pag.index')
+            // 🔹 BUSCA O FINANCEIRO DA FORMA DE PAGAMENTO
+            $forma = FormaPagamento::findOrFail($idForma);
+            $id_fin = $forma->financeiro_id_fin;
+
+            // 🔹 VOLTA PARA A MESMA TELA DO FORMA PAGAMENTO
+            return redirect('/forma_pagamento?' . $id_fin)
                 ->with('success', 'Parcelas cadastradas com sucesso!');
         } catch (ValidationException $e) {
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-            return back()->with('error', 'Erro ao criar parcelas: ' . $e->getMessage())
+            return back()
+                ->with('error', 'Erro ao criar parcelas: ' . $e->getMessage())
                 ->withInput();
         }
     }

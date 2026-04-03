@@ -31,9 +31,14 @@
                 <div class="mt-6">
                     <label for="clie_orc_email"
                         class="block text-sm font-medium text-custom-dark-text mb-1">E-mail</label>
-                    <input type="email" name="clie_orc_email" id="clie_orc_email"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
-                        placeholder="nome@exemplo.com" maxlength="85" value="{{ old('clie_orc_email') }}" required>
+                    <input type="email"
+                        name="clie_orc_email"
+                        id="clie_orc_email"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="nome@exemplo.com"
+                        maxlength="85"
+                        value="{{ old('clie_orc_email') }}"
+                        required>
                     @error('clie_orc_email')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -43,9 +48,13 @@
                 <div class="mt-6">
                     <label for="clie_orc_logradouro"
                         class="block text-sm font-medium text-custom-dark-text mb-1">Logradouro</label>
-                    <input type="text" name="clie_orc_logradouro" id="clie_orc_logradouro"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
-                        placeholder="Rua, Avenida, etc." maxlength="100" value="{{ old('clie_orc_logradouro') }}"
+                    <input type="text"
+                        name="clie_orc_logradouro"
+                        id="clie_orc_logradouro"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="Rua, Avenida, etc."
+                        maxlength="100"
+                        value="{{ old('clie_orc_logradouro') }}"
                         required>
                     @error('clie_orc_logradouro')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -54,11 +63,15 @@
 
                 {{-- Campo Bairro --}}
                 <div class="mt-6">
-                    <label for="clie_orc_bairro"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">Bairro</label>
-                    <input type="text" name="clie_orc_bairro" id="clie_orc_bairro"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
-                        placeholder="Nome do bairro" maxlength="80" value="{{ old('clie_orc_bairro') }}" required>
+                    <label for="clie_orc_bairro" class="block text-sm font-medium text-custom-dark-text mb-1">Bairro</label>
+                    <input type="text"
+                        name="clie_orc_bairro"
+                        id="clie_orc_bairro"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="Nome do bairro"
+                        maxlength="80"
+                        value="{{ old('clie_orc_bairro') }}"
+                        required>
                     @error('clie_orc_bairro')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -66,11 +79,15 @@
 
                 {{-- Campo Cidade --}}
                 <div class="mt-6">
-                    <label for="clie_orc_cidade"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">Cidade</label>
-                    <input type="text" name="clie_orc_cidade" id="clie_orc_cidade"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
-                        placeholder="Nome da cidade" maxlength="60" value="{{ old('clie_orc_cidade') }}" required>
+                    <label for="clie_orc_cidade" class="block text-sm font-medium text-custom-dark-text mb-1">Cidade</label>
+                    <input type="text"
+                        name="clie_orc_cidade"
+                        id="clie_orc_cidade"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="Nome da cidade"
+                        maxlength="60"
+                        value="{{ old('clie_orc_cidade') }}"
+                        required>
                     @error('clie_orc_cidade')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -81,15 +98,21 @@
             <div>
                 {{-- Campo Tipo de Documento --}}
                 <div>
-                    <label for="clie_orc_tipo_doc" class="block text-sm font-medium text-custom-dark-text mb-1">Tipo de
-                        Documento</label>
-                    <select name="clie_orc_tipo_doc" id="clie_orc_tipo_doc"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
+                    <label for="clie_orc_tipo_doc" class="block text-sm font-medium text-custom-dark-text mb-1">
+                        Tipo de Documento
+                    </label>
+
+                    <select name="clie_orc_tipo_doc"
+                        id="clie_orc_tipo_doc"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
                         required>
-                        <option value="" class="text-gray-400">Selecione</option>
+
+                        <option value="">Selecione</option>
                         <option value="CPF" {{ old('clie_orc_tipo_doc') == 'CPF' ? 'selected' : '' }}>CPF</option>
                         <option value="CNPJ" {{ old('clie_orc_tipo_doc') == 'CNPJ' ? 'selected' : '' }}>CNPJ</option>
+
                     </select>
+
                     @error('clie_orc_tipo_doc')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -97,12 +120,22 @@
 
                 {{-- Campo Número do Documento --}}
                 <div class="mt-6">
-                    <label for="clie_orc_doc_numero" class="block text-sm font-medium text-custom-dark-text mb-1">Número
-                        do Documento</label>
-                    <input type="text" name="clie_orc_doc_numero" id="clie_orc_doc_numero"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
-                        placeholder="Informe o número do documento" maxlength="18"
-                        value="{{ old('clie_orc_doc_numero') }}" required>
+                    <label for="clie_orc_doc_numero"
+                        class="block text-sm font-medium text-custom-dark-text mb-1">
+
+                        Número do Documento
+
+                    </label>
+
+                    <input type="text"
+                        name="clie_orc_doc_numero"
+                        id="clie_orc_doc_numero"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="Informe o número do documento"
+                        maxlength="18"
+                        value="{{ old('clie_orc_doc_numero') }}"
+                        required>
+
                     @error('clie_orc_doc_numero')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -116,7 +149,7 @@
                             class="block text-sm font-medium text-custom-dark-text mb-1">Número
                             Celular</label>
                         <input type="text" name="clie_orc_celular" id="clie_orc_celular"
-                            class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
+                            class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
                             placeholder="(XX) XXXXX-XXXX" maxlength="15" required value="{{ old('clie_orc_celular') }}">
                         @error('clie_orc_celular')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -141,21 +174,33 @@
 
                 {{-- Campo CEP --}}
                 <div class="mt-6">
-                    <label for="clie_orc_cep" class="block text-sm font-medium text-custom-dark-text mb-1">CEP</label>
-                    <input type="text" name="clie_orc_cep" id="clie_orc_cep"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
-                        placeholder="XXXXX-XXX" maxlength="9" value="{{ old('clie_orc_cep') }}" required>
+                    <label for="clie_orc_cep"
+                        class="block text-sm font-medium text-custom-dark-text mb-1">
+
+                        CEP
+
+                    </label>
+
+                    <input type="text"
+                        name="clie_orc_cep"
+                        id="clie_orc_cep"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="XXXXX-XXX"
+                        maxlength="9"
+                        value="{{ old('clie_orc_cep') }}"
+                        required>
+
                     @error('clie_orc_cep')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
-
                 {{-- Campo UF --}}
                 <div class="mt-6">
                     <label for="clie_orc_uf" class="block text-sm font-medium text-custom-dark-text mb-1">UF
                         (Estado)</label>
-                    <select name="clie_orc_uf" id="clie_orc_uf"
-                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
+                    <select name="clie_orc_uf"
+                        id="clie_orc_uf"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
                         required>
                         <option value="" class="text-gray-400">Selecione o Estado</option>
                         <option value="AC" {{ old('clie_orc_uf') == 'AC' ? 'selected' : '' }}>Acre</option>
@@ -197,13 +242,15 @@
         <div class="md:col-span-2 mt-6">
             <label for="clie_orc_cod_interno"
                 class="block text-sm font-medium text-custom-dark-text mb-1">
+
                 Código Interno
+
             </label>
 
             <input type="text"
                 name="clie_orc_cod_interno"
                 id="clie_orc_cod_interno"
-                class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150" placeholder="Nome completo do cliente" maxlength="80" value="{{ old('clie_orc_nome') }}"
+                class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
                 placeholder="Informe o código interno"
                 maxlength="60"
                 value="{{ old('clie_orc_cod_interno') }}">
@@ -254,7 +301,13 @@
                 docNumero.attr('placeholder', '000.000.000-00');
                 docNumero.attr('maxlength', '14');
             } else if (type === 'CNPJ') {
-                docNumero.mask('00.000.000/0000-00');
+                docNumero.mask('AA.AAA.AAA/AAAA-AA', {
+                    translation: {
+                        'A': {
+                            pattern: /[A-Za-z0-9]/
+                        }
+                    }
+                });
                 docNumero.attr('placeholder', '00.000.000/0000-00');
                 docNumero.attr('maxlength', '18');
             } else {

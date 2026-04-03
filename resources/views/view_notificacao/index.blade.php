@@ -118,7 +118,6 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Forma Pagamento</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Tipo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Descrição</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Criado em</th>
                     <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase">Ações</th>
                 </tr>
             </thead>
@@ -168,11 +167,6 @@
                     {{-- Descrição --}}
                     <td class="px-4 py-4 text-sm text-gray-900 truncate max-w-xs">
                         {{ $notificacao->not_descricao }}
-                    </td>
-
-                    {{-- Data --}}
-                    <td class="px-4 py-4 text-sm text-gray-900">
-                        {{ $notificacao->created_at->format('d/m/Y H:i') }}
                     </td>
 
                     {{-- Ações --}}

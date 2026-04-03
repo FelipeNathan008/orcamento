@@ -232,7 +232,13 @@
                 docNumero.attr('placeholder', '000.000.000-00');
                 docNumero.attr('maxlength', '14');
             } else if (type === 'CNPJ') {
-                docNumero.mask('00.000.000/0000-00');
+                docNumero.mask('AA.AAA.AAA/AAAA-AA', {
+                    translation: {
+                        'A': {
+                            pattern: /[A-Za-z0-9]/
+                        }
+                    }
+                });
                 docNumero.attr('placeholder', '00.000.000/0000-00');
                 docNumero.attr('maxlength', '18');
             } else {

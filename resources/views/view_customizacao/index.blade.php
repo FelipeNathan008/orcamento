@@ -138,8 +138,7 @@
 
                     <td class="px-4 py-4 text-sm text-gray-800">
                         @if($customizacao->cust_imagem)
-                        <img
-                            src="data:image/jpeg;base64,{{ base64_encode($customizacao->cust_imagem) }}"
+                        <img src="{{ asset('images_customizacoes/' . $customizacao->cust_imagem) }}"
                             class="w-16 h-16 object-cover rounded shadow">
 
                         @else

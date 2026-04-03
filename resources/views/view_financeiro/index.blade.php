@@ -258,7 +258,7 @@
 
                 {{-- LINHA OCULTA STATUS --}}
                 <tr id="status-{{ $fin->id_fin }}" class="hidden">
-                    <td colspan="5" class="px-6 py-4 text-sm text-gray-700">
+                    <td colspan="6" class="px-6 py-4 text-sm text-gray-700">
 
                         @if($fin->logs->isEmpty())
                         <p class="text-center text-gray-500">Nenhum status encontrado.</p>

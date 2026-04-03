@@ -1,48 +1,54 @@
-{{-- resources/views/view_forma_pagamento/index.blade.php --}}
 @extends('layouts.app_financeiro')
 
 @section('title', 'Formas de Pagamento')
 
 @section('content')
+@php
+$idFin = array_key_first(request()->query());
+@endphp
+{{-- RESUMO FINANCEIRO --}}
+@if($idFin)
+@php
+$financeiroSelecionado = $financeiros->firstWhere('id_fin', $idFin);
+$formasDoFinanceiro = $formasPagamento->where('financeiro_id_fin', $idFin);
+$valorPago = $formasDoFinanceiro->sum('forma_valor');
+$valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
+$valorFaltante = max($valorTotal - $valorPago, 0);
+@endphp
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
-    {{-- HEADER --}}
-    @php
-    $idFin = array_key_first(request()->query());
-    @endphp
-
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+
         <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Formas de Pagamento
         </h1>
 
-        <div class="flex space-x-2">
-            {{-- VOLTAR --}}
+        <div class="flex items-center gap-3">
+
             <a href="{{ route('financeiro.index') }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400">
                 VOLTAR
             </a>
 
-            {{-- NOVA FORMA --}}
+            @if($valorFaltante > 0)
             <a href="{{ route('forma_pagamento.create', ['financeiro_id' => $id]) }}"
-                class="px-4 py-2 text-sm font-medium rounded-md text-white shadow-sm"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
                 style="background-color: #EA792D;">
-                Nova Forma de Pagamento
+                Nova Forma
             </a>
+            @endif
+
         </div>
+
     </div>
 
+    {{-- ALERTA --}}
+    @if (session('success'))
+    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
+        {{ session('success') }}
+    </div>
+    @endif
 
-
-    {{-- RESUMO FINANCEIRO --}}
-    @if($idFin)
-    @php
-    $financeiroSelecionado = $financeiros->firstWhere('id_fin', $idFin);
-    $formasDoFinanceiro = $formasPagamento->where('financeiro_id_fin', $idFin);
-    $valorPago = $formasDoFinanceiro->sum('forma_valor');
-    $valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
-    $valorFaltante = max($valorTotal - $valorPago, 0);
-    @endphp
     @if($idFin && isset($financeiroSelecionado))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
@@ -67,7 +73,7 @@
             </div>
 
 
-             <div>
+            <div>
                 <p class="text-gray-600">ID Orçamento</p>
                 <p class="font-semibold text-gray-900">
                     {{ $financeiroSelecionado->orcamento_id_orcamento}}
@@ -92,30 +98,27 @@
         </div>
     </div>
     @endif
-
-    {{-- SUCESSO --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
-        <strong>Sucesso!</strong> {{ session('success') }}
-    </div>
-    @endif
-
-    {{-- SEM FORMAS --}}
+    {{-- SEM PAGAMENTOS --}}
     @if ($formasPagamento->isEmpty())
-    <p class="text-gray-600 text-center py-8">Nenhuma forma de pagamento cadastrada.</p>
+
+    <p class="text-gray-600 text-center py-8">
+        Nenhuma forma de pagamento cadastrada.
+    </p>
+
     @else
 
-    {{-- TABELA PRINCIPAL --}}
+    {{-- TABELA --}}
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
+
         <table class="min-w-full divide-y divide-gray-200">
+
             <thead class="bg-table-header-bg">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">ID Forma Pag</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">ID</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Tipo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Prazo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Parcelas</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Valor Parcela</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Competência</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Valor</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Descrição</th>
                     <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase">Ações</th>
                 </tr>
@@ -124,19 +127,36 @@
             <tbody class="bg-white divide-y divide-gray-200">
 
                 @foreach ($formasPagamento as $forma)
+
                 <tr>
-                    <td class="px-4 py-4 text-sm">{{ $forma->id_forma_pag }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $forma->tipoPagamento?->tipo_plano_fin ?? '—' }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $forma->forma_prazo }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $forma->forma_qtd_parcela }}</td>
-                    <td class="px-4 py-4 text-sm">R$ {{ number_format($forma->forma_valor, 2, ',', '.') }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $forma->forma_mes }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $forma->forma_descricao }}</td>
+
+                    <td class="px-4 py-4 text-sm">
+                        {{ $forma->id_forma_pag }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm">
+                        {{ $forma->tipoPagamento?->tipo_plano_fin }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm">
+                        {{ $forma->forma_prazo }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm">
+                        {{ $forma->forma_qtd_parcela }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm">
+                        R$ {{ number_format($forma->forma_valor,2,',','.') }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm">
+                        {{ $forma->forma_descricao }}
+                    </td>
 
                     <td class="px-2 py-4 text-center">
-                        <div class="flex justify-center space-x-2">
+                        <div class="flex justify-center items-center gap-2 flex-wrap">
 
-                            {{-- BOTÃO VER PARCELAS --}}
                             @if($forma->forma_prazo === 'Parcelado')
                             <button
                                 class="parcelas-btn px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
@@ -145,7 +165,6 @@
                             </button>
                             @endif
 
-                            {{-- EXCLUIR --}}
                             <form action="{{ route('forma_pagamento.destroy', $forma->id_forma_pag) }}" method="POST"
                                 onsubmit="return confirm('Tem certeza que deseja excluir esta forma de pagamento?');">
                                 @csrf
@@ -158,159 +177,146 @@
                         </div>
                     </td>
                 </tr>
-
-                {{-- LINHA EXPANDIDA DAS PARCELAS --}}
+                {{-- PARCELAS --}}
                 <tr id="parcelas-{{ $forma->id_forma_pag }}" class="hidden">
-                    <td colspan="9" class="bg-blue-50 p-4">
 
-                        <h3 class="text-lg font-bold text-blue-800 mb-3 flex items-center gap-2">
-                            Parcelas da Forma de Pagamento
-
-                            <!-- Ícone com tooltip via JS -->
-                            <button
-                                onclick="alert('Atenção! Não é possível alterar ou excluir parcelas diretamente por aqui.\nPara corrigir, você deve excluir a forma de pagamento e criar uma nova corretamente.');"
-                                class="text-white bg-blue-600 hover:bg-blue-700 rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold cursor-pointer"
-                                title="Informações">
-                                ?
-                            </button>
+                    <td colspan="7" class="bg-blue-50 p-4">
+                        <h3 class="text-lg font-bold text-blue-800 mb-3">
+                            Parcelas
                         </h3>
+                        @if($forma->detalhes->isEmpty())
 
-
-                        @php
-                        $parcelas = $forma->detalhes;
-                        @endphp
-
-                        @if($parcelas->isEmpty())
-                        <p class="text-gray-600 text-sm">Nenhuma parcela cadastrada.</p>
+                        <p class="text-gray-600 text-sm">
+                            Nenhuma parcela cadastrada.
+                        </p>
                         @else
                         <table class="min-w-full divide-y divide-gray-200 bg-white shadow rounded-md">
+
                             <thead class="bg-gray-200">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Valor</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Vencimento</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Situação</th>
-                                    <th class="px-4 py-2 text-center text-xs font-bold uppercase">Ações</th>
+                                    <th class="px-4 py-2 text-xs font-bold uppercase">Valor</th>
+                                    <th class="px-4 py-2 text-xs font-bold uppercase">Vencimento</th>
+                                    <th class="px-4 py-2 text-xs font-bold uppercase">Situação</th>
+                                    <th class="px-4 py-2 text-xs font-bold uppercase">Ações</th>
                                 </tr>
                             </thead>
 
-                            <tbody class="divide-y divide-gray-200">
-                                @foreach ($parcelas as $parcela)
-                                @php
-                                $estaVencida = \Carbon\Carbon::parse($parcela->det_forma_data_venc)->isPast();
-                                @endphp
+                            <tbody>
 
-                                @php
-                                $dataVenc = \Carbon\Carbon::parse($parcela->det_forma_data_venc);
-                                $hoje = \Carbon\Carbon::today();
-                                $diasAtraso = $dataVenc->diffInDays($hoje, false);
+                                @foreach($forma->detalhes as $parcela)
 
-                                $classeVencido = '';
+                                <tr>
 
-                                // Status que NÃO devem ter cor
-                                if (in_array($parcela->det_situacao, ['Pago', 'Quitado'])) {
-                                $classeVencido = '';
-                                }
-                                elseif ($diasAtraso > 0 && $diasAtraso <= 3) {
-                                    // Amarelo (atraso leve)
-                                    $classeVencido='bg-yellow-200 text-yellow-800 font-semibold' ;
+                                    <td class="px-4 py-2 text-sm">
+                                        R$ {{ number_format($parcela->det_forma_valor_parcela,2,',','.') }}
+                                    </td>
+
+                                    @php
+                                    $vencimento = \Carbon\Carbon::parse($parcela->det_forma_data_venc);
+                                    $hoje = \Carbon\Carbon::today();
+                                    $diasAtraso = $vencimento->diffInDays($hoje, false);
+
+                                    $classeVencimento = '';
+
+                                    if(!in_array($parcela->det_situacao, ['Pago','Quitado'])){
+
+                                    if($diasAtraso > 3){
+                                    $classeVencimento = 'bg-red-200 text-red-800 font-semibold';
                                     }
-                                    elseif ($diasAtraso> 3) {
-                                    // Vermelho (atraso grave)
-                                    $classeVencido = 'bg-red-300 text-red-800 font-bold';
+                                    elseif($diasAtraso > 0){
+                                    $classeVencimento = 'bg-yellow-200 text-yellow-800 font-semibold';
+                                    }
+
                                     }
                                     @endphp
 
+                                    <td class="px-4 py-2 text-sm {{ $classeVencimento }}">
+                                        {{ $vencimento->format('d/m/Y') }}
+                                    </td>
+                                    @php
+                                    $status = $parcela->det_situacao;
 
+                                    if(
+                                    $diasAtraso > 3 &&
+                                    $status === 'Acordo' &&
+                                    !in_array($status, ['Pago','Quitado'])
+                                    ){
+                                    $status = 'Inadimplencia';
+                                    }
+                                    @endphp
+                                    @php
+                                    $corStatus = match($status) {
+                                    'Pago', 'Quitado' => 'bg-green-100 text-green-700',
+                                    'Não pago' => 'bg-yellow-100 text-yellow-700',
+                                    'Acordo' => 'bg-blue-100 text-blue-700',
+                                    'Inadimplencia' => 'bg-red-100 text-red-700',
+                                    default => 'bg-gray-100 text-gray-700'
+                                    };
+                                    @endphp
 
-                                    <tr class="{{ $classeVencido }}">
-                                        <td class="px-4 py-2 text-sm">
-                                            R$ {{ number_format($parcela->det_forma_valor_parcela, 2, ',', '.') }}
-                                        </td>
+                                    <td class="px-4 py-2 text-sm">
+                                        <span class="px-2 py-1 rounded-md text-xs font-semibold {{ $corStatus }}">
+                                            {{ $status }} </span>
+                                    </td>
 
-                                        <td class="px-4 py-2 text-sm">
-                                            {{ \Carbon\Carbon::parse($parcela->det_forma_data_venc)->format('d/m/Y') }}
-                                        </td>
+                                    <td class="px-4 py-2 text-sm text-center">
+                                        <div class="flex justify-center items-center gap-2 flex-wrap">
 
-                                        <td class="px-4 py-2 text-sm">
-                                            {{ $parcela->det_situacao }}
-                                        </td>
-
-                                        <td class="px-4 py-2 text-center">
-
-                                            @if($parcela->det_situacao === 'Pago' ||$parcela->det_situacao === 'Quitado' )
-
-                                            <form action="{{ route('parcelas.voltarNaoPago', $parcela->id_det_forma) }}" method="POST">
+                                            {{-- DAR BAIXA --}}
+                                            @if(in_array($parcela->det_situacao, ['Não pago','Acordo','Inadimplencia']))
+                                            <form action="{{ route('parcelas.darBaixa', $parcela->id_det_forma) }}" method="POST"
+                                                onsubmit="return confirm('Tem certeza que deseja Dar Baixa nesta parcela?');">
                                                 @csrf
-                                                <button
-                                                    class="px-2 py-1 text-xs rounded-md text-white"
-                                                    style="background-color: #f59e0b;"
-                                                    onclick="return confirm('Deseja marcar esta parcela como NÃO paga?');">
-                                                    Voltar para Não Pago
-                                                </button>
-                                            </form>
-                                            @endif
-
-                                            @if($parcela->det_situacao === 'Não pago' || $parcela->det_situacao === 'Acordo')
-
-                                            <form action="{{ route('parcelas.darBaixa', $parcela->id_det_forma) }}" method="POST">
-                                                @csrf
-                                                <button
-                                                    class="px-2 py-1 text-xs rounded-md text-white"
-                                                    style="background-color: #22c55e;"
-                                                    onclick="return confirm('Confirmar baixa desta parcela?');">
+                                                <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                                     Dar Baixa
                                                 </button>
                                             </form>
-
                                             @endif
 
+                                            {{-- VOLTAR --}}
+                                            @if(in_array($parcela->det_situacao, ['Pago','Quitado']))
+                                            <form action="{{ route('parcelas.voltarNaoPago', $parcela->id_det_forma) }}" method="POST"
+                                                onsubmit="return confirm('Tem certeza que deseja Voltar Para Não Pago esta parcela?');">
+                                                @csrf
+                                                <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+                                                    Voltar Para Não Pago
+                                                </button>
+                                            </form>
+                                            @endif
 
-                                        </td>
-                                    </tr>
+                                        </div>
+                                    </td>
 
-
-                                    @endforeach
+                                </tr>
+                                @endforeach
                             </tbody>
-
-
                         </table>
                         @endif
                     </td>
                 </tr>
-
                 @endforeach
-
             </tbody>
         </table>
     </div>
     @endif
+
 </div>
 
-{{-- SCRIPT VER PARCELAS --}}
+{{-- SCRIPT --}}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        document.querySelectorAll('.parcelas-btn').forEach(function(btn) {
-
-            btn.addEventListener('click', function() {
-
-                const id = btn.dataset.id;
-
-                // Fechar TODAS as outras linhas
-                document.querySelectorAll('[id^="parcelas-"]').forEach(function(row) {
-                    if (row.id !== 'parcelas-' + id) {
-                        row.classList.add('hidden');
-                    }
-                });
-
-                // Alternar a linha clicada
-                const row = document.getElementById('parcelas-' + id);
-                if (row) row.classList.toggle('hidden');
-
-            });
-        });
-
-    });
+    document.querySelectorAll('.parcelas-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id
+            document.querySelectorAll('[id^="parcelas-"]').forEach(row => {
+                if (row.id !== 'parcelas-' + id) {
+                    row.classList.add('hidden')
+                }
+            })
+            const row = document.getElementById('parcelas-' + id)
+            if (row) {
+                row.classList.toggle('hidden')
+            }
+        })
+    })
 </script>
-
 @endsection

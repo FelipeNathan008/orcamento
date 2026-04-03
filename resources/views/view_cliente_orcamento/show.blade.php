@@ -43,7 +43,7 @@
                 <p class="text-gray-600 text-sm">Tipo de Documento:</p>
                 <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_tipo_doc }}</p>
             </div>
-            @if ($clienteOrcamento->clie_orc_cpf)
+            @if ($clienteOrcamento->clie_orc_tipo_doc === 'CPF' && $clienteOrcamento->clie_orc_cpf)
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CPF:</p>
                 <p class="text-gray-900 text-lg font-semibold">
@@ -51,11 +51,11 @@
                 </p>
             </div>
             @endif
-            @if ($clienteOrcamento->clie_orc_cnpj)
+            @if ($clienteOrcamento->clie_orc_tipo_doc === 'CNPJ' && $clienteOrcamento->clie_orc_cnpj)
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">CNPJ:</p>
                 <p class="text-gray-900 text-lg font-semibold">
-                    {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_cnpj)) }}
+                    {{ preg_replace('/([A-Za-z0-9]{2})([A-Za-z0-9]{3})([A-Za-z0-9]{3})([A-Za-z0-9]{4})([A-Za-z0-9]{2})/', '$1.$2.$3/$4-$5', $clienteOrcamento->clie_orc_cnpj) }}
                 </p>
             </div>
             @endif
