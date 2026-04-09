@@ -123,18 +123,13 @@
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Prospecções</a>
                 <a href="{{ route('cliente_orcamento.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Clientes/Orçamentos</a>
-                <a href="{{ route('produto.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Produtos</a>
-
-                <a href="{{ route('preco_customizacao.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Preço
-                    Customização</a>
-                <a href="{{ route('tipo_fluxo_caixa.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Tipo Fluxo Caixa</a>
                 <a href="{{ route('fluxo_caixa.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Fluxo Caixa</a>
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Fluxo Caixa</a>
+                </a>
+                <a href="{{ route('administracao.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Administração</a>
+                </a>
+
                 <a href="{{ route('financeiro.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
                     Financeiro</a>
@@ -223,7 +218,19 @@
                     ) {
                         isActive = true;
                     }
-
+                    /* ADMINISTRAÇÃO */
+                    if (
+                        (
+                            currentPathname.startsWith('/administracao/') ||
+                            currentPathname.startsWith('/produto/') ||
+                            currentPathname.startsWith('/preco_customizacao/') ||
+                            currentPathname.startsWith('/tipo_fluxo_caixa/') ||
+                            currentPathname.startsWith('/tipo_pagamento/')
+                        ) &&
+                        linkPathname === '/administracao/'
+                    ) {
+                        isActive = true;
+                    }
 
                     if (link.id === 'layout-camiseta-nav-link') {
                         if (currentPathname.startsWith('/camisa/show_layout/')) {

@@ -57,6 +57,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     //ROUTE USERS
     Route::resource('users', UserController::class);
 
+    //ROUTE ADMIN
+    Route::get('/administracao', function () {
+        return view('administracao.index');
+    })->name('administracao.index');
+
     //ROUTE FINANCEIRO E PAGAMENTO
     Route::resource('tipo_pagamento', TipoPagamentoController::class);
     Route::resource('detalhes_forma_pag', DetalhesFormaPagController::class);
@@ -173,6 +178,12 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::resource('tipo_fluxo_caixa', TipoFluxoCaixaController::class);
 
     //ROTA PARA FLUXO CAIXA
+ 
+    Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'gerarFluxoPdfPorData']);
+
+    Route::post('/fluxo-caixa/store-fluxo', [FluxoCaixaController::class, 'storeFluxo'])
+        ->name('fluxo_caixa.storeFluxo');
+
     Route::resource('fluxo_caixa', FluxoCaixaController::class);
 });
 

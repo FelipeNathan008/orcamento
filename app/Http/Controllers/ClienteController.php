@@ -38,11 +38,10 @@ class ClienteController extends Controller
             'clie_cidade' => 'required|string|max:60',
             'clie_uf' => 'required|string|max:2',
         ], [
-            'clie_email.unique' => 'Este e-mail já está cadastrado em nosso sistema.',
+            'clie_email.unique' => 'Este e-mail já está cadastrado para outra prospecção.',
             'clie_email.required' => 'O e-mail é obrigatório.',
             'clie_email.email' => 'Por favor, informe um e-mail válido.',
         ]);
-
         // 2. Limpar os dados com máscara (remover caracteres não numéricos)
         $docNumeroLimpo = preg_replace('/[.\-\/]/', '', $validatedData['clie_doc_numero']);
         $telefoneLimpo = preg_replace('/\D/', '', $validatedData['clie_telefone']);
@@ -139,7 +138,7 @@ class ClienteController extends Controller
             $request->clie_tipo_doc === 'CPF'
                 ? 'Este CPF já pertence a outro cliente cadastrado.'
                 : 'Este CNPJ já pertence a outro cliente cadastrado.',
-            'clie_email.unique' => 'Este e-mail já está cadastrado em nosso sistema.',
+            'clie_email.unique' => 'Este e-mail já está cadastrado em outra prospecção.',
             'clie_email.required' => 'O e-mail é obrigatório.',
             'clie_email.email' => 'Por favor, informe um e-mail válido.',
         ]);

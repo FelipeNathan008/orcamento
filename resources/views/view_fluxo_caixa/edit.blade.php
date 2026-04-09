@@ -212,7 +212,7 @@
 
             this.value = 'R$ ' + value;
 
-            valorReal.value = value.replace(',', '.');
+            valorReal.value = value.replace(/\./g, '').replace(',', '.');
         });
 
     });

@@ -4,19 +4,14 @@
 @section('title', 'Cadastrar Nova Empresa')
 
 @section('content')
-{{-- Contêiner principal para centralizar o formulário e definir largura máxima --}}
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    {{-- Título do formulário, centralizado e com cor customizada --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Nova Empresa</h1>
 
-    {{-- Formulário de cadastro --}}
-    <form action="{{ route('empresa.store') }}" method="POST" class="space-y-6">
-        @csrf {{-- Proteção CSRF obrigatória no Laravel --}}
+    <form id="empresaForm" action="{{ route('empresa.store') }}" method="POST" class="space-y-6">
+        @csrf
 
-        {{-- Seção de campos do formulário organizada em layout de duas colunas (responsivo) --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- Campo Nome da Empresa - Agora ocupa duas colunas --}}
             <div class="md:col-span-2">
                 <!-- Campo Nome da Empresa -->
                 <div>
@@ -152,7 +147,7 @@
         </div>
 
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarEmpresa"
                 class="px-8 py-3 bg-button-save-bg text-white rounded-md hover:bg-button-save-hover">
                 SALVAR
             </button>
@@ -182,6 +177,17 @@
         });
         // Máscara para CEP
         $('#emp_cep').mask('00000-000');
+    });
+    $('#empresaForm').on('submit', function() {
+
+        const btn = $('#btnSalvarEmpresa');
+
+        btn.prop('disabled', true);
+
+        btn
+            .text('SALVANDO...')
+            .removeClass('hover:bg-button-save-hover')
+            .addClass('opacity-70 cursor-not-allowed');
     });
 </script>
 @endpush

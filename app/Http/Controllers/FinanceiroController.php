@@ -6,6 +6,8 @@ use App\Models\Financeiro;
 use App\Models\Orcamento;
 use App\Models\StatusMercadoria;
 use App\Models\LogStatus;
+use App\Models\Movimentacao;
+use App\Models\TipoFluxoCaixa;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
@@ -23,7 +25,19 @@ class FinanceiroController extends Controller
     {
         $financeiro = Financeiro::with(['logs.status'])->get();
 
-        return view('view_financeiro.index', compact('financeiro'));
+        foreach ($financeiro as $fin) {
+            $fin->temStatusPendente = $fin->logs->contains('log_situacao', 0);
+        }
+
+       
+        $tipos = TipoFluxoCaixa::all();
+        $movimentacoes = Movimentacao::all();
+
+        $tipoDespesaUP = TipoFluxoCaixa::where('tipo_flu_nome', 'Despesa UP')->first();
+
+        $movSaida = Movimentacao::where('mov_nome', 'Saída')->first();
+
+        return view('view_financeiro.index', compact('tipoDespesaUP', 'movSaida', 'financeiro', 'tipos', 'movimentacoes'));
     }
 
 
@@ -80,8 +94,6 @@ class FinanceiroController extends Controller
             ->route('financeiro.index')
             ->with('success', 'Status atualizado com sucesso!');
     }
-
-
 
     /**
      * Store a newly created resource in storage.

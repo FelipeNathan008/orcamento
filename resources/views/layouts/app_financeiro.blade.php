@@ -99,14 +99,9 @@
 
             <div class="flex flex-wrap gap-2">
 
-                <a href="{{ route('empresa.index') }}"
+                <a href="{{ route('dashboard') }}"
                     class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
-                    Empresas
-                </a>
-
-                <a href="{{ route('cliente_orcamento.index') }}"
-                    class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
-                    Clientes
+                    Home
                 </a>
 
                 <a href="{{ route('financeiro.index') }}"
@@ -119,13 +114,17 @@
                     Cobrança
                 </a>
 
-                 <a href="{{ route('notificacao.index') }}"
+                <a href="{{ route('notificacao.index') }}"
                     class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
                     Notificação
                 </a>
-                <a href="{{ route('tipo_pagamento.index') }}"
+
+                <a href="{{ route('fluxo_caixa.index') }}"
                     class="nav-link text-bege-construcao hover:bg-laranja-seguranca hover:text-white px-4 py-2 rounded-lg transition">
-                    Tipo Pagamento
+                    Fluxo Caixa
+                </a>
+                <a href="{{ route('administracao.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Administração</a>
                 </a>
 
             </div>
@@ -207,7 +206,15 @@
                 ) {
                     isActive = true;
                 }
-
+                if (
+                    (
+                        currentPathname.startsWith('/administracao/') ||
+                        currentPathname.startsWith('/tipo_pagamento/')
+                    ) &&
+                    linkPathname === '/administracao/'
+                ) {
+                    isActive = true;
+                }
                 if (!isActive) {
 
                     if (linkPathname === '/') {

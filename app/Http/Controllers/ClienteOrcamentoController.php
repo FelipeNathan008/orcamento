@@ -95,6 +95,7 @@ class ClienteOrcamentoController extends Controller
                     Rule::unique('cliente_orcamento', 'clie_orc_cod_interno'),
                 ],
             ], [
+                'clie_orc_email.unique' => 'Este e-mail já está cadastrado para outro cliente.',
                 'clie_orc_cod_interno.unique' => 'Este código interno já pertence a outro cliente.',
             ]);
 
@@ -221,6 +222,7 @@ class ClienteOrcamentoController extends Controller
                         ->ignore($clienteOrcamento->id_co, 'id_co'),
                 ],
             ], [
+                'clie_orc_email.unique' => 'Este e-mail já está cadastrado para outro cliente.',
                 'clie_orc_cod_interno.unique' => 'Este código interno já pertence a outro cliente.',
             ]);
 

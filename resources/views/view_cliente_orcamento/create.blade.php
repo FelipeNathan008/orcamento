@@ -7,7 +7,7 @@
     {{-- Título do formulário unificado --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Novo Cliente</h1>
 
-    <form action="{{ route('cliente_orcamento.store') }}" method="POST" id="clientForm" class="space-y-6">
+    <form action="{{ route('cliente_orcamento.store') }}" method="POST" id="clienteOrcamento" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -260,7 +260,7 @@
             @enderror
         </div>
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarClienteOrcamento"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
@@ -283,6 +283,17 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
+    $('#clienteOrcamento').on('submit', function() {
+
+        const btn = $('#btnSalvarClienteOrcamento');
+
+        btn.prop('disabled', true);
+
+        btn
+            .text('SALVANDO...')
+            .removeClass('hover:bg-button-save-hover')
+            .addClass('opacity-70 cursor-not-allowed');
+    });
     $(document).ready(function() {
         var docNumero = $('#clie_orc_doc_numero');
         var tipoDoc = $('#clie_orc_tipo_doc');
@@ -290,7 +301,7 @@
         var telefone = $('#clie_orc_telefone');
         var cep = $('#clie_orc_cep');
         var nome = $('#clie_orc_nome');
-        var formulario = $('#clientForm');
+        var formulario = $('#clienteOrcamento');
         var mensagemErroNome = $('#erroNome');
         var mensagemErroContato = $('#mensagemErroContato');
 

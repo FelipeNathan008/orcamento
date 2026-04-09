@@ -61,7 +61,7 @@
     @endif
 
     <div>
-        <form action="{{ route('orcamento.store') }}" method="POST" class="space-y-6">
+        <form id="orcamentoForm" action="{{ route('orcamento.store') }}" method="POST" class="space-y-6">
             @csrf
             {{-- Campo hidden para salvar o id --}}
             <input type="hidden" name="cliente_orcamento_id_co"
@@ -175,7 +175,7 @@
             </div>
             {{-- BOTÕES --}}
             <div class="flex justify-center mt-8">
-                <button type="submit"
+                <button type="submit" id="BtnSalvarOrcamento"
                     class="py-3 px-8 rounded-md text-white bg-button-save-bg hover:bg-button-save-hover">
                     SALVAR
                 </button>
@@ -195,28 +195,42 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // BOTÃO SALVAR
+        const form = document.getElementById('orcamentoForm');
+        const btnSalvar = document.getElementById('BtnSalvarOrcamento');
+
+        form.addEventListener('submit', function () {
+            btnSalvar.disabled = true;
+            btnSalvar.textContent = 'SALVANDO...';
+            btnSalvar.classList.remove('hover:bg-button-save-hover');
+            btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+        });
+
+
+        // CÁLCULO AUTOMÁTICO DATA FIM (+15 DIAS)
         const dataInicioInput = document.getElementById('orc_data_inicio');
         const dataFimInput = document.getElementById('orc_data_fim');
-        const form = document.querySelector('form');
 
-        if (dataInicioInput && dataFimInput) {
-            dataInicioInput.addEventListener('change', function() {
-                const dataInicioValue = this.value;
-                if (dataInicioValue) {
-                    const dataInicio = new Date(dataInicioValue + 'T00:00:00');
-                    dataInicio.setDate(dataInicio.getDate() + 15);
-                    const year = dataInicio.getFullYear();
-                    const month = String(dataInicio.getMonth() + 1).padStart(2, '0');
-                    const day = String(dataInicio.getDate()).padStart(2, '0');
-                    dataFimInput.value = `${year}-${month}-${day}`;
-                } else {
-                    dataFimInput.value = '';
-                }
-            });
-        }
+        dataInicioInput.addEventListener('change', function () {
+            if (this.value) {
+                const dataInicio = new Date(this.value + 'T00:00:00');
 
-        // --- Mostrar/ocultar o campo "Motivo da Rejeição" ---
+                dataInicio.setDate(dataInicio.getDate() + 15);
+
+                const ano = dataInicio.getFullYear();
+                const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
+                const dia = String(dataInicio.getDate()).padStart(2, '0');
+
+                dataFimInput.value = `${ano}-${mes}-${dia}`;
+            } else {
+                dataFimInput.value = '';
+            }
+        });
+
+
+        // MOSTRAR / OCULTAR MOTIVO DA REJEIÇÃO
         const statusSelect = document.getElementById('orc_status');
         const motivoContainer = document.getElementById('motivoRejeicaoContainer');
         const motivoInput = document.getElementById('orc_motivo_rejeicao');
@@ -228,39 +242,14 @@
             } else {
                 motivoContainer.classList.add('hidden');
                 motivoInput.removeAttribute('required');
-                motivoInput.value = ''; // limpa o campo se mudar o status
+                motivoInput.value = '';
             }
         }
 
-        // Executa ao carregar a página (para manter o estado em caso de erro de validação)
         toggleMotivoRejeicao();
-
-        // Executa quando o status muda
         statusSelect.addEventListener('change', toggleMotivoRejeicao);
 
-
-        searchInput.addEventListener('focus', function() {
-            renderResults(clientesOrcamento);
-        });
-
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('#cliente_orcamento_search') && !event.target.closest('#cliente_orcamento_results')) {
-                resultsDiv.classList.add('hidden');
-            }
-        });
-
-        // Adicionando a validação no envio do formulário
-        form.addEventListener('submit', function(event) {
-            console.log('Valor do hiddenInput antes de enviar:', hiddenInput.value);
-
-            // Valida se o campo escondido tem um valor
-            if (!hiddenInput.value) {
-                event.preventDefault();
-                alert('Por favor, selecione um cliente da lista de busca.');
-                searchInput.classList.add('border-red-500'); // Adiciona destaque de erro
-                searchInput.focus();
-            }
-        });
     });
 </script>
+
 @endpush

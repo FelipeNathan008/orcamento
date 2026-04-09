@@ -35,8 +35,6 @@ class ContatoClienteController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View
      */
     public function create($cliente_orcamento)
     {
@@ -166,8 +164,13 @@ class ContatoClienteController extends Controller
     public function destroy($id)
     {
         $contatoCliente = ContatoCliente::findOrFail($id);
+
+        $clienteId = $contatoCliente->cliente_orcamento_id_co;
+
         $contatoCliente->delete();
 
-        return redirect()->route('contato_cliente.index')->with('success', 'Contato de Cliente excluído com sucesso!');
+        return redirect()->route('contato_cliente.index', [
+            'cliente_orcamento' => $clienteId
+        ])->with('success', 'Contato de Cliente excluído com sucesso!');
     }
 }

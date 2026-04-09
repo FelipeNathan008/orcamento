@@ -204,12 +204,12 @@
             this.value = 'R$ ' + value;
 
             // salva sem máscara
-            valorReal.value = value.replace(',', '.');
+            valorReal.value = value.replace(/\./g, '').replace(',', '.');
         });
 
         // REMOVE MÁSCARA AO ENVIAR
         document.getElementById('formFluxo').addEventListener('submit', function() {
-            valorReal.value = valorReal.value.replace(',', '.');
+            valorReal.value = value.replace(/\./g, '').replace(',', '.');
         });
 
     });

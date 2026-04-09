@@ -240,13 +240,15 @@
                             )
                             <form action="{{ route('financeiro.prosseguir', $fin->id_fin) }}"
                                 method="POST"
-                                onsubmit="return confirm('Tem certeza que deseja prosseguir o status?');">
+                                class="form-prosseguir"
+                                data-status="{{ $fin->fin_status }}">
                                 @csrf
 
-                                <button type="submit"
-                                    class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-                                    id="prosseguirBtn-{{ $fin->id_fin }}"
-                                    data-pendente="{{ $temStatusPendente ? '1' : '0' }}">
+                                <button type="button"
+                                    class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                    data-id-fin="{{ $fin->id_fin }}"
+                                    data-valor="{{ $fin->fin_valor_total }}"
+                                    data-orcamento="{{ $fin->orcamento_id_orcamento }}">
                                     Prosseguir Status
                                 </button>
                             </form>
@@ -290,99 +292,314 @@
         </table>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.status-btn').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    const id = btn.dataset.id;
+    <div id="modalAnalise" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center overflow-auto">
 
-                    document.querySelectorAll('[id^="status-"]').forEach(function(row) {
-                        if (row.id !== 'status-' + id) {
-                            row.classList.add('hidden');
-                        }
-                    });
+        <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-3xl">
 
-                    const row = document.getElementById('status-' + id);
-                    if (row) row.classList.toggle('hidden');
-                });
-            });
-        });
+            <h2 class="text-xl font-bold mb-6">
+                Lançar no Fluxo de Caixa
+            </h2>
 
-        document.addEventListener('DOMContentLoaded', function() {
+            <form id="formModalFluxo" action="{{ route('fluxo_caixa.storeFluxo') }}" method="POST">
+                @csrf
 
-            const searchInput = document.getElementById('searchFinanceiroInput');
-            const searchStatusSelect = document.getElementById('searchFinanceiroStatus');
-            const searchOrcamentoInput = document.getElementById('searchFinanceiroOrcamento');
-            const clearBtn = document.getElementById('clearFiltersBtn');
-            const tableBody = document.getElementById('financeiroTableBody');
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex items-start gap-3">
 
-            const filterTable = () => {
+                        <svg class="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0"
+                            fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.518 11.591c.75 1.334-.213 2.99-1.742 2.99H3.48c-1.53 0-2.492-1.656-1.743-2.99L8.257 3.1zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-7a1 1 0 00-1 1v3a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                clip-rule="evenodd"
+                                fill-rule="evenodd" />
+                        </svg>
 
-                const searchTerm = searchInput.value.toLowerCase().trim();
-                const selectedStatus = searchStatusSelect.value.toLowerCase().trim();
-                const searchOrcamento = searchOrcamentoInput.value.toLowerCase().trim();
-                const rows = tableBody.querySelectorAll('tr');
+                        <div>
+                            <p class="font-semibold text-yellow-800">
+                                Atenção
+                            </p>
 
-                rows.forEach(row => {
+                            <p class="text-sm text-yellow-700 mt-1">
+                                O status do pedido só será atualizado após o lançamento do fluxo de caixa.
+                            </p>
+                        </div>
 
-                    // Ignora linha oculta de status
-                    if (row.id && row.id.startsWith('status-')) return;
+                    </div>
 
-                    const clienteNome = row.children[1]?.textContent.toLowerCase().trim() ?? '';
-                    const statusText = row.dataset.status ?? '';
-                    const orcamentoId = row.children[0]?.textContent.toLowerCase().trim() ?? '';
-                    const matchClient = clienteNome.includes(searchTerm);
-                    const matchStatus =
-                        selectedStatus === '' ||
-                        statusText === selectedStatus;
+                    {{-- CARD INFORMATIVO --}}
+                    <div class="md:col-span-2 bg-orange-50 border border-orange-200 rounded-lg p-6 shadow-sm">
 
-                    const matchOrcamento =
-                        searchOrcamento === '' ||
-                        orcamentoId.includes(searchOrcamento);
+                        <h2 class="text-lg font-bold text-orange-700 mb-4">
+                            Informações do Lançamento
+                        </h2>
 
-                    if (matchClient && matchStatus && matchOrcamento) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
 
-                        // Fecha linha de status aberta
-                        const id = row.querySelector('.status-btn')?.dataset.id;
-                        const statusRow = document.getElementById('status-' + id);
-                        if (statusRow) statusRow.classList.add('hidden');
-                    }
-                });
-            };
+                            <div>
+                                <p class="text-gray-600">Orçamento</p>
 
-            // Eventos filtro
-            searchInput.addEventListener('input', filterTable);
-            searchStatusSelect.addEventListener('change', filterTable);
-            searchOrcamentoInput.addEventListener('input', filterTable);
+                                <p id="orcamentoModal" class="font-semibold text-gray-900"></p>
+                            </div>
 
-            // Botão limpar filtros
-            clearBtn.addEventListener('click', function() {
+                            <div>
+                                <p class="text-gray-600">Tipo de Despesa</p>
+                                <p class="font-semibold text-gray-900">Variável</p>
+                            </div>
 
-                searchInput.value = '';
-                searchStatusSelect.value = '';
-                searchOrcamentoInput.value = '';
+                            <div>
+                                <p class="text-gray-600">Tipo</p>
+                                <p class="font-semibold text-gray-900">Despesa UP</p>
+                            </div>
 
-                const rows = tableBody.querySelectorAll('tr');
+                            <div>
+                                <p class="text-gray-600">Movimentação</p>
+                                <p class="font-semibold text-gray-900">Saída</p>
+                            </div>
 
-                rows.forEach(row => {
-                    row.style.display = '';
+                        </div>
 
-                    // Fecha todas linhas de status
-                    if (row.id && row.id.startsWith('status-')) {
-                        row.classList.add('hidden');
-                    }
-                });
-            });
+                        <input type="hidden" name="flu_tipo_despesa" value="Variavel">
+                        <input type="hidden" name="flu_id_tipo" value="{{ $tipoDespesaUP->id_tipo_fluxo }}">
+                        <input type="hidden" name="flu_id_movimentacao" value="{{ $movSaida->id_movimentacao }}">
 
-        });
-    </script>
+                    </div>
+                    {{-- DATA --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Data</label>
+                        <input type="date"
+                            name="flu_data_despesa"
+                            id="modalData"
+                            class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300"
+                            required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Valor</label>
+                        <input type="text" id="valorMask"
+                            class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
+                            placeholder="R$ 0,00"
+                            required>
+
+                        {{-- valor real escondido --}}
+                        <input type="hidden" name="flu_valor" id="valorReal">
+                    </div>
 
 
+                    {{-- NUM DOC --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Num. Documento (Opcional)</label>
+                        <input type="text" name="flu_num_doc" placeholder="NF 1024, 5501-A"
+                            class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300">
+                    </div>
+
+                    {{-- DESCRIÇÃO --}}
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium mb-1">Descrição</label>
+                        <textarea name="flu_desc" placeholder="Pagamento do Orçamento #44"
+                            class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300"
+                            rows="3"
+                            required></textarea>
+                    </div>
+                </div>
+
+                <input type="hidden" name="id_financeiro" id="idFinanceiroModal">
+
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" id="cancelarModal"
+                        class="px-4 py-2 bg-gray-300 rounded">
+                        Cancelar
+                    </button>
+
+                    <button type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded">
+                        Salvar
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
     @endif
 
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        let formProsseguir = null;
+
+        const modal = document.getElementById('modalAnalise');
+        const btnCancelar = document.getElementById('cancelarModal');
+        const formModal = document.getElementById('formModalFluxo');
+
+
+        // DATA AUTOMÁTICA
+        document.getElementById('modalData').value =
+            new Date().toISOString().split('T')[0];
+
+        // ABRIR MODAL
+        document.querySelectorAll('.btn-prosseguir').forEach(btn => {
+            btn.addEventListener('click', function() {
+
+                const form = btn.closest('form');
+                const status = form.dataset.status.toLowerCase();
+
+                if (status === 'análise pedido' || status === 'analise pedido') {
+
+                    document.getElementById('idFinanceiroModal').value =
+                        btn.dataset.idFin;
+
+                    document.getElementById('orcamentoModal').textContent = btn.dataset.orcamento;
+
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                } else {
+                    if (confirm('Tem certeza que deseja prosseguir o status?')) {
+                        form.submit();
+                    }
+                }
+            });
+        });
+
+        const valorInput = document.getElementById('valorMask');
+        const valorReal = document.getElementById('valorReal');
+
+        valorInput.addEventListener('input', function() {
+
+            let value = this.value.replace(/\D/g, '');
+
+            value = (value / 100).toFixed(2) + '';
+
+            value = value.replace('.', ',');
+
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            this.value = 'R$ ' + value;
+
+            // salva sem máscara
+            valorReal.value = value.replace(/\./g, '').replace(',', '.');
+        });
+
+        // REMOVE MÁSCARA AO ENVIAR
+        document.getElementById('formModalFluxo').addEventListener('submit', function() {
+            valorReal.value = value.replace(/\./g, '').replace(',', '.');
+        });
+
+
+        // CANCELAR
+        btnCancelar.addEventListener('click', function() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        });
+
+
+        formModal.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const valor = valorReal.value;
+
+            const confirmar = confirm(
+                `Tem certeza que deseja salvar o fluxo de caixa com o valor de R$ ${valor.replace('.', ',')}?`
+            );
+
+            if (!confirmar) return;
+
+            this.submit();
+        });
+
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.status-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const id = btn.dataset.id;
+
+                document.querySelectorAll('[id^="status-"]').forEach(function(row) {
+                    if (row.id !== 'status-' + id) {
+                        row.classList.add('hidden');
+                    }
+                });
+
+                const row = document.getElementById('status-' + id);
+                if (row) row.classList.toggle('hidden');
+            });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const searchInput = document.getElementById('searchFinanceiroInput');
+        const searchStatusSelect = document.getElementById('searchFinanceiroStatus');
+        const searchOrcamentoInput = document.getElementById('searchFinanceiroOrcamento');
+        const clearBtn = document.getElementById('clearFiltersBtn');
+        const tableBody = document.getElementById('financeiroTableBody');
+
+        const filterTable = () => {
+
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedStatus = searchStatusSelect.value.toLowerCase().trim();
+            const searchOrcamento = searchOrcamentoInput.value.toLowerCase().trim();
+            const rows = tableBody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+
+                // Ignora linha oculta de status
+                if (row.id && row.id.startsWith('status-')) return;
+
+                const clienteNome = row.children[2]?.textContent.toLowerCase().trim() ?? '';
+                const orcamentoId = row.children[1]?.textContent.toLowerCase().trim() ?? '';
+                const statusText = row.dataset.status ?? '';
+                const matchClient = clienteNome.includes(searchTerm);
+                const matchStatus =
+                    selectedStatus === '' ||
+                    statusText === selectedStatus;
+
+                const matchOrcamento =
+                    searchOrcamento === '' ||
+                    orcamentoId.includes(searchOrcamento);
+
+                if (matchClient && matchStatus && matchOrcamento) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+
+                    // Fecha linha de status aberta
+                    const id = row.querySelector('.status-btn')?.dataset.id;
+                    const statusRow = document.getElementById('status-' + id);
+                    if (statusRow) statusRow.classList.add('hidden');
+                }
+            });
+        };
+
+        // Eventos filtro
+        searchInput.addEventListener('input', filterTable);
+        searchStatusSelect.addEventListener('change', filterTable);
+        searchOrcamentoInput.addEventListener('input', filterTable);
+
+        // Botão limpar filtros
+        clearBtn.addEventListener('click', function() {
+
+            searchInput.value = '';
+            searchStatusSelect.value = '';
+            searchOrcamentoInput.value = '';
+
+            const rows = tableBody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                row.style.display = '';
+
+                // Fecha todas linhas de status
+                if (row.id && row.id.startsWith('status-')) {
+                    row.classList.add('hidden');
+                }
+            });
+        });
+
+    });
+</script>
+
 
 @endsection

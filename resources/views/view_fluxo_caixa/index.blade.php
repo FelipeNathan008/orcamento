@@ -13,6 +13,7 @@
             Fluxo de Caixa
         </h1>
 
+
         <div class="flex items-center gap-3">
 
             <a href="{{ route('dashboard') }}"
@@ -26,10 +27,23 @@
                 Novo Lançamento
             </a>
 
+            <a id="btnExportarPdf"
+                href="#"
+                class="px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 hidden">
+                Exportar PDF
+            </a>
+
         </div>
 
     </div>
+    <div class="flex items-start gap-3">
 
+        <div>
+            <p class="text-sm text-yellow-700 mt-1">
+                Para gerar o PDF, selecione uma data específica, pois o relatório é baseado no fluxo de caixa diário. </p>
+        </div>
+
+    </div>
     {{-- ALERT --}}
     @if (session('success'))
     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
@@ -42,34 +56,37 @@
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
 
+            {{-- DATA --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar
+                    Filtrar por Data
                 </label>
 
-                <div class="relative">
-
-                    <input
-                        type="text"
-                        id="searchFluxoInput"
-                        placeholder="Descrição ou tipo..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
-
-                </div>
+                <input
+                    type="date"
+                    id="filterDate"
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
             </div>
 
+            {{-- MOVIMENTAÇÃO --}}
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Movimentação
+                </label>
+
+                <select id="filterMov"
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
+                    <option value="">Todas</option>
+                    <option value="entrada">Entrada</option>
+                    <option value="saída">Saída</option>
+                </select>
+            </div>
+
+            {{-- BOTÃO --}}
             <div class="flex md:justify-end">
                 <button id="clearFiltersFluxo"
                     class="px-4 py-2 h-10 text-sm rounded-md bg-gray-200 hover:bg-gray-300">
-                    Limpar Busca
+                    Limpar Filtros
                 </button>
             </div>
 
@@ -106,11 +123,6 @@
 
                     <th scope="col"
                         class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Descrição
-                    </th>
-
-                    <th scope="col"
-                        class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Ações
                     </th>
                 </tr>
@@ -120,8 +132,8 @@
 
                 @foreach ($fluxos as $fluxo)
                 <tr class="hover:bg-gray-50"
-                    data-desc="{{ $fluxo->flu_desc }}"
-                    data-tipo="{{ $fluxo->tipo->tipo_flu_nome ?? '' }}">
+                    data-data="{{ $fluxo->flu_data_despesa }}"
+                    data-mov="{{ strtolower($fluxo->movimentacao->mov_nome ?? '') }}">
 
                     <td class="px-4 py-4 text-sm text-gray-700">
                         {{ \Carbon\Carbon::parse($fluxo->flu_data_despesa)->format('d/m/Y') }}
@@ -137,10 +149,6 @@
 
                     <td class="px-4 py-4 text-sm text-gray-700">
                         R$ {{ number_format($fluxo->flu_valor, 2, ',', '.') }}
-                    </td>
-
-                    <td class="px-4 py-4 text-sm text-gray-700">
-                        {{ $fluxo->flu_desc }}
                     </td>
 
                     <td class="px-2 py-4 text-center text-sm">
@@ -195,36 +203,56 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
-        const searchInput = document.getElementById('searchFluxoInput');
+        const filterDate = document.getElementById('filterDate');
+        const filterMov = document.getElementById('filterMov');
         const clearBtn = document.getElementById('clearFiltersFluxo');
+
+        const btnPdf = document.getElementById('btnExportarPdf');
 
         const rows = Array.from(document.querySelectorAll('#fluxoTableBody tr'));
         const noResults = document.getElementById('noResultsFluxo');
 
         function filter() {
-            const term = searchInput.value.toLowerCase();
+            const selectedDate = filterDate.value;
+            const selectedMov = filterMov.value.toLowerCase();
+
             let found = false;
 
             rows.forEach(row => {
-                const desc = row.dataset.desc.toLowerCase();
-                const tipo = row.dataset.tipo.toLowerCase();
+                const rowDate = row.dataset.data;
+                const rowMov = row.dataset.mov;
 
-                if (desc.includes(term) || tipo.includes(term)) {
+                let matchDate = !selectedDate || rowDate === selectedDate;
+                let matchMov = !selectedMov || rowMov.includes(selectedMov);
+
+                if (matchDate && matchMov) {
                     row.style.display = '';
                     found = true;
                 } else {
                     row.style.display = 'none';
                 }
             });
-
             noResults.classList.toggle('hidden', found);
+
+            // 🔥 MOSTRAR BOTÃO SE TEM DATA
+            if (selectedDate) {
+                btnPdf.classList.remove('hidden');
+
+                // atualiza link com a data
+                btnPdf.href = `/fluxo-caixa/pdf?data=${selectedDate}`;
+            } else {
+                btnPdf.classList.add('hidden');
+            }
         }
 
-        searchInput.addEventListener('input', filter);
+        filterDate.addEventListener('change', filter);
+        filterMov.addEventListener('change', filter);
 
         clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
+            filterDate.value = '';
+            filterMov.value = '';
             filter();
+            btnPdf.classList.add('hidden');
         });
 
     });

@@ -42,7 +42,7 @@
 
     </div>
     @endif
-    <form action="{{ route('contato_cliente.store') }}" method="POST" class="space-y-6">
+    <form id="contatoForm" action="{{ route('contato_cliente.store') }}" method="POST" class="space-y-6">
         @csrf
 
         {{-- ID DO CLIENTE FIXO --}}
@@ -141,7 +141,7 @@
         </div>
 
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarContato"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
@@ -164,6 +164,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
 <script>
+    $('#contatoForm').on('submit', function() {
+
+        const btn = $('#btnSalvarContato');
+
+        btn.prop('disabled', true);
+
+        btn
+            .text('SALVANDO...')
+            .removeClass('hover:bg-button-save-hover')
+            .addClass('opacity-70 cursor-not-allowed');
+    });
     $(function() {
         $('input[name="cont_telefone"]').mask('(00) 0000-0000');
         $('input[name="cont_celular"]').mask('(00) 00000-0000');
