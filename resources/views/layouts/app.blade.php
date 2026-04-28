@@ -225,7 +225,8 @@
                             currentPathname.startsWith('/produto/') ||
                             currentPathname.startsWith('/preco_customizacao/') ||
                             currentPathname.startsWith('/tipo_fluxo_caixa/') ||
-                            currentPathname.startsWith('/tipo_pagamento/')
+                            currentPathname.startsWith('/tipo_pagamento/') ||
+                            currentPathname.startsWith('/conta_bancaria')
                         ) &&
                         linkPathname === '/administracao/'
                     ) {

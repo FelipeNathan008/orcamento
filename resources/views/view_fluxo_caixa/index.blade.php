@@ -50,6 +50,12 @@
         {{ session('success') }}
     </div>
     @endif
+    {{-- ERROS --}}
+    @if(session('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4">
+        {{ session('error') }}
+    </div>
+    @endif
 
     {{-- FILTRO --}}
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
@@ -93,6 +99,39 @@
         </div>
 
     </div>
+    <h2 class="text-3xl sm:text-[18px] font-bold text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
+        Fluxo de Caixa do Dia
+    </h2>
+
+    <div class="mb-6 p-4 bg-gray-100 rounded-lg flex justify-around text-center">
+
+        <div>
+            <span class="font-bold text-lg text-yellow-600">Saldo Caixa Total</span>
+            <span class="block text-gray-900 text-lg">
+                R$ {{ number_format($saldoTotal, 2, ',', '.') }}
+            </span>
+        </div>
+
+        <div>
+            <span class="font-bold text-lg text-yellow-600">Saldo Caixa Dia</span>
+            <span class="block text-gray-900 text-lg">
+                R$ {{ number_format($saldo, 2, ',', '.') }}
+            </span>
+        </div>
+        <div>
+            <span class="font-bold text-lg text-green-600">Entrada Caixa Dia</span>
+            <span class="block text-gray-900 text-lg">
+                R$ {{ number_format($entrada, 2, ',', '.') }}
+            </span>
+        </div>
+        <div>
+            <span class="font-bold text-lg text-red-600">Saída Caixa Dia</span>
+            <span class="block text-gray-900 text-lg">
+                R$ {{ number_format($saida, 2, ',', '.') }}
+            </span>
+        </div>
+
+    </div>
 
     {{-- TABELA --}}
     @if ($fluxos->isEmpty())
@@ -110,6 +149,10 @@
                     <th scope="col"
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Tipo
+                    </th>
+                    <th scope="col"
+                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Conta Bancária
                     </th>
                     <th scope="col"
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
@@ -142,6 +185,15 @@
                     <td class="px-4 py-4 text-sm text-gray-700">
                         {{ $fluxo->tipo->tipo_flu_nome ?? 'N/A' }}
                     </td>
+
+                    <td class="px-4 py-4 text-sm text-gray-700">
+                        @if($fluxo->conta)
+                        {{ $fluxo->conta->conta_nome_banco }}
+                        @else
+                        N/A
+                        @endif
+                    </td>
+
 
                     <td class="px-4 py-4 text-sm text-gray-700">
                         {{ $fluxo->movimentacao->mov_nome ?? 'N/A' }}

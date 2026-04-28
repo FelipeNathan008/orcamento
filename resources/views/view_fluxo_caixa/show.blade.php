@@ -38,13 +38,25 @@
                 </p>
             </div>
 
-
+            <div class="md:col-span-2 mb-4">
+                <p class="text-gray-600 text-sm">Conta Bancária</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    @if($fluxo->conta)
+                    {{ $fluxo->conta->conta_nome_banco }} -
+                    {{ $fluxo->conta->numero_conta_corrente }}
+                    @else
+                    N/A
+                    @endif
+                </p>
+            </div>
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Movimentação</p>
                 <p class="text-gray-900 text-lg font-semibold">
                     {{ $fluxo->movimentacao->mov_nome ?? 'N/A' }}
                 </p>
             </div>
+
+
 
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Valor</p>
@@ -57,6 +69,13 @@
                 <p class="text-gray-600 text-sm">Descrição</p>
                 <p class="text-gray-900 text-lg font-semibold">
                     {{ $fluxo->flu_desc }}
+                </p>
+            </div>
+
+            <div class="md:col-span-2 mb-4">
+                <p class="text-gray-600 text-sm">Tipo Fiscal</p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ $fluxo->flu_tipo_fiscal ?? 'N/A'}}
                 </p>
             </div>
 

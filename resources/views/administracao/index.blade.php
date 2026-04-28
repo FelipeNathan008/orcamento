@@ -35,6 +35,14 @@
             </p>
         </a>
 
+        <a href="{{ route('conta_bancaria.index') }}"
+            class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition border border-gray-200">
+            <h2 class="text-xl font-bold text-orange-600">Contas Bancárias</h2>
+            <p class="text-gray-600 mt-2">
+                Gerenciar as contas bancárias.
+            </p>
+        </a>
+
         <a href="{{ route('tipo_pagamento.index') }}"
             class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition border border-gray-200">
             <h2 class="text-xl font-bold text-orange-600">Tipo Pagamento</h2>
@@ -42,7 +50,7 @@
                 Gerencias os Tipo de Pagamento.
             </p>
         </a>
-        
+
     </div>
 
 </div>

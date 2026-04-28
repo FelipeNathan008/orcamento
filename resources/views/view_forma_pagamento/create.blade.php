@@ -51,6 +51,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
 
                     <div>
+                        <p class="text-gray-600">Orçamento</p>
+                        <p class="font-semibold text-gray-900">
+                            {{ $financeiroSelecionado->orcamento_id_orcamento }}
+                        </p>
+                    </div>
+
+                    <div>
                         <p class="text-gray-600">Cliente</p>
                         <p class="font-semibold text-gray-900">
                             {{ $financeiroSelecionado->fin_nome_cliente }}
@@ -140,6 +147,27 @@
                 @enderror
             </div>
 
+            {{-- CONTA BANCÁRIA --}}
+            <div class="md:col-span-1">
+                <label class="block text-sm font-medium text-custom-dark-text mb-1">
+                    Conta Bancária
+                </label>
+
+                <select name="conta_bancaria_id"
+                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
+                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+
+                    <option value="">Selecione</option>
+
+                    @foreach ($contas as $conta)
+                    <option value="{{ $conta->id_conta }}">
+                        {{ $conta->conta_nome_banco }} - {{ $conta->numero_conta_corrente }}
+                    </option>
+                    @endforeach
+
+                </select>
+            </div>
+
 
             {{-- Quantidade de Parcelas --}}
             <div class="md:col-span-1">
@@ -152,6 +180,19 @@ focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 e
                 @error('forma_qtd_parcela')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- DATA (somente à vista) --}}
+            <div class="md:col-span-1 hidden" id="campo_data">
+                <label class="block text-sm font-medium text-custom-dark-text mb-1">
+                    Data do Pagamento
+                </label>
+
+                <input type="date" name="forma_data"
+                    value="{{ old('forma_data') }}"
+                    max="{{ date('Y-m-d') }}"
+                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
+    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
             </div>
 
             {{-- Descrição --}}
@@ -248,25 +289,48 @@ focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 e
     const selectPrazo = document.getElementById('forma_prazo');
     const inputParcelas = document.getElementById('forma_qtd_parcela');
 
-    function controlarParcelas() {
+    const campoData = document.getElementById('campo_data');
 
+    const campoDataInput = document.querySelector('input[name="forma_data"]');
+
+    campoDataInput.addEventListener('change', function() {
+
+        const hoje = new Date().toISOString().split('T')[0];
+
+        if (this.value > hoje) {
+            this.value = hoje;
+        }
+    });
+
+    function controlarParcelas() {
         if (selectPrazo.value === 'À vista') {
             inputParcelas.value = 1;
             inputParcelas.readOnly = true;
             inputParcelas.classList.add('bg-gray-200');
 
+            campoData.classList.remove('hidden');
+            campoDataInput.required = true;
+
         } else if (selectPrazo.value === 'Parcelado') {
             inputParcelas.readOnly = false;
             inputParcelas.value = '';
             inputParcelas.classList.remove('bg-gray-200');
+
+            campoData.classList.add('hidden');
+            campoDataInput.required = false;
+            campoDataInput.value = '';
+
         } else {
             inputParcelas.readOnly = false;
             inputParcelas.value = '';
             inputParcelas.classList.remove('bg-gray-200');
+
+            campoData.classList.add('hidden');
+            campoDataInput.required = false;
+            campoDataInput.value = '';
         }
     }
     selectPrazo.addEventListener('change', controlarParcelas);
-
     window.addEventListener('DOMContentLoaded', controlarParcelas);
 
     // Mascara

@@ -25,6 +25,7 @@ use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\LogStatusController;
 use App\Http\Controllers\StatusMercadoriaController;
 use App\Http\Controllers\CobrancaController;
+use App\Http\Controllers\ContaBancariaController;
 use App\Http\Controllers\DetalhesCobrancaController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\DashboardController;
@@ -177,8 +178,12 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     //ROTA PARA TIPO FLUXO CAIXA
     Route::resource('tipo_fluxo_caixa', TipoFluxoCaixaController::class);
 
+    //ROTA PARA CONTA BANCARIA
+    Route::resource('conta_bancaria', ContaBancariaController::class);
+
+
     //ROTA PARA FLUXO CAIXA
- 
+
     Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'gerarFluxoPdfPorData']);
 
     Route::post('/fluxo-caixa/store-fluxo', [FluxoCaixaController::class, 'storeFluxo'])

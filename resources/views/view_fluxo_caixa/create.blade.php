@@ -10,16 +10,31 @@
     </h1>
 
     {{-- ERROS --}}
-    @if ($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        <strong>Opa!</strong>
-        <ul class="mt-3 list-disc list-inside">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
+    @if(session('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4">
+        {{ session('error') }}
     </div>
     @endif
+
+    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+
+        <h2 class="text-lg font-bold text-orange-700 mb-4">
+            Informações da caixa
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
+            <div>
+                <p class="text-gray-600">Saldo Caixa Total</p>
+                <p class="font-semibold text-gray-900">
+                    R$ {{ number_format($saldoTotal, 2, ',', '.') }}
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
 
     <form id="formFluxo" action="{{ route('fluxo_caixa.store') }}" method="POST" class="space-y-6">
         @csrf
@@ -64,7 +79,8 @@
 
                         @foreach ($tipos as $tipo)
                         <option value="{{ $tipo->id_tipo_fluxo }}"
-                            data-despesa="{{ $tipo->tipo_despesa }}">
+                            data-despesa="{{ $tipo->tipo_despesa }}"
+                            data-caixa="{{ str_contains(strtolower($tipo->tipo_flu_nome), 'caixa') ? '1' : '0' }}">
                             {{ $tipo->tipo_flu_nome }}
                         </option>
                         @endforeach
@@ -83,7 +99,8 @@
                         <option value="">Selecione</option>
 
                         @foreach ($movimentacoes as $mov)
-                        <option value="{{ $mov->id_movimentacao }}">
+                        <option value="{{ $mov->id_movimentacao }}"
+                            data-tipo="{{ $mov->mov_nome }}">
                             {{ $mov->mov_nome }}
                         </option>
                         @endforeach
@@ -95,6 +112,25 @@
 
             {{-- DIREITA --}}
             <div class="space-y-6">
+
+                {{-- CONTA BANCÁRIA --}}
+                <div>
+                    <label class="block text-sm font-medium mb-1">Conta Bancária</label>
+
+                    <select name="conta_bancaria_id"
+                        class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500">
+
+                        <option value="">Selecione</option>
+
+                        @foreach ($contas as $conta)
+                        <option value="{{ $conta->id_conta }}">
+                            {{ $conta->conta_nome_banco }} -
+                            {{ $conta->numero_conta_corrente }}
+                        </option>
+                        @endforeach
+
+                    </select>
+                </div>
 
                 {{-- VALOR --}}
                 <div>
@@ -108,11 +144,30 @@
                     <input type="hidden" name="flu_valor" id="valorReal">
                 </div>
 
-                {{-- DOC --}}
-                <div>
-                    <label class="block text-sm font-medium mb-1">Num. Documento (Opcional)</label>
-                    <input type="text" name="flu_num_doc" placeholder="Opcional"
-                        class="w-full px-4 py-2 border rounded-md">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {{-- TIPO FISCAL --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Tipo Fiscal</label>
+                        <div>
+
+                            <select name="flu_tipo_fiscal" id="tipoFiscal"
+                                class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
+                                required>
+
+                                <option value="">Selecione</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {{-- DOC --}}
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Num. Documento (Opcional)</label>
+                        <input type="text" name="flu_num_doc" id="numDoc" placeholder="Opcional"
+                            class="w-full px-4 py-2 border rounded-md"
+                            disabled>
+                    </div>
+
                 </div>
 
                 {{-- DESC --}}
@@ -150,23 +205,25 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
+        // =========================
         // DATA AUTOMÁTICA
+        // =========================
         const hoje = new Date().toISOString().split('T')[0];
         document.getElementById('dataHoje').value = hoje;
 
-        // FILTRO FIXO/VARIAVEL
+        // =========================
+        // FILTRO TIPO (Fixa/Variável)
+        // =========================
         const filtro = document.getElementById('filtroDespesa');
         const selectTipo = document.getElementById('selectTipo');
         const options = Array.from(selectTipo.options);
 
-        // começa desabilitado
         selectTipo.disabled = true;
 
         filtro.addEventListener('change', function() {
 
             const valor = this.value;
 
-            // limpa opções
             selectTipo.innerHTML = '<option value="">Selecione</option>';
 
             if (!valor) {
@@ -174,7 +231,6 @@
                 return;
             }
 
-            // habilita select
             selectTipo.disabled = false;
 
             options.forEach(opt => {
@@ -184,32 +240,155 @@
                     selectTipo.appendChild(opt);
                 }
             });
-
         });
 
-        // 🔹 MÁSCARA DE DINHEIRO
+        // =========================
+        // VARIÁVEIS TIPO FISCAL
+        // =========================
+        const movimentacao = document.querySelector('[name="flu_id_movimentacao"]');
+
+        const movOptions = Array.from(movimentacao.options);
+        movimentacao.disabled = true;
+
+        const tipoFiscal = document.getElementById('tipoFiscal');
+        const numDoc = document.getElementById('numDoc');
+
+        // inicia bloqueado (igual você queria)
+        tipoFiscal.disabled = true;
+        numDoc.disabled = true;
+
+        function atualizarMovimentacao() {
+
+            const selectedTipo = selectTipo.options[selectTipo.selectedIndex];
+
+            if (!selectedTipo || !selectedTipo.value) {
+                movimentacao.innerHTML = '<option value="">Selecione</option>';
+                movimentacao.disabled = true;
+                return;
+            }
+
+            const isCaixa = selectedTipo.dataset.caixa === '1';
+
+            movimentacao.innerHTML = '<option value="">Selecione</option>';
+            movimentacao.disabled = false;
+
+            movOptions.forEach(opt => {
+
+                if (!opt.value) return;
+
+                let nome = normalizarTexto(opt.dataset.tipo);
+
+                if (isCaixa) {
+                    // só mostra os que tem "caixa"
+                    if (nome.includes('caixa')) {
+                        movimentacao.appendChild(opt);
+                    }
+                } else {
+                    // mostra tudo MENOS caixa
+                    if (!nome.includes('caixa')) {
+                        movimentacao.appendChild(opt);
+                    }
+                }
+            });
+
+            // reset dependentes
+            tipoFiscal.innerHTML = '<option value="">Selecione</option>';
+            tipoFiscal.disabled = true;
+            numDoc.disabled = true;
+            numDoc.value = '';
+        }
+        selectTipo.addEventListener('change', atualizarMovimentacao);
+        // =========================
+        // NORMALIZAR TEXTO (remove acento)
+        // =========================
+        function normalizarTexto(texto) {
+            return texto
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        }
+
+
+
+        // =========================
+        // ATUALIZAR TIPO FISCAL
+        // =========================
+        function atualizarTipoFiscal() {
+
+            const selected = movimentacao.options[movimentacao.selectedIndex];
+
+            if (!selected || !selected.dataset.tipo) {
+                tipoFiscal.disabled = true;
+                tipoFiscal.innerHTML = '<option value="">Selecione</option>';
+                return;
+            }
+
+            let tipo = normalizarTexto(selected.dataset.tipo);
+
+            tipoFiscal.innerHTML = '<option value="">Selecione</option>';
+            tipoFiscal.disabled = true;
+
+            if (tipo.includes('saida')) {
+
+                tipoFiscal.innerHTML += `
+                <option value="NF">Nota Fiscal (NF)</option>
+                <option value="RC">Recibo (RC)</option>
+                <option value="CF">Cupom Fiscal (CF)</option>
+                <option value="OUT">Outros</option>
+            `;
+
+                tipoFiscal.disabled = false;
+
+            } else if (tipo.includes('entrada')) {
+
+                tipoFiscal.innerHTML += `
+                <option value="OC">Orçamento (OC)</option>
+            `;
+
+                tipoFiscal.disabled = false;
+            }
+
+            // reset documento
+            numDoc.value = '';
+            numDoc.disabled = true;
+        }
+
+        // =========================
+        // EVENTOS
+        // =========================
+        movimentacao.addEventListener('change', atualizarTipoFiscal);
+
+        tipoFiscal.addEventListener('change', function() {
+            if (this.value) {
+                numDoc.disabled = false;
+            } else {
+                numDoc.disabled = true;
+                numDoc.value = '';
+            }
+        });
+
+        // =========================
+        // MÁSCARA DE DINHEIRO
+        // =========================
         const valorInput = document.getElementById('valorMask');
         const valorReal = document.getElementById('valorReal');
 
         valorInput.addEventListener('input', function() {
 
             let value = this.value.replace(/\D/g, '');
-
             value = (value / 100).toFixed(2) + '';
-
             value = value.replace('.', ',');
-
             value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
             this.value = 'R$ ' + value;
 
-            // salva sem máscara
             valorReal.value = value.replace(/\./g, '').replace(',', '.');
         });
 
-        // REMOVE MÁSCARA AO ENVIAR
         document.getElementById('formFluxo').addEventListener('submit', function() {
-            valorReal.value = value.replace(/\./g, '').replace(',', '.');
+            let value = valorInput.value.replace(/\D/g, '');
+            value = (value / 100).toFixed(2);
+            valorReal.value = value;
         });
 
     });

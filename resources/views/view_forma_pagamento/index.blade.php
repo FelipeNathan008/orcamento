@@ -116,7 +116,9 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">ID</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Tipo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Conta Bancária</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Prazo</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Data</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Parcelas</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Valor</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Descrição</th>
@@ -139,9 +141,20 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                     </td>
 
                     <td class="px-4 py-4 text-sm">
+                        @if($forma->conta)
+                        {{ $forma->conta->conta_nome_banco }}
+                        @else
+                        N/A
+                        @endif
+                    </td>
+
+                    <td class="px-4 py-4 text-sm">
                         {{ $forma->forma_prazo }}
                     </td>
 
+                    <td class="px-4 py-4 text-sm">
+                        {{ $forma->forma_data ? \Carbon\Carbon::parse($forma->forma_data)->format('d/m/Y') : 'N/D' }}
+                    </td>
                     <td class="px-4 py-4 text-sm">
                         {{ $forma->forma_qtd_parcela }}
                     </td>
@@ -165,14 +178,14 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                             </button>
                             @endif
 
-                            <form action="{{ route('forma_pagamento.destroy', $forma->id_forma_pag) }}" method="POST"
+                            <!-- <form action="{{ route('forma_pagamento.destroy', $forma->id_forma_pag) }}" method="POST"
                                 onsubmit="return confirm('Tem certeza que deseja excluir esta forma de pagamento?');">
                                 @csrf
                                 @method('DELETE')
                                 <button class="px-2 py-1 text-xs rounded-md text-white bg-red-600 hover:bg-red-700">
                                     Excluir
                                 </button>
-                            </form>
+                            </form> -->
 
                         </div>
                     </td>
@@ -180,7 +193,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                 {{-- PARCELAS --}}
                 <tr id="parcelas-{{ $forma->id_forma_pag }}" class="hidden">
 
-                    <td colspan="7" class="bg-blue-50 p-4">
+                    <td colspan="9" class="bg-blue-50 p-4">
                         <h3 class="text-lg font-bold text-blue-800 mb-3">
                             Parcelas
                         </h3>

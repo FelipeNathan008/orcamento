@@ -13,8 +13,11 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use App\Models\Cobranca;
+use App\Models\ContaBancaria;
 use App\Models\DetalhesCobranca;
 use Carbon\Carbon;
+use App\Models\FluxoCaixa;
+use App\Models\TipoFluxoCaixa;
 
 class FormaPagamentoController extends Controller
 {
@@ -26,6 +29,7 @@ class FormaPagamentoController extends Controller
         if (!$id) {
             return redirect()->route('financeiro.index');
         }
+        $contas = ContaBancaria::all();
 
         $financeiros = Financeiro::all();
 
@@ -127,7 +131,8 @@ class FormaPagamentoController extends Controller
         return view('view_forma_pagamento.index', compact(
             'formasPagamento',
             'financeiros',
-            'id'
+            'id',
+            'contas'
         ));
     }
 
@@ -244,11 +249,14 @@ class FormaPagamentoController extends Controller
         $financeiros = Financeiro::all();
         $tiposPagamento = TipoPagamento::all();
         $formasPagamento = FormaPagamento::with(['financeiro', 'tipoPagamento'])->get();
+        $contas = ContaBancaria::all();
+
 
         return view('view_forma_pagamento.create', compact(
             'financeiros',
             'tiposPagamento',
-            'formasPagamento'
+            'formasPagamento',
+            'contas'
         ));
     }
 
@@ -256,66 +264,87 @@ class FormaPagamentoController extends Controller
     public function store(Request $request)
     {
         try {
-
             $request->merge([
-                'forma_valor' => str_replace(['R$', '.', ','], ['', '', '.'], $request->forma_valor)
+                'forma_valor' => trim(str_replace(['R$', '.', ','], ['', '', '.'], $request->forma_valor))
             ]);
-
 
             $validatedData = $request->validate([
                 'financeiro_id_fin' => 'required|exists:financeiro,id_fin',
                 'tipo_pagamento_id_tipo' => 'required|exists:tipo_pagamento,id_tipo_pagamento',
+                'conta_bancaria_id' => 'nullable|exists:conta_bancaria,id_conta',
                 'forma_valor' => 'required|numeric|min:0',
                 'forma_mes' => 'required|integer|min:1|max:12',
                 'forma_descricao' => 'required|string|max:120',
                 'forma_prazo' => 'required|string|max:45',
                 'forma_qtd_parcela' => 'required|integer|min:1',
+                'forma_data' => 'required_if:forma_prazo,À vista|nullable|date|before_or_equal:today',
             ]);
 
-            $formapag = FormaPagamento::create($validatedData);
+            return DB::transaction(function () use ($validatedData) {
 
-            $financeiro = Financeiro::findOrFail($validatedData['financeiro_id_fin']);
+                $formapag = FormaPagamento::create($validatedData);
+                $financeiro = Financeiro::findOrFail($validatedData['financeiro_id_fin']);
 
-            $valorTotal = $financeiro->fin_valor_total;
-            $valorPagoTotal = FormaPagamento::where('financeiro_id_fin', $validatedData['financeiro_id_fin'])
-                ->sum('forma_valor');
+                $valorTotal = $financeiro->fin_valor_total;
+                $valorPagoTotal = FormaPagamento::where('financeiro_id_fin', $validatedData['financeiro_id_fin'])
+                    ->sum('forma_valor');
 
-            // Buscar status reais
-            $aguardando = DB::table('status_mercadoria')->where('id_status_merc', 1)->value('status_merc_nome');
-            $realizado  = DB::table('status_mercadoria')->where('id_status_merc', 2)->value('status_merc_nome');
+                $aguardando = DB::table('status_mercadoria')->where('id_status_merc', 1)->value('status_merc_nome');
+                $realizado  = DB::table('status_mercadoria')->where('id_status_merc', 2)->value('status_merc_nome');
 
-            // Atualizar status
-            $financeiro->fin_status = ($valorPagoTotal >= $valorTotal) ? $realizado : $aguardando;
-            $financeiro->save();
+                $financeiro->fin_status = ($valorPagoTotal >= $valorTotal) ? $realizado : $aguardando;
+                $financeiro->save();
 
-            if ($valorPagoTotal >= $valorTotal) {
-                DB::table('log_status')
-                    ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
-                    ->where('status_mercadoria_id_status', 2)        // Onde status atual é 2
-                    ->update([
-                        'log_situacao' => 1
+                if ($valorPagoTotal >= $valorTotal) {
+                    DB::table('log_status')
+                        ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
+                        ->where('status_mercadoria_id_status', 2)
+                        ->update(['log_situacao' => 1]);
+                } else {
+                    DB::table('log_status')
+                        ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
+                        ->where('status_mercadoria_id_status', 2)
+                        ->update(['log_situacao' => 0]);
+                }
+
+                // FLUXO AUTOMÁTICO SE FOR À VISTA
+                if ($validatedData['forma_prazo'] === 'À vista') {
+
+                    $tipoVenda = TipoFluxoCaixa::where('tipo_flu_nome', 'Venda')->first();
+
+                    if (!$tipoVenda) {
+                        throw new \Exception('Tipo "Venda" não encontrado na tabela tipo_fluxo_caixa.');
+                    }
+
+                    FluxoCaixa::create([
+                        'flu_data_despesa' => $validatedData['forma_data'],
+                        'flu_id_tipo' => $tipoVenda->id_tipo_fluxo,
+                        'flu_id_movimentacao' => 1,
+                        'conta_bancaria_id' => $validatedData['conta_bancaria_id'] ?? null,
+                        'flu_valor' => $validatedData['forma_valor'],
+                        'flu_tipo_fiscal' => 'OC',
+                        'flu_num_doc' => $financeiro->orcamento_id_orcamento,
+                        'flu_desc' => 'Pagamento da venda recebida do orçamento ' . $financeiro->orcamento_id_orcamento,
                     ]);
-            } else {
-                DB::table('log_status')
-                    ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
-                    ->where('status_mercadoria_id_status', 2)        // Onde status atual é 2
-                    ->update([
-                        'log_situacao' => 0
+                }
+
+                if ($validatedData['forma_prazo'] === 'Parcelado') {
+                    return redirect()->route('detalhes_forma_pag.create', [
+                        'id_forma_pag' => $formapag->id_forma_pag
                     ]);
-            }
-            if ($validatedData['forma_prazo'] === 'Parcelado') {
-                return redirect()->route('detalhes_forma_pag.create', [
-                    'id_forma_pag' => $formapag->id_forma_pag
-                ]);
-            }
-            return redirect('/forma_pagamento?' . $validatedData['financeiro_id_fin'])
-                ->with('success', 'Forma de Pagamento criada com sucesso!');
+                }
+
+                return redirect('/forma_pagamento?' . $validatedData['financeiro_id_fin'])
+                    ->with('success', 'Forma de Pagamento criada com sucesso!');
+            });
         } catch (ValidationException $e) {
             return redirect('/forma_pagamento?' . $request->financeiro_id_fin)
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao criar a forma de pagamento: ' . $e->getMessage())->withInput();
+            return redirect()->back()
+                ->with('error', 'Erro ao criar a forma de pagamento: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
