@@ -213,16 +213,17 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
-    $('#clienteForm').on('submit', function() {
+    const form = document.getElementById('clienteForm');
+    const btnSalvar = document.getElementById('btnSalvarCliente');
 
-        const btn = $('#btnSalvarCliente');
+    form.addEventListener('submit', function() {
 
-        btn.prop('disabled', true);
-
-        btn
-            .text('SALVANDO...')
-            .removeClass('hover:bg-button-save-hover')
-            .addClass('opacity-70 cursor-not-allowed');
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
     });
     $(document).ready(function() {
         var docNumero = $('#clie_doc_numero');

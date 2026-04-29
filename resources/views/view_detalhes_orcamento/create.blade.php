@@ -56,7 +56,7 @@
     </div>
     @endif
 
-    <form action="{{ route('detalhes_orcamento.store') }}" method="POST" class="space-y-6">
+    <form id="detalhesOrcamentoForm" action="{{ route('detalhes_orcamento.store') }}" method="POST" class="space-y-6">
         @csrf
 
         <input type="hidden" name="orcamento_id_orcamento" value="{{ $selectedOrcamentoId }}">
@@ -194,7 +194,7 @@
         {{-- BOTÕES --}}
 
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarDetalhesOrcamento"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
@@ -213,6 +213,19 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+
+        const form = document.getElementById('detalhesOrcamentoForm');
+        const btnSalvar = document.getElementById('btnSalvarDetalhesOrcamento');
+
+        form.addEventListener('submit', function() {
+
+            if (btnSalvar.disabled) {
+                return false;
+            }
+            btnSalvar.disabled = true;
+            btnSalvar.innerText = 'SALVANDO...';
+            btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+        });
 
         // ELEMENTOS
         const produtoIdHidden = document.getElementById('produto_id_produto');

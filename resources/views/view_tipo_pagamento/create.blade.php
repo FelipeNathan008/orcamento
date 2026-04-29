@@ -10,7 +10,7 @@
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Novo Tipo de Pagamento</h1>
 
     {{-- Formulário --}}
-    <form action="{{ route('tipo_pagamento.store') }}" method="POST" class="space-y-6">
+    <form id="TipoPagamentoForm" action="{{ route('tipo_pagamento.store') }}" method="POST" class="space-y-6">
         @csrf
 
         {{-- Grid principal (usado apenas para manter o padrão visual) --}}
@@ -35,7 +35,7 @@
         </div> {{-- Fim do grid --}}
 
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarTipoPagamento"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
@@ -49,5 +49,18 @@
         </div>
     </form>
 </div>
+<script>
+    const form = document.getElementById('TipoPagamentoForm');
+    const btnSalvar = document.getElementById('btnSalvarTipoPagamento');
 
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
+</script>
 @endsection

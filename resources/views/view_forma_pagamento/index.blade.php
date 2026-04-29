@@ -119,9 +119,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Conta Bancária</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Prazo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Data</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Parcelas</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Valor</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Descrição</th>
                     <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase">Ações</th>
                 </tr>
             </thead>
@@ -155,37 +153,27 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                     <td class="px-4 py-4 text-sm">
                         {{ $forma->forma_data ? \Carbon\Carbon::parse($forma->forma_data)->format('d/m/Y') : 'N/D' }}
                     </td>
-                    <td class="px-4 py-4 text-sm">
-                        {{ $forma->forma_qtd_parcela }}
-                    </td>
 
                     <td class="px-4 py-4 text-sm">
                         R$ {{ number_format($forma->forma_valor,2,',','.') }}
                     </td>
 
-                    <td class="px-4 py-4 text-sm">
-                        {{ $forma->forma_descricao }}
-                    </td>
 
                     <td class="px-2 py-4 text-center">
                         <div class="flex justify-center items-center gap-2 flex-wrap">
 
                             @if($forma->forma_prazo === 'Parcelado')
                             <button
-                                class="parcelas-btn px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                class="parcelas-btn px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600"
                                 data-id="{{ $forma->id_forma_pag }}">
-                                Ver Parcelas
+                                Parcelas
                             </button>
                             @endif
 
-                            <!-- <form action="{{ route('forma_pagamento.destroy', $forma->id_forma_pag) }}" method="POST"
-                                onsubmit="return confirm('Tem certeza que deseja excluir esta forma de pagamento?');">
-                                @csrf
-                                @method('DELETE')
-                                <button class="px-2 py-1 text-xs rounded-md text-white bg-red-600 hover:bg-red-700">
-                                    Excluir
-                                </button>
-                            </form> -->
+                            <a href="{{ route('forma_pagamento.show', $forma->id_forma_pag) }}"
+                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                                Ver
+                            </a>
 
                         </div>
                     </td>
@@ -195,7 +183,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 
                     <td colspan="9" class="bg-blue-50 p-4">
                         <h3 class="text-lg font-bold text-blue-800 mb-3">
-                            Parcelas
+                            Parcelas ({{ $forma->forma_qtd_parcela }})
                         </h3>
                         @if($forma->detalhes->isEmpty())
 
@@ -210,6 +198,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Valor</th>
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Vencimento</th>
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Situação</th>
+                                    <th class="px-4 py-2 text-xs font-bold uppercase">Pagamento</th>
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Ações</th>
                                 </tr>
                             </thead>
@@ -272,30 +261,38 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                                             {{ $status }} </span>
                                     </td>
 
+                                    <td class="px-4 py-2 text-sm">
+                                        {{ $parcela->det_forma_data_pagamento ? \Carbon\Carbon::parse($parcela->det_forma_data_pagamento)->format('d/m/Y') 
+                                    : 'N/D' }}
+                                    </td>
+
                                     <td class="px-4 py-2 text-sm text-center">
                                         <div class="flex justify-center items-center gap-2 flex-wrap">
 
                                             {{-- DAR BAIXA --}}
                                             @if(in_array($parcela->det_situacao, ['Não pago','Acordo','Inadimplencia']))
-                                            <form action="{{ route('parcelas.darBaixa', $parcela->id_det_forma) }}" method="POST"
-                                                onsubmit="return confirm('Tem certeza que deseja Dar Baixa nesta parcela?');">
+                                            <form method="POST">
                                                 @csrf
-                                                <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                                                <button
+                                                    type="button"
+                                                    data-id="{{ $parcela->id_det_forma }}"
+                                                    onclick="abrirModal(this)"
+                                                    class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                                     Dar Baixa
                                                 </button>
                                             </form>
                                             @endif
 
                                             {{-- VOLTAR --}}
-                                            @if(in_array($parcela->det_situacao, ['Pago','Quitado']))
+                                            {{-- @if(in_array($parcela->det_situacao, ['Pago','Quitado']))
                                             <form action="{{ route('parcelas.voltarNaoPago', $parcela->id_det_forma) }}" method="POST"
-                                                onsubmit="return confirm('Tem certeza que deseja Voltar Para Não Pago esta parcela?');">
-                                                @csrf
-                                                <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                                                    Voltar Para Não Pago
-                                                </button>
+                                            onsubmit="return confirm('Tem certeza que deseja Voltar Para Não Pago esta parcela?');">
+                                            @csrf
+                                            <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+                                                Voltar Para Não Pago
+                                            </button>
                                             </form>
-                                            @endif
+                                            @endif--}}
 
                                         </div>
                                     </td>
@@ -314,6 +311,66 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     @endif
 
 </div>
+<!-- MODAL -->
+<div id="modalPagamento" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-96">
+
+        <h2 class="text-lg font-bold mb-4">Data do Pagamento</h2>
+
+        <form id="formBaixa" method="POST">
+            @csrf
+
+
+            <div class="mb-4">
+                <label class="block text-sm text-gray-600">Selecione a data:</label>
+                <input type="date" name="data_pagamento" id="data_pagamento" required class="w-full border rounded p-2">
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="fecharModal()" class="bg-gray-400 text-white px-3 py-1 rounded">
+                    Cancelar
+                </button>
+
+                <button type="button" onclick="confirmarData()" class="bg-green-600 text-white px-3 py-1 rounded">
+                    Confirmar
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+<script>
+    let parcelaId = null;
+
+    function abrirModal(element) {
+        const id = element.dataset.id;
+        parcelaId = id;
+
+        document.getElementById('modalPagamento').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+        document.getElementById('modalPagamento').classList.add('hidden');
+    }
+
+    function confirmarData() {
+        const data = document.getElementById('data_pagamento').value;
+
+        if (!data) {
+            alert('Selecione uma data!');
+            return;
+        }
+
+        if (!confirm('Confirma essa data de pagamento?')) {
+            return;
+        }
+
+        const form = document.getElementById('formBaixa');
+        form.action = `/parcelas/${parcelaId}/dar-baixa`;
+
+        form.submit();
+    }
+</script>
 
 {{-- SCRIPT --}}
 <script>

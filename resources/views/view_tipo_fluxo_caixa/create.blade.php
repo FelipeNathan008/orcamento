@@ -30,7 +30,7 @@
     </div>
     @endif
 
-    <form action="{{ route('tipo_fluxo_caixa.store') }}" method="POST" class="space-y-6">
+    <form id="tipoFluxoCaixaForm" action="{{ route('tipo_fluxo_caixa.store') }}" method="POST" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -94,7 +94,7 @@
 
         {{-- BOTÃO SALVAR --}}
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarTipoFluxoCaixa"
                 class="px-8 py-3 text-white rounded-md shadow-sm bg-button-save-bg hover:bg-button-save-hover">
                 SALVAR
             </button>
@@ -110,4 +110,18 @@
 
     </form>
 </div>
+<script>
+    const form = document.getElementById('tipoFluxoCaixaForm');
+    const btnSalvar = document.getElementById('btnSalvarTipoFluxoCaixa');
+
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
+</script>
 @endsection

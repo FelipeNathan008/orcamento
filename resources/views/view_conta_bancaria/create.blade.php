@@ -27,7 +27,7 @@
     </div>
     @endif
 
-    <form action="{{ route('conta_bancaria.store') }}" method="POST" class="space-y-6">
+    <form id="contaBancariaForm" action="{{ route('conta_bancaria.store') }}" method="POST" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -43,10 +43,19 @@
 
             <div>
                 <label class="block text-sm font-medium mb-1">Código do Banco</label>
-                <input type="text" name="conta_cod_banco"
+                <input type="text" name="conta_cod_banco" 
                     class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
                     value="{{ old('conta_cod_banco') }}"
                     maxlength="10" placeholder="341"
+                    required>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-1">Agência</label>
+                <input type="text" name="conta_agencia"
+                    class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
+                    value="{{ old('conta_agencia') }}"
+                    maxlength="50" placeholder="1234"
                     required>
             </div>
 
@@ -55,7 +64,7 @@
                 <input type="text" name="numero_conta_corrente"
                     class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
                     value="{{ old('numero_conta_corrente') }}"
-                    maxlength="100" placeholder="x-yyyyy"
+                    maxlength="100" placeholder="xxxxxxxx"
                     required>
             </div>
 
@@ -64,7 +73,7 @@
                 <input type="text" name="numero_digito_corrente"
                     class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
                     value="{{ old('numero_digito_corrente') }}"
-                    maxlength="90" placeholder="xxxxx-y"
+                    maxlength="90" placeholder="y"
                     required>
             </div>
 
@@ -80,7 +89,7 @@
         </div>
         {{-- BOTÕES --}}
         <div class="flex justify-center mt-8">
-            <button class="px-8 py-3 text-white rounded-md bg-button-save-bg">
+            <button id="btnSalvarContaBancaria" class="px-8 py-3 text-white rounded-md bg-button-save-bg">
                 SALVAR
             </button>
         </div>
@@ -94,4 +103,18 @@
 
     </form>
 </div>
+<script>
+    const form = document.getElementById('contaBancariaForm');
+    const btnSalvar = document.getElementById('btnSalvarContaBancaria');
+
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
+</script>
 @endsection

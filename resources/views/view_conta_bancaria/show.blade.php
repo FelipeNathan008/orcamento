@@ -38,6 +38,13 @@
             </div>
 
             <div>
+                <p class="text-gray-600 text-sm">Agência</p>
+                <p class="text-lg font-semibold">
+                    {{ $conta->conta_agencia }}
+                </p>
+            </div>
+
+            <div>
                 <p class="text-gray-600 text-sm">Conta</p>
                 <p class="text-lg font-semibold">
                     {{ $conta->numero_conta_corrente }}

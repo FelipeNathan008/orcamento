@@ -69,7 +69,7 @@
                         <label for="preco_valor" class="block text-sm font-medium text-custom-dark-text mb-1">Valor</label>
                         <input type="text" name="preco_valor" id="preco_valor"
                             class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            value="{{ old('preco_valor', $precoCustomizacao->preco_valor) }}" placeholder="Ex: 50.99" required>
+                            value="{{ old('preco_valor', 'R$ ' . number_format($precoCustomizacao->preco_valor, 2, ',', '.')) }}" placeholder="Ex: 50.99" required>
                         @error('preco_valor')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -95,4 +95,27 @@
         </form>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const input = document.getElementById('preco_valor');
+
+    input.addEventListener('input', function() {
+
+        let value = this.value.replace(/\D/g, '');
+
+        if (value === '') {
+            this.value = '';
+            return;
+        }
+
+        value = (parseFloat(value) / 100).toFixed(2);
+        value = value.replace('.', ',');
+        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        this.value = 'R$ ' + value;
+    });
+
+});
+</script>
 @endsection

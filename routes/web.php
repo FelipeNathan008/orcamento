@@ -13,14 +13,11 @@ use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\CustomizacaoController;
 use App\Http\Controllers\PrecoCustomizacaoController;
 use App\Models\Customizacao;
-use App\Http\Controllers\ContactController; // Importe o ContactController
-use App\Models\Preco; // Importe o modelo Preco para usar na nova rota
-use Illuminate\Http\Request; // Importe a classe Request
+use Illuminate\Http\Request; 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\TipoPagamentoController;
 use App\Http\Controllers\FormaPagamentoController;
-use App\Http\Controllers\DetalhesFormaPagController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\LogStatusController;
 use App\Http\Controllers\StatusMercadoriaController;
@@ -65,10 +62,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     //ROUTE FINANCEIRO E PAGAMENTO
     Route::resource('tipo_pagamento', TipoPagamentoController::class);
-    Route::resource('detalhes_forma_pag', DetalhesFormaPagController::class);
     Route::resource('forma_pagamento', FormaPagamentoController::class);
-    Route::get('/detalhes_forma_pag/create', [DetalhesFormaPagController::class, 'create'])
-        ->name('detalhes_forma_pag.create');
 
     Route::resource('financeiro', FinanceiroController::class);
     Route::resource('log_status', LogStatusController::class);

@@ -36,7 +36,7 @@
     </div>
 
 
-    <form id="formFluxo" action="{{ route('fluxo_caixa.store') }}" method="POST" class="space-y-6">
+    <form id="fluxoCaixaForm" action="{{ route('fluxo_caixa.store') }}" method="POST" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -185,7 +185,7 @@
         </div>
 
         <div class="flex justify-center mt-8">
-            <button class="px-8 py-3 text-white rounded-md bg-button-save-bg">
+            <button id="btnSalvarFluxoCaixa" class="px-8 py-3 text-white rounded-md bg-button-save-bg">
                 SALVAR
             </button>
         </div>
@@ -203,6 +203,18 @@
 
 @push('scripts')
 <script>
+    const form = document.getElementById('fluxoCaixaForm');
+    const btnSalvar = document.getElementById('btnSalvarFluxoCaixa');
+
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
     document.addEventListener('DOMContentLoaded', function() {
 
         // =========================
@@ -385,7 +397,7 @@
             valorReal.value = value.replace(/\./g, '').replace(',', '.');
         });
 
-        document.getElementById('formFluxo').addEventListener('submit', function() {
+        document.getElementById('fluxoCaixaForm').addEventListener('submit', function() {
             let value = valorInput.value.replace(/\D/g, '');
             value = (value / 100).toFixed(2);
             valorReal.value = value;

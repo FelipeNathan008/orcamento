@@ -89,6 +89,7 @@
 
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Banco</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Código</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Agência</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Conta</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Dígito</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Descrição</th>
@@ -110,6 +111,10 @@
 
                     <td class="px-4 py-4 text-sm text-gray-700">
                         {{ $conta->conta_cod_banco }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm text-gray-700">
+                        {{ $conta->conta_agencia }}
                     </td>
 
                     <td class="px-4 py-4 text-sm text-gray-700">
@@ -174,41 +179,41 @@
 {{-- SCRIPT --}}
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
 
-    const searchInput = document.getElementById('searchContaInput');
-    const clearBtn = document.getElementById('clearFiltersConta');
+        const searchInput = document.getElementById('searchContaInput');
+        const clearBtn = document.getElementById('clearFiltersConta');
 
-    const rows = Array.from(document.querySelectorAll('#contaTableBody tr'));
-    const noResults = document.getElementById('noResultsConta');
+        const rows = Array.from(document.querySelectorAll('#contaTableBody tr'));
+        const noResults = document.getElementById('noResultsConta');
 
-    function filter() {
-        const term = searchInput.value.toLowerCase();
-        let found = false;
+        function filter() {
+            const term = searchInput.value.toLowerCase();
+            let found = false;
 
-        rows.forEach(row => {
-            const nome = row.dataset.nome.toLowerCase();
-            const desc = (row.dataset.desc || '').toLowerCase();
+            rows.forEach(row => {
+                const nome = row.dataset.nome.toLowerCase();
+                const desc = (row.dataset.desc || '').toLowerCase();
 
-            if (nome.includes(term) || desc.includes(term)) {
-                row.style.display = '';
-                found = true;
-            } else {
-                row.style.display = 'none';
-            }
+                if (nome.includes(term) || desc.includes(term)) {
+                    row.style.display = '';
+                    found = true;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            noResults.classList.toggle('hidden', found);
+        }
+
+        searchInput.addEventListener('input', filter);
+
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            filter();
         });
 
-        noResults.classList.toggle('hidden', found);
-    }
-
-    searchInput.addEventListener('input', filter);
-
-    clearBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        filter();
     });
-
-});
 </script>
 @endpush
 

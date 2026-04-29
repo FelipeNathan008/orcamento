@@ -3,7 +3,7 @@
 @section('title', 'Criar Nova Customização')
 
 @section('content')
-<div class="max-w-6xl mx-auto bg-gray-100 p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
+<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
 
     {{-- Título e botão de voltar --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Criar Nova Customização</h1>
@@ -87,8 +87,7 @@
 
 
 
-    <form action="{{ route('customizacao.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6"
-        id="customizacaoForm">
+    <form id="customizacaoForm" action="{{ route('customizacao.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
         <input type="hidden"
@@ -264,7 +263,7 @@ file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:fo
         {{-- BOTÕES --}}
 
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarCustomizacao"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
@@ -321,6 +320,19 @@ file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:fo
     data-precos='@json($precos)'>
 </div>
 <script>
+    const form = document.getElementById('customizacaoForm');
+    const btnSalvar = document.getElementById('btnSalvarCustomizacao');
+
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
+
     $(document).ready(function() {
 
         // ===============================================

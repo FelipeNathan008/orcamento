@@ -32,20 +32,25 @@ class PrecoCustomizacaoController extends Controller
      * Armazena um recurso recém-criado no armazenamento.
      */
     public function store(Request $request)
+
     {
-        // 1. Valida os dados da requisição
+        $valor = str_replace(['R$', '.', ','], ['', '', '.'], $request->preco_valor);
+
+        $request->merge([
+            'preco_valor' => $valor
+        ]);
+
+        // Validação agora funciona
         $validatedData = $request->validate([
             'preco_tipo' => 'required|string|max:45',
             'preco_tamanho' => 'required|string|max:30',
             'preco_valor' => 'required|numeric|max:99999.99',
         ]);
 
-        // 2. Cria um novo registro no banco de dados com os dados validados
-        PrecoCustomizacao::create($validatedData);
 
-        // 3. Redireciona o usuário de volta com uma mensagem de sucesso
+        PrecoCustomizacao::create($validatedData);
         return redirect()->route('preco_customizacao.index')
-                         ->with('success', 'Preço de customização criado com sucesso!');
+            ->with('success', 'Preço de customização criado com sucesso!');
     }
 
     /**
@@ -77,22 +82,23 @@ class PrecoCustomizacaoController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // 1. Valida os dados da requisição
+        $valor = str_replace(['R$', '.', ','], ['', '', '.'], $request->preco_valor);
+
+        $request->merge([
+            'preco_valor' => $valor
+        ]);
         $validatedData = $request->validate([
             'preco_tipo' => 'required|string|max:45',
             'preco_tamanho' => 'required|string|max:30',
             'preco_valor' => 'required|numeric|max:99999.99',
         ]);
 
-        // 2. Encontra o preço de customização pelo ID ou retorna um erro 404
         $precoCustomizacao = PrecoCustomizacao::findOrFail($id);
 
-        // 3. Atualiza o registro com os dados validados
         $precoCustomizacao->update($validatedData);
 
-        // 4. Redireciona o usuário de volta com uma mensagem de sucesso
         return redirect()->route('preco_customizacao.index')
-                         ->with('success', 'Preço de customização atualizado com sucesso!');
+            ->with('success', 'Preço de customização atualizado com sucesso!');
     }
 
     /**
@@ -108,6 +114,6 @@ class PrecoCustomizacaoController extends Controller
 
         // 3. Redireciona o usuário de volta com uma mensagem de sucesso
         return redirect()->route('preco_customizacao.index')
-                         ->with('success', 'Preço de customização excluído com sucesso!');
+            ->with('success', 'Preço de customização excluído com sucesso!');
     }
 }

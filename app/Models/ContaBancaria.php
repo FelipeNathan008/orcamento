@@ -13,6 +13,7 @@ class ContaBancaria extends Model
     protected $fillable = [
         'conta_nome_banco',
         'conta_cod_banco',
+        'conta_agencia',
         'numero_conta_corrente',
         'numero_digito_corrente',
         'conta_desc',

@@ -30,7 +30,7 @@
 
     {{-- Formulário para criar novo preço de customização --}}
     <div>
-        <form action="{{ route('preco_customizacao.store') }}" method="POST" class="space-y-6">
+        <form id="precoCustomizacaoForm" action="{{ route('preco_customizacao.store') }}" method="POST" class="space-y-6">
             @csrf
 
             {{-- Seção de campos do formulário em uma única coluna --}}
@@ -79,7 +79,7 @@
 
             <!-- Botões de Ação -->
             <div class="flex justify-center mt-8">
-                <button type="submit"
+                <button type="submit" id="btnSalvarPrecoCustomizacao"
                     class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                     SALVAR
                 </button>
@@ -98,25 +98,40 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const precoValorInput = document.getElementById('preco_valor');
+    const form = document.getElementById('precoCustomizacaoForm');
+    const btnSalvar = document.getElementById('btnSalvarPrecoCustomizacao');
 
-        if (precoValorInput) {
-            precoValorInput.addEventListener('input', function(event) {
-                // Remove todos os caracteres não numéricos
-                let value = event.target.value.replace(/\D/g, '');
+    form.addEventListener('submit', function() {
 
-                // Limita a um máximo de 4 dígitos (2 inteiros + 2 decimais)
-                value = value.substring(0, 4);
-
-                if (value.length > 2) {
-                    // Adiciona o ponto decimal duas posições antes do final
-                    value = value.substring(0, value.length - 2) + '.' + value.substring(value.length - 2);
-                }
-
-                event.target.value = value;
-            });
+        if (btnSalvar.disabled) {
+            return false;
         }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('preco_valor');
+
+        input.addEventListener('input', function() {
+
+            let value = this.value.replace(/\D/g, '');
+
+            if (value === '') {
+                this.value = '';
+                return;
+            }
+
+            value = (parseFloat(value) / 100).toFixed(2);
+
+            value = value.replace('.', ',');
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            this.value = 'R$ ' + value;
+        });
     });
 </script>
 @endpush

@@ -39,6 +39,17 @@
                     required>
             </div>
 
+            {{-- NOVO CAMPO AQUI --}}
+            <div>
+                <label class="block text-sm font-medium mb-1">Agência</label>
+                <input type="text" name="conta_agencia"
+                    value="{{ old('conta_agencia', $conta->conta_agencia) }}"
+                    class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
+                    maxlength="50"
+                    placeholder="1234"
+                    required>
+            </div>
+
             {{-- CONTA --}}
             <div>
                 <label class="block text-sm font-medium mb-1">Número da Conta</label>

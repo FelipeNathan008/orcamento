@@ -24,6 +24,7 @@ class ContaBancariaController extends Controller
             'conta_nome_banco' => 'required|string|max:200',
             'conta_cod_banco' => 'required|string|max:10',
             'numero_conta_corrente' => 'required|string|max:100',
+            'conta_agencia' => 'required|string|max:50',
             'numero_digito_corrente' => 'required|string|max:90',
             'conta_desc' => 'nullable|string|max:255',
         ]);
@@ -51,6 +52,7 @@ class ContaBancariaController extends Controller
         $validatedData = $request->validate([
             'conta_nome_banco' => 'required|string|max:200',
             'conta_cod_banco' => 'required|string|max:10',
+            'conta_agencia' => 'required|string|max:50',
             'numero_conta_corrente' => 'required|string|max:100',
             'numero_digito_corrente' => 'required|string|max:90',
             'conta_desc' => 'nullable|string|max:255',

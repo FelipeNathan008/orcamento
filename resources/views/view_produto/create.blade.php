@@ -28,7 +28,7 @@
     @endif
 
     {{-- Formulário de cadastro --}}
-    <form action="{{ route('produto.store') }}" method="POST" class="space-y-6" id="produto-form">
+    <form action="{{ route('produto.store') }}" method="POST" class="space-y-6" id="produtoForm">
         @csrf
 
         {{-- Seção de campos do formulário organizada em layout de duas colunas (responsivo) --}}
@@ -243,8 +243,8 @@
 
         </div> {{-- Fim do grid principal --}}
 
-         <div class="flex justify-center mt-8">
-            <button type="submit"
+        <div class="flex justify-center mt-8">
+            <button type="submit" id="btnSalvarProduto"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
@@ -264,6 +264,19 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
+    const form = document.getElementById('produtoForm');
+    const btnSalvar = document.getElementById('btnSalvarProduto');
+
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
+    
     $(document).ready(function() {
         // Máscara para Preço (moeda brasileira)
         $('#prod_preco').mask('000.000.000.000.000,00', {
@@ -453,7 +466,7 @@
         });
 
         // Validação de formulário personalizada
-        $('#produto-form').on('submit', function(event) {
+        $('#produtoForm').on('submit', function(event) {
             // Antes de enviar, remove a máscara do campo de preço
             const precoValue = $('#prod_preco').val();
             const cleanPreco = precoValue.replace(/\./g, '').replace(',', '.');

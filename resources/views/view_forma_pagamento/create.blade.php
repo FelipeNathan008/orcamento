@@ -1,9 +1,29 @@
-{{-- resources/views/view_forma_pagamento/create.blade.php --}}
 @extends('layouts.app_financeiro')
 
 @section('title', 'Cadastrar Nova Forma de Pagamento')
 
 @section('content')
+@php
+$financeiroId = request('financeiro_id') ?? array_key_first(request()->query());
+
+$financeiroSelecionado = null;
+$valorPago = 0;
+$valorTotal = 0;
+$valorFaltante = 0;
+
+if ($financeiroId) {
+$financeiroSelecionado = $financeiros->firstWhere('id_fin', $financeiroId);
+
+if ($financeiroSelecionado) {
+$formasDoFinanceiro = $formasPagamento->where('financeiro_id_fin', $financeiroId);
+
+$valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
+$valorPago = $formasDoFinanceiro->sum('forma_valor');
+$valorFaltante = max($valorTotal - $valorPago, 0);
+}
+}
+@endphp
+
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Nova Forma de Pagamento</h1>
 
@@ -18,50 +38,25 @@
     </div>
     @endif
 
-    @php
-    $financeiroSelecionado = null;
-    $valorPago = 0;
-    $valorTotal = 0;
-    $valorFaltante = 0;
-
-    if(request('financeiro_id')) {
-    $financeiroSelecionado = $financeiros->firstWhere('id_fin', request('financeiro_id'));
-
-    // Pega todas as formas de pagamento do financeiro selecionado
-    $formasDoFinanceiro = $formasPagamento->where('financeiro_id_fin', request('financeiro_id'));
-
-    $valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
-    $valorPago = $formasDoFinanceiro->sum('forma_valor');
-    $valorFaltante = max($valorTotal - $valorPago, 0);
-    }
-    @endphp
-
-    <form action="{{ route('forma_pagamento.store') }}" method="POST" class="space-y-6">
+    <form id="formaPagamentoForm" action="{{ route('forma_pagamento.store') }}" method="POST" class="space-y-6">
         @csrf
 
+        <input type="hidden" name="financeiro_id_fin" value="{{ $financeiroId }}">
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {{-- Card Financeiro --}}
             @if($financeiroSelecionado)
             <div class="md:col-span-2 bg-orange-50 border border-orange-200 rounded-lg p-6 shadow-sm">
-
-                <h2 class="text-lg font-bold text-orange-700 mb-4">
-                    Informações do Financeiro
-                </h2>
+                <h2 class="text-lg font-bold text-orange-700 mb-4">Informações do Financeiro</h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-
                     <div>
                         <p class="text-gray-600">Orçamento</p>
-                        <p class="font-semibold text-gray-900">
-                            {{ $financeiroSelecionado->orcamento_id_orcamento }}
-                        </p>
+                        <p class="font-semibold text-gray-900">{{ $financeiroSelecionado->orcamento_id_orcamento }}</p>
                     </div>
 
                     <div>
                         <p class="text-gray-600">Cliente</p>
-                        <p class="font-semibold text-gray-900">
-                            {{ $financeiroSelecionado->fin_nome_cliente }}
-                        </p>
+                        <p class="font-semibold text-gray-900">{{ $financeiroSelecionado->fin_nome_cliente }}</p>
                     </div>
 
                     <div>
@@ -69,26 +64,21 @@
                         <p class="font-semibold text-gray-900">
                             R$ {{ number_format($financeiroSelecionado->fin_valor_total, 2, ',', '.') }}
                         </p>
+
                     </div>
 
                     <div>
                         <p class="text-gray-600">Status</p>
-                        <p class="font-semibold text-gray-900">
-                            {{ $financeiroSelecionado->fin_status }}
-                        </p>
+                        <p class="font-semibold text-gray-900">{{ $financeiroSelecionado->fin_status }}</p>
                     </div>
-
                 </div>
-
             </div>
-
-            {{-- ID oculto para envio no form --}}
-            <input type="hidden" name="financeiro_id_fin" value="{{ $financeiroSelecionado->id_fin }}">
             @endif
 
-            {{-- Select Tipo de Pagamento --}}
             <div class="md:col-span-1">
-                <label for="tipo_pagamento_id_tipo" class="block text-sm font-medium text-custom-dark-text mb-1">Tipo de Pagamento</label>
+                <label for="tipo_pagamento_id_tipo" class="block text-sm font-medium text-custom-dark-text mb-1">
+                    Tipo de Pagamento
+                </label>
                 <select name="tipo_pagamento_id_tipo" id="tipo_pagamento_id_tipo" required
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     <option value="">Selecione</option>
@@ -103,19 +93,18 @@
                 @enderror
             </div>
 
-            {{-- Valor --}}
             <div class="md:col-span-1">
                 <label for="forma_valor" class="block text-sm font-medium text-custom-dark-text mb-1">Valor Total</label>
                 <input type="text" name="forma_valor" id="forma_valor"
                     value="{{ old('forma_valor') }}" required
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                     placeholder="R$ 0,00">
+                <p id="msg_valor" class="text-xs text-gray-500 hidden">Preencha o tipo de pagamento primeiro</p>
                 @error('forma_valor')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
-            {{-- Competência --}}
             <div class="md:col-span-1">
                 <label for="forma_mes" class="block text-sm font-medium text-custom-dark-text mb-1">Competência (Mês)</label>
                 <input type="number" name="forma_mes" id="forma_mes"
@@ -129,73 +118,89 @@
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
-            {{-- Prazo --}}
+
             <div class="md:col-span-1">
                 <label for="forma_prazo" class="block text-sm font-medium text-custom-dark-text mb-1">Prazo</label>
-
                 <select name="forma_prazo" id="forma_prazo" required
-                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
-        focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-
+                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     <option value="">Selecione...</option>
                     <option value="À vista" {{ old('forma_prazo') == 'À vista' ? 'selected' : '' }}>À vista</option>
                     <option value="Parcelado" {{ old('forma_prazo') == 'Parcelado' ? 'selected' : '' }}>Parcelado</option>
                 </select>
+                <p id="msg_prazo" class="text-xs text-gray-500 hidden">Preencha o valor primeiro</p>
 
                 @error('forma_prazo')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
-            {{-- CONTA BANCÁRIA --}}
             <div class="md:col-span-1">
-                <label class="block text-sm font-medium text-custom-dark-text mb-1">
-                    Conta Bancária
-                </label>
-
-                <select name="conta_bancaria_id"
-                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
-                     focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-
+                <label class="block text-sm font-medium text-custom-dark-text mb-1">Conta Bancária</label>
+                <select name="conta_bancaria_id" required
+                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     <option value="">Selecione</option>
-
                     @foreach ($contas as $conta)
                     <option value="{{ $conta->id_conta }}">
                         {{ $conta->conta_nome_banco }} - {{ $conta->numero_conta_corrente }}
                     </option>
                     @endforeach
-
                 </select>
+                @error('conta_bancaria_id')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
             </div>
 
-
-            {{-- Quantidade de Parcelas --}}
             <div class="md:col-span-1">
                 <label for="forma_qtd_parcela" class="block text-sm font-medium text-custom-dark-text mb-1">Qtd Parcelas</label>
                 <input type="number" name="forma_qtd_parcela" id="forma_qtd_parcela"
-                    value="{{ old('forma_qtd_parcela') }}" required
-                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
-focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                    value="{{ old('forma_qtd_parcela', 1) }}"
+                    min="1"
+                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                     placeholder="1, 2, 3...">
+                <p id="msg_parcelas" class="text-xs text-gray-500 hidden">Selecione o prazo primeiro</p>
+
                 @error('forma_qtd_parcela')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
-            {{-- DATA (somente à vista) --}}
-            <div class="md:col-span-1 hidden" id="campo_data">
-                <label class="block text-sm font-medium text-custom-dark-text mb-1">
-                    Data do Pagamento
-                </label>
+            <div id="areaParcelas" class="hidden md:col-span-2 bg-gray-50 border border-gray-200 rounded-lg p-5">
+                <h2 class="text-lg font-bold text-gray-700 mb-4">Parcelas geradas</h2>
 
-                <input type="date" name="forma_data"
-                    value="{{ old('forma_data') }}"
-                    max="{{ date('Y-m-d') }}"
-                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none
-    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="data_primeira_parcela" class="block text-sm font-medium text-custom-dark-text mb-1">
+                            Data da 1ª parcela
+                        </label>
+                        <input type="date" id="data_primeira_parcela"
+                            class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-custom-dark-text mb-1">
+                            Valor de cada parcela
+                        </label>
+                        <input type="text" id="valor_parcela_preview"
+                            class="block w-full px-4 py-2 bg-gray-100 text-gray-900 rounded-md border border-gray-300"
+                            readonly>
+                    </div>
+                </div>
+
+                <div id="listaParcelas" class="space-y-2"></div>
+                <div id="parcelasHidden"></div>
             </div>
 
-            {{-- Descrição --}}
+            <div class="md:col-span-1 hidden" id="campo_data">
+                <label class="block text-sm font-medium text-custom-dark-text mb-1">Data do Pagamento</label>
+                <input type="date" name="forma_data" id="forma_data"
+                    value="{{ old('forma_data') }}"
+                    max="{{ date('Y-m-d') }}"
+                    class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                @error('forma_data')
+                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="md:col-span-2">
                 <label for="forma_descricao" class="block text-sm font-medium text-custom-dark-text mb-1">Descrição</label>
                 <textarea name="forma_descricao" id="forma_descricao" placeholder="Entrada, Chegada do Material..." required
@@ -206,77 +211,21 @@ focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 e
             </div>
         </div>
 
-        {{-- Valores totais --}}
         <div id="valorTotalPedido" class="mt-6 text-red-600 font-bold text-lg text-center">
             Valor Total do Pedido: R$ {{ number_format($valorTotal, 2, ',', '.') }}<br>
             Valor Pago: R$ {{ number_format($valorPago, 2, ',', '.') }}<br>
             Valor Faltante: R$ {{ number_format($valorFaltante, 2, ',', '.') }}
         </div>
 
-        {{-- Script para atualizar valores dinamicamente --}}
-        <script>
-            const financeiros = JSON.parse('@json($financeiros)');
-            const formasPagamento = JSON.parse('@json($formasPagamento)');
-            const selectFinanceiro = document.getElementById('financeiro_id_fin_fake');
-            const inputValor = document.getElementById('forma_valor');
-            const valorTotalDiv = document.getElementById('valorTotalPedido');
-
-            // Garantir que todas as variáveis sejam números
-            let valorTotal = parseFloat('@json($valorTotal)') || 0;
-            let valorPagoAtual = parseFloat('@json($valorPago)') || 0;
-            let valorFaltante = Math.max(valorTotal - valorPagoAtual, 0);
-
-            function atualizarValores() {
-                let valorInput = parseFloat(inputValor.value) || 0;
-
-                // Corrige automaticamente se o valor digitado ultrapassar o faltante
-                if (valorInput > valorFaltante) {
-                    valorInput = valorFaltante;
-                    inputValor.value = valorFaltante.toFixed(2);
-                }
-
-                const faltante = Math.max(valorTotal - valorPagoAtual - valorInput, 0);
-
-                valorTotalDiv.innerHTML = `
-            Valor Total do Pedido: R$ ${valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}<br>
-            Valor Pago: R$ ${valorPagoAtual.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}<br>
-            Valor Faltante: R$ ${faltante.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-        `;
-            }
-
-            function atualizarFinanceiro() {
-                const selectedId = parseInt(selectFinanceiro.value);
-
-                const fin = financeiros.find(f => f.id_fin === selectedId);
-                if (fin) {
-                    valorTotal = parseFloat(fin.fin_valor_total) || 0;
-
-                    const formasDoFin = formasPagamento.filter(f => f.financeiro_id_fin === selectedId);
-                    valorPagoAtual = formasDoFin.reduce((sum, f) => sum + parseFloat(f.forma_valor || 0), 0);
-
-                    valorFaltante = Math.max(valorTotal - valorPagoAtual, 0);
-
-                    atualizarValores();
-                }
-            }
-
-            selectFinanceiro.addEventListener('change', atualizarFinanceiro);
-            inputValor.addEventListener('input', atualizarValores);
-
-            window.addEventListener('DOMContentLoaded', () => {
-                atualizarFinanceiro();
-            });
-        </script>
-
         <div class="flex justify-center mt-8">
-            <button type="submit"
+            <button type="submit" id="btnSalvarForma"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
                 SALVAR
             </button>
         </div>
-        {{-- Botão Voltar unificado e movido para fora do formulário --}}
+
         <div class="flex justify-center mb-8">
-            <a href="{{ url('/forma_pagamento?' . (int) request()->query('financeiro_id')) }}"
+            <a href="{{ url('/forma_pagamento?' . $financeiroId) }}"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
                 VOLTAR PARA A LISTA
             </a>
@@ -284,87 +233,226 @@ focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 e
     </form>
 </div>
 
-
 <script>
-    const selectPrazo = document.getElementById('forma_prazo');
-    const inputParcelas = document.getElementById('forma_qtd_parcela');
+    const form = document.getElementById('formaPagamentoForm');
+    const btnSalvar = document.getElementById('btnSalvarForma');
 
-    const campoData = document.getElementById('campo_data');
+    form.addEventListener('submit', function() {
 
-    const campoDataInput = document.querySelector('input[name="forma_data"]');
-
-    campoDataInput.addEventListener('change', function() {
-
-        const hoje = new Date().toISOString().split('T')[0];
-
-        if (this.value > hoje) {
-            this.value = hoje;
+        // evita múltiplos cliques
+        if (btnSalvar.disabled) {
+            return false;
         }
+
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
     });
 
-    function controlarParcelas() {
+    const selectPrazo = document.getElementById('forma_prazo');
+    const inputParcelas = document.getElementById('forma_qtd_parcela');
+    const areaParcelas = document.getElementById('areaParcelas');
+    const inputDataPrimeiraParcela = document.getElementById('data_primeira_parcela');
+    const listaParcelas = document.getElementById('listaParcelas');
+    const parcelasHidden = document.getElementById('parcelasHidden');
+    const inputValorTotal = document.getElementById('forma_valor');
+    const inputValorParcelaPreview = document.getElementById('valor_parcela_preview');
+    const campoData = document.getElementById('campo_data');
+    const campoDataInput = document.getElementById('forma_data');
+
+    function converterValorBRparaFloat(valor) {
+        if (!valor) return 0;
+        return parseFloat(valor.replace(/\D/g, '')) / 100;
+    }
+
+    function formatarBR(valor) {
+        return valor.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function calcularValorParcela() {
+        const total = converterValorBRparaFloat(inputValorTotal.value);
+        const qtd = parseInt(inputParcelas.value);
+
+        if (!total || !qtd || qtd <= 0) return 0;
+
+        return Number((total / qtd).toFixed(2));
+    }
+
+    function add30dias(data) {
+        const nova = new Date(data);
+        nova.setDate(nova.getDate() + 30);
+        return nova;
+    }
+
+    function gerarParcelas() {
+        listaParcelas.innerHTML = '';
+        parcelasHidden.innerHTML = '';
+
+        const qtd = parseInt(inputParcelas.value);
+        const dataInicial = inputDataPrimeiraParcela.value;
+        const valorParcela = calcularValorParcela();
+
+        if (!qtd || !dataInicial || !valorParcela) {
+            inputValorParcelaPreview.value = '';
+            return;
+        }
+
+        inputValorParcelaPreview.value = 'R$ ' + formatarBR(valorParcela);
+
+        let data = new Date(dataInicial + 'T00:00:00');
+
+        for (let i = 1; i <= qtd; i++) {
+            const dia = String(data.getDate()).padStart(2, '0');
+            const mes = String(data.getMonth() + 1).padStart(2, '0');
+            const ano = data.getFullYear();
+
+            listaParcelas.innerHTML += `
+                <div class="p-3 bg-white rounded border border-gray-300 flex justify-between">
+                    <span>Parcela ${i}</span>
+                    <span><strong>${dia}/${mes}/${ano}</strong> - R$ ${formatarBR(valorParcela)}</span>
+                </div>
+            `;
+
+            parcelasHidden.innerHTML += `
+                <input type="hidden" name="datas_parcelas[]" value="${ano}-${mes}-${dia}">
+                <input type="hidden" name="valores_parcelas[]" value="${valorParcela}">
+            `;
+
+            data = add30dias(data);
+        }
+    }
+
+    function controlarCampos() {
         if (selectPrazo.value === 'À vista') {
             inputParcelas.value = 1;
             inputParcelas.readOnly = true;
-            inputParcelas.classList.add('bg-gray-200');
+            areaParcelas.classList.add('hidden');
+
+            parcelasHidden.innerHTML = '';
+            listaParcelas.innerHTML = '';
+            inputValorParcelaPreview.value = '';
+
+            inputDataPrimeiraParcela.required = false;
+            inputDataPrimeiraParcela.value = '';
 
             campoData.classList.remove('hidden');
             campoDataInput.required = true;
-
         } else if (selectPrazo.value === 'Parcelado') {
             inputParcelas.readOnly = false;
-            inputParcelas.value = '';
-            inputParcelas.classList.remove('bg-gray-200');
+            areaParcelas.classList.remove('hidden');
 
             campoData.classList.add('hidden');
             campoDataInput.required = false;
             campoDataInput.value = '';
 
+            inputDataPrimeiraParcela.required = true;
+            gerarParcelas();
         } else {
             inputParcelas.readOnly = false;
-            inputParcelas.value = '';
-            inputParcelas.classList.remove('bg-gray-200');
+            areaParcelas.classList.add('hidden');
+
+            parcelasHidden.innerHTML = '';
+            listaParcelas.innerHTML = '';
+            inputValorParcelaPreview.value = '';
+
+            inputDataPrimeiraParcela.required = false;
+            inputDataPrimeiraParcela.value = '';
 
             campoData.classList.add('hidden');
             campoDataInput.required = false;
             campoDataInput.value = '';
         }
     }
-    selectPrazo.addEventListener('change', controlarParcelas);
-    window.addEventListener('DOMContentLoaded', controlarParcelas);
 
-    // Mascara
-    const campoValor = document.getElementById('forma_valor');
+    selectPrazo.addEventListener('change', controlarCampos);
+    inputParcelas.addEventListener('input', gerarParcelas);
+    inputDataPrimeiraParcela.addEventListener('change', gerarParcelas);
+    inputValorTotal.addEventListener('input', gerarParcelas);
 
-    campoValor.addEventListener('input', function(e) {
+    window.addEventListener('DOMContentLoaded', controlarCampos);
+    const tipoPagamento = document.getElementById('tipo_pagamento_id_tipo');
+    const valor = document.getElementById('forma_valor');
+    const competencia = document.getElementById('forma_mes');
+    const prazo = document.getElementById('forma_prazo');
+    const conta = document.querySelector('[name="conta_bancaria_id"]');
+    const parcelas = document.getElementById('forma_qtd_parcela');
+    const dataPagamento = document.getElementById('forma_data');
+    const descricao = document.getElementById('forma_descricao');
 
-        let valor = e.target.value.replace(/\D/g, '');
+    const msgValor = document.getElementById('msg_valor');
+    const msgPrazo = document.getElementById('msg_prazo');
+    const msgParcelas = document.getElementById('msg_parcelas');
 
-        valor = (valor / 100).toFixed(2) + '';
 
-        valor = valor.replace(".", ",");
+    function toggleMsg(element, condition) {
+        element.classList.toggle('hidden', condition);
+    }
 
-        valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    function bloquearCampos() {
+        valor.disabled = !tipoPagamento.value;
+        toggleMsg(msgValor, tipoPagamento.value);
+        prazo.disabled = !valor.value;
+        toggleMsg(msgPrazo, valor.value);
+        parcelas.disabled = !prazo.value;
+        toggleMsg(msgParcelas, prazo.value);
 
-        e.target.value = "R$ " + valor;
 
+        // lógica especial para data
+        if (prazo.value === 'À vista') {
+            campoData.classList.remove('hidden');
+            dataPagamento.disabled = !parcelas.value;
+            areaParcelas.classList.add('hidden');
+        } else if (prazo.value === 'Parcelado') {
+            campoData.classList.add('hidden');
+            dataPagamento.disabled = true;
+            areaParcelas.classList.remove('hidden');
+        } else {
+            campoData.classList.add('hidden');
+            dataPagamento.disabled = true;
+            areaParcelas.classList.add('hidden');
+        }
+
+        descricao.disabled = prazo.value === 'À vista' ?
+            !dataPagamento.value :
+            !parcelas.value;
+    }
+
+    // eventos
+    tipoPagamento.addEventListener('change', bloquearCampos);
+
+    function formatarMoedaBR(input) {
+        let valor = input.value.replace(/\D/g, '');
+        if (valor === '') {
+            input.value = '';
+            return;
+        }
+        valor = (parseInt(valor) / 100).toFixed(2) + '';
+        valor = valor.replace('.', ',');
+        valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        input.value = 'R$ ' + valor;
+    }
+    valor.addEventListener('input', function() {
+        formatarMoedaBR(this);
+        bloquearCampos();
     });
+    prazo.addEventListener('change', bloquearCampos);
+    parcelas.addEventListener('input', bloquearCampos);
+    dataPagamento.addEventListener('change', bloquearCampos);
 
-    //validar 1-12 competencia
-    const campoCompetencia = document.getElementById('forma_mes');
+    window.addEventListener('DOMContentLoaded', () => {
 
-    campoCompetencia.addEventListener('input', function() {
+        // começa tudo travado
+        valor.disabled = true;
+        prazo.disabled = true;
+        parcelas.disabled = true;
+        dataPagamento.disabled = true;
+        descricao.disabled = true;
 
-        let valor = parseInt(this.value);
-
-        if (valor > 12) {
-            this.value = 12;
-        }
-
-        if (valor < 1) {
-            this.value = 1;
-        }
-
+        bloquearCampos();
     });
 </script>
 @endsection

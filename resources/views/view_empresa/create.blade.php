@@ -166,6 +166,18 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script>
+    const form = document.getElementById('empresaForm');
+    const btnSalvar = document.getElementById('btnSalvarEmpresa');
+
+    form.addEventListener('submit', function() {
+
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
     $(document).ready(function() {
         // Máscara para CNPJ
         $('#emp_cnpj').mask('AA.AAA.AAA/AAAA-AA', {
@@ -177,17 +189,6 @@
         });
         // Máscara para CEP
         $('#emp_cep').mask('00000-000');
-    });
-    $('#empresaForm').on('submit', function() {
-
-        const btn = $('#btnSalvarEmpresa');
-
-        btn.prop('disabled', true);
-
-        btn
-            .text('SALVANDO...')
-            .removeClass('hover:bg-button-save-hover')
-            .addClass('opacity-70 cursor-not-allowed');
     });
 </script>
 @endpush
