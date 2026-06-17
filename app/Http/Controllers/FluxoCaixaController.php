@@ -11,19 +11,40 @@ use App\Models\LogStatus;
 use App\Models\StatusMercadoria;
 use App\Models\Caixa;
 use App\Models\ContaBancaria;
+use App\Models\SaldoConta;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 
 class FluxoCaixaController extends Controller
 {
     public function index(Request $request)
     {
-        $data = $request->data;
+        $dataInicio = $request->data_inicio;
+        $dataFim = $request->data_fim;
 
-        $query = FluxoCaixa::with(['tipo', 'movimentacao', 'conta']);
-        if ($data) {
-            $query->whereDate('flu_data_despesa', $data);
+        $query = FluxoCaixa::with([
+            'tipo',
+            'movimentacao',
+            'conta'
+        ]);
+
+        if ($dataInicio && !$dataFim) {
+
+            $query->whereDate(
+                'flu_data_despesa',
+                $dataInicio
+            );
+        }
+
+        if ($dataInicio && $dataFim) {
+
+            $query->whereBetween(
+                'flu_data_despesa',
+                [$dataInicio, $dataFim]
+            );
         }
 
         $fluxos = $query->get();
@@ -32,7 +53,7 @@ class FluxoCaixaController extends Controller
         $dataFiltro = $data ?? now()->toDateString();
 
         $fluxosDoDia = FluxoCaixa::with(['tipo', 'movimentacao', 'conta'])
-        ->whereDate('flu_data_despesa', $dataFiltro)
+            ->whereDate('flu_data_despesa', $dataFiltro)
             ->get();
 
         // CALCULOS
@@ -40,102 +61,229 @@ class FluxoCaixaController extends Controller
         $saida = 0;
 
         foreach ($fluxosDoDia as $fluxo) {
-            $nome = trim(strtolower($fluxo->movimentacao->mov_nome ?? ''));
 
-            if ($nome == 'entrada caixa') {
-                $entrada += $fluxo->flu_valor;
+            $mov = mb_strtolower(trim($fluxo->movimentacao->mov_nome ?? ''));
+
+            if (str_contains($mov, 'entrada')) {
+                $entrada += (float) $fluxo->flu_valor;
             }
 
-            if ($nome == 'saida caixa' || $nome == 'saída caixa') {
-                $saida += $fluxo->flu_valor;
+            if (
+                str_contains($mov, 'saida') ||
+                str_contains($mov, 'saída')
+            ) {
+                $saida += (float) $fluxo->flu_valor;
             }
         }
 
         $caixa = Caixa::first();
         $saldoTotal = $caixa ? $caixa->caixa_saldo : 0;
-        $saldo = $entrada - $saida;
 
-        return view('view_fluxo_caixa.index', compact('fluxos', 'entrada', 'saida', 'saldoTotal', 'saldo', 'data'));
-    }
+        $contaSelecionada = $request->conta_bancaria_id;
 
-    public function create()
-    {
-        $tipos = TipoFluxoCaixa::all();
-        $caixa = Caixa::first();
         $contas = ContaBancaria::all();
-        $saldoTotal = $caixa ? $caixa->caixa_saldo : 0;
-        $movimentacoes = Movimentacao::all();
 
-        return view('view_fluxo_caixa.create', compact('tipos', 'contas', 'movimentacoes', 'saldoTotal'));
+        $dataFiltro = $data ?? now()->toDateString();
+
+        $entrada = 0;
+        $saida = 0;
+        $saldoConta = 0;
+
+        if ($contaSelecionada) {
+
+            $fluxosDoDia = FluxoCaixa::with(['movimentacao'])
+                ->whereDate('flu_data_despesa', $dataFiltro)
+                ->where('conta_bancaria_id', $contaSelecionada)
+                ->get();
+
+            foreach ($fluxosDoDia as $fluxo) {
+
+                $mov = mb_strtolower(
+                    trim($fluxo->movimentacao->mov_nome ?? '')
+                );
+
+                if (str_contains($mov, 'entrada')) {
+                    $entrada += (float) $fluxo->flu_valor;
+                }
+
+                if (
+                    str_contains($mov, 'saida') ||
+                    str_contains($mov, 'saída')
+                ) {
+                    $saida += (float) $fluxo->flu_valor;
+                }
+            }
+
+            $saldoConta = SaldoConta::where(
+                'id_conta_bancaria_id',
+                $contaSelecionada
+            )->value('saldo_conta_valor') ?? 0;
+        }
+
+        return view('view_fluxo_caixa.index', compact('fluxos', 'entrada', 'saida', 'saldoConta', 'contas', 'contaSelecionada', 'dataInicio', 'dataFim'));
     }
 
 
     public function gerarFluxoPdfPorData(Request $request)
     {
-        $data = $request->data;
+        $dataInicio = $request->data_inicio;
+        $dataFim = $request->data_fim;
 
-        $fluxos = FluxoCaixa::with(['tipo', 'movimentacao'])
-            ->whereDate('flu_data_despesa', $data)
-            ->get();
+        $query = FluxoCaixa::with([
+            'tipo',
+            'movimentacao'
+        ]);
 
-        $pdf = Pdf::loadView('view_fluxo_caixa.pdf', compact('fluxos', 'data'));
+        if ($dataInicio && !$dataFim) {
 
-        return $pdf->download('Fluxo_Caixa' . $data . '.pdf');
+            $query->whereDate(
+                'flu_data_despesa',
+                $dataInicio
+            );
+        }
+
+        if ($dataInicio && $dataFim) {
+
+            $query->whereBetween(
+                'flu_data_despesa',
+                [$dataInicio, $dataFim]
+            );
+        }
+
+        $fluxos = $query->get();
+
+        $pdf = Pdf::loadView(
+            'view_fluxo_caixa.pdf',
+            compact(
+                'fluxos',
+                'dataInicio',
+                'dataFim'
+            )
+        );
+
+        $nomeArquivo = 'Fluxo_de_Caixa';
+
+        if ($dataInicio && $dataFim) {
+
+            $nomeArquivo .= '_' .
+                \Carbon\Carbon::parse($dataInicio)->format('d-m-Y') .
+                '_a_' .
+                \Carbon\Carbon::parse($dataFim)->format('d-m-Y');
+        } elseif ($dataInicio) {
+
+            $nomeArquivo .= '_' .
+                \Carbon\Carbon::parse($dataInicio)->format('d-m-Y');
+        }
+
+        return $pdf->download($nomeArquivo . '.pdf');
+    }
+
+    public function create()
+    {
+        $contas = ContaBancaria::all();
+        $tipos = TipoFluxoCaixa::all();
+        $movimentacoes = Movimentacao::all();
+
+        return view(
+            'view_fluxo_caixa.create',
+            compact(
+                'contas',
+                'tipos',
+                'movimentacoes'
+            )
+        );
     }
 
     public function store(Request $request)
     {
-        //dd($request);
-        $validatedData = $request->validate([
-            'flu_data_despesa' => 'required|date',
-            'flu_id_tipo' => 'required|integer',
-            'flu_id_movimentacao' => 'required|integer',
-            'conta_bancaria_id' => 'required|integer|exists:conta_bancaria,id_conta',
-            'flu_valor' => 'required|numeric',
-            'flu_tipo_fiscal' => 'required|string|max:90',
-            'flu_num_doc' => 'nullable|string|max:255',
-            'flu_desc' => 'required|string|max:180',
+        $valor = str_replace('.', '', $request->flu_valor);
+        $valor = str_replace(',', '.', $valor);
+        $valor = (float) $valor;
+        $request->validate([
+            'flu_data_despesa'      => 'required|date',
+            'conta_bancaria_id'     => 'required',
+            'flu_id_tipo'           => 'required',
+            'flu_id_movimentacao'   => 'required',
+            'flu_valor'             => 'required|numeric|min:0.01',
+            'flu_tipo_fiscal'       => 'required|max:100',
+            'flu_num_doc'           => 'nullable|max:100',
+            'flu_desc'              => 'required|max:180',
         ]);
 
-        $mov = Movimentacao::find($validatedData['flu_id_movimentacao']);
-        $caixa = Caixa::first();
-        $saldoAtual = $caixa ? $caixa->caixa_saldo : 0;
+        DB::beginTransaction();
 
-        if ($mov && in_array(strtolower($mov->mov_nome), ['saida caixa', 'saída caixa'])) {
+        try {
 
-            if (($saldoAtual - $validatedData['flu_valor']) < 0) {
-                return redirect()->back()
-                    ->with('error', 'Saldo insuficiente no caixa!')
-                    ->withInput();
+            $movimentacao = Movimentacao::findOrFail(
+                $request->flu_id_movimentacao
+            );
+
+            $saldoConta = SaldoConta::firstOrCreate(
+                [
+                    'id_conta_bancaria_id' => $request->conta_bancaria_id
+                ],
+                [
+                    'saldo_conta_valor' => 0
+                ]
+            );
+
+            $valor = (float) $request->flu_valor;
+
+            $nomeMovimentacao = strtolower(
+                trim($movimentacao->mov_nome)
+            );
+
+            if (str_contains($nomeMovimentacao, 'entrada')) {
+                $saldoConta->saldo_conta_valor += $valor;
+                $saldoConta->save();
             }
+
+
+            if (
+                str_contains($nomeMovimentacao, 'saida') ||
+                str_contains($nomeMovimentacao, 'saída')
+            ) {
+
+                if ($saldoConta->saldo_conta_valor < $valor) {
+                    DB::rollBack();
+                    return back()
+                        ->withInput()
+                        ->with(
+                            'error',
+                            'Saldo insuficiente para realizar esta saída.'
+                        );
+                }
+
+                $saldoConta->saldo_conta_valor -= $valor;
+
+                $saldoConta->save();
+            }
+
+            FluxoCaixa::create([
+                'flu_data_despesa'      => $request->flu_data_despesa,
+                'conta_bancaria_id'     => $request->conta_bancaria_id,
+                'flu_id_tipo'           => $request->flu_id_tipo,
+                'flu_id_movimentacao'   => $request->flu_id_movimentacao,
+                'flu_valor'             => $valor,
+                'flu_tipo_fiscal'       => $request->flu_tipo_fiscal,
+                'flu_num_doc'           => $request->flu_num_doc,
+                'flu_desc'              => $request->flu_desc,
+            ]);
+
+            DB::commit();
+            return redirect()
+                ->route('fluxo_caixa.index')
+                ->with('success', 'Lançamento criado com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()
+                ->withInput()
+                ->with(
+                    'error',
+                    'Erro ao salvar lançamento: ' . $e->getMessage()
+                );
         }
-
-        FluxoCaixa::create($validatedData);
-
-        // CAIXA
-        $mov = Movimentacao::find($validatedData['flu_id_movimentacao']);
-
-        if ($mov && in_array(strtolower($mov->mov_nome), ['entrada caixa', 'saída caixa'])) {
-
-            $caixa = Caixa::first();
-
-            if (!$caixa) {
-                $caixa = Caixa::create(['caixa_saldo' => 0]);
-            }
-
-            if (strtolower($mov->mov_nome) == 'entrada caixa') {
-                $caixa->caixa_saldo += $validatedData['flu_valor'];
-            } else {
-                $caixa->caixa_saldo -= $validatedData['flu_valor'];
-            }
-
-            $caixa->save();
-        }
-
-        return redirect()->route('fluxo_caixa.index')
-            ->with('success', 'Registro de fluxo criado com sucesso!');
     }
-
 
     public function storeFluxo(Request $request)
     {
@@ -158,14 +306,46 @@ class FluxoCaixaController extends Controller
 
             FluxoCaixa::create([
                 'flu_data_despesa' => $validatedData['flu_data_despesa'],
+                'conta_bancaria_id' => $validatedData['conta_bancaria_id'],
                 'flu_id_tipo' => $validatedData['flu_id_tipo'],
                 'flu_id_movimentacao' => $validatedData['flu_id_movimentacao'],
-                'conta_bancaria_id' => $validatedData['conta_bancaria_id'],
                 'flu_valor' => $validatedData['flu_valor'],
                 'flu_tipo_fiscal' => $validatedData['flu_tipo_fiscal'],
                 'flu_num_doc' => $validatedData['flu_num_doc'],
                 'flu_desc' => $validatedData['flu_desc'],
             ]);
+
+            $mov = Movimentacao::find($validatedData['flu_id_movimentacao']);
+
+            $saldoConta = SaldoConta::firstOrCreate(
+                [
+                    'id_conta_bancaria_id' => $validatedData['conta_bancaria_id']
+                ],
+                [
+                    'saldo_conta_valor' => 0
+                ]
+            );
+
+            $nomeMov = strtolower(trim($mov->mov_nome));
+
+            if (str_contains($nomeMov, 'saida')) {
+
+                if (($saldoConta->saldo_conta_valor - $validatedData['flu_valor']) < 0) {
+                    throw new \Exception('Saldo insuficiente na conta bancária.');
+                }
+            }
+
+            if (str_contains($nomeMov, 'e   ntrada')) {
+
+                $saldoConta->saldo_conta_valor += $validatedData['flu_valor'];
+            } elseif (
+                str_contains($nomeMov, 'saida') || str_contains($nomeMov, 'saída')
+            ) {
+
+                $saldoConta->saldo_conta_valor -= $validatedData['flu_valor'];
+            }
+
+            $saldoConta->save();
 
             $financeiro = Financeiro::findOrFail($validatedData['id_financeiro']);
 
@@ -216,144 +396,47 @@ class FluxoCaixaController extends Controller
         return view('view_fluxo_caixa.show', compact('fluxo'));
     }
 
-    public function edit(string $id)
-    {
-        $fluxo = FluxoCaixa::findOrFail($id);
-        $tipos = TipoFluxoCaixa::all();
-        $movimentacoes = Movimentacao::all();
-        $caixa = Caixa::first();
-        $saldoTotal = $caixa ? $caixa->caixa_saldo : 0;
-        $contas = ContaBancaria::all();
-
-        return view('view_fluxo_caixa.edit', compact('saldoTotal', 'fluxo', 'tipos', 'movimentacoes','contas'));
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $validatedData = $request->validate([
-            'flu_data_despesa' => 'required|date',
-            'flu_id_tipo' => 'required|integer',
-            'flu_id_movimentacao' => 'required|integer',
-            'conta_bancaria_id' => 'required|integer|exists:conta_bancaria,id_conta',
-            'flu_valor' => 'required|numeric',
-            'flu_tipo_fiscal' => 'required|string|max:90',
-            'flu_num_doc' => 'nullable|string|max:255',
-            'flu_desc' => 'required|string|max:180',
-        ]);
-
-        $fluxo = FluxoCaixa::findOrFail($id);
-
-        // DADOS ANTIGOS
-        $valorAntigo = $fluxo->flu_valor;
-        $movAntigo = Movimentacao::find($fluxo->flu_id_movimentacao);
-
-        // DADOS NOVOS
-        $movNovo = Movimentacao::find($validatedData['flu_id_movimentacao']);
-        $valorNovo = $validatedData['flu_valor'];
-
-        $caixa = Caixa::first();
-
-        if (!$caixa) {
-            $caixa = Caixa::create(['caixa_saldo' => 0]);
-        }
-
-        // VALIDAÇÃO DE SALDO (ANTES DE ATUALIZAR)
-        if ($movNovo && in_array(strtolower($movNovo->mov_nome), ['saida caixa', 'saída caixa'])) {
-
-            $saldoSimulado = $caixa->caixa_saldo;
-
-            // REMOVE EFEITO ANTIGO
-            if ($movAntigo && strtolower($movAntigo->mov_nome) == 'entrada caixa') {
-                $saldoSimulado -= $valorAntigo;
-            } elseif ($movAntigo && in_array(strtolower($movAntigo->mov_nome), ['saida caixa', 'saída caixa'])) {
-                $saldoSimulado += $valorAntigo;
-            }
-
-            // APLICA NOVO
-            $saldoSimulado -= $valorNovo;
-
-            if ($saldoSimulado < 0) {
-                return redirect()->back()
-                    ->with('error', 'Essa alteração deixaria o caixa negativo!')
-                    ->withInput();
-            }
-        }
-
-        // ATUALIZA FLUXO
-        $fluxo->update($validatedData);
-
-        // REMOVE EFEITO ANTIGO
-        if ($movAntigo && in_array(strtolower($movAntigo->mov_nome), ['entrada caixa', 'saída caixa'])) {
-
-            if (strtolower($movAntigo->mov_nome) == 'entrada caixa') {
-                $caixa->caixa_saldo -= $valorAntigo;
-            } else {
-                $caixa->caixa_saldo += $valorAntigo;
-            }
-        }
-
-        // APLICA NOVO
-        if ($movNovo && in_array(strtolower($movNovo->mov_nome), ['entrada caixa', 'saída caixa'])) {
-
-            if (strtolower($movNovo->mov_nome) == 'entrada caixa') {
-                $caixa->caixa_saldo += $valorNovo;
-            } else {
-                $caixa->caixa_saldo -= $valorNovo;
-            }
-        }
-
-        $caixa->save();
-
-        return redirect()->route('fluxo_caixa.index')
-            ->with('success', 'Registro de fluxo atualizado com sucesso!');
-    }
-
     public function destroy(string $id)
     {
         $fluxo = FluxoCaixa::findOrFail($id);
 
         $mov = Movimentacao::find($fluxo->flu_id_movimentacao);
-        $caixa = Caixa::first();
 
-        if (!$caixa) {
-            $caixa = Caixa::create(['caixa_saldo' => 0]);
-        }
+        $saldoConta = SaldoConta::where(
+            'id_conta_bancaria_id',
+            $fluxo->conta_bancaria_id
+        )->first();
 
-        // SIMULAÇÃO DE SALDO
-        $saldoSimulado = $caixa->caixa_saldo;
+        if ($saldoConta && $mov) {
 
-        if ($mov && in_array(strtolower($mov->mov_nome), ['entrada caixa', 'saída caixa'])) {
+            $nomeMov = strtolower(trim($mov->mov_nome));
 
-            if (strtolower($mov->mov_nome) == 'entrada caixa') {
-                // remover entrada diminui saldo
-                $saldoSimulado -= $fluxo->flu_valor;
-            } else {
-                // remover saída aumenta saldo
-                $saldoSimulado += $fluxo->flu_valor;
+            if (str_contains($nomeMov, 'entrada')) {
+
+                if (($saldoConta->saldo_conta_valor - $fluxo->flu_valor) < 0) {
+
+                    return redirect()->back()
+                        ->with(
+                            'error',
+                            'Não é possível excluir. O saldo ficaria negativo.'
+                        );
+                }
+
+                $saldoConta->saldo_conta_valor -= $fluxo->flu_valor;
+            } elseif (
+                str_contains($nomeMov, 'saida') || str_contains($nomeMov, 'saída')
+            ) {
+
+                $saldoConta->saldo_conta_valor += $fluxo->flu_valor;
             }
 
-            // BLOQUEIO
-            if ($saldoSimulado < 0) {
-                return redirect()->back()
-                    ->with('error', 'Não é possível excluir! Isso deixaria o caixa negativo.');
-            }
-        }
-
-        // APLICA NO CAIXA REAL
-        if ($mov && in_array(strtolower($mov->mov_nome), ['entrada caixa', 'saída caixa'])) {
-
-            if (strtolower($mov->mov_nome) == 'entrada caixa') {
-                $caixa->caixa_saldo -= $fluxo->flu_valor;
-            } else {
-                $caixa->caixa_saldo += $fluxo->flu_valor;
-            }
-
-            $caixa->save();
+            $saldoConta->save();
         }
 
         $fluxo->delete();
 
-        return redirect()->route('fluxo_caixa.index')
-            ->with('success', 'Registro de fluxo excluído com sucesso!');
+        return redirect()
+            ->route('fluxo_caixa.index')
+            ->with('success', 'Registro excluído com sucesso!');
     }
 }

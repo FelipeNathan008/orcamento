@@ -46,7 +46,7 @@
 
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10 mb-10 font-poppins">
     <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-gray-900 font-bai-jamjuree mb-6 border-b pb-4">
-        Orçamento #{{ $orcamento->id_orcamento }}
+        Orçamento #{{ $orcamento->orc_cod_interno }}
     </h1>
 
     <div class="space-y-8">
@@ -83,7 +83,8 @@
         <div class="border-b pb-6">
             <h2 class="text-2xl font-bold mb-4 text-gray-800">Dados do Orçamento</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-y-2 gap-x-4 text-gray-700">
-                <p><strong class="text-gray-900">ID do Orçamento:</strong> {{ $orcamento->id_orcamento }}</p>
+                <p><strong class="text-gray-900">Cód. Fábrica:</strong> {{ $orcamento->orc_cod_fabrica }}</p>
+                <p><strong class="text-gray-900">Cód. Interno:</strong> {{ $orcamento->orc_cod_interno }}</p>
                 <p><strong class="text-gray-900">Data de Início:</strong>
                     {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
                 </p>

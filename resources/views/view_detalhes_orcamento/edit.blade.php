@@ -8,7 +8,6 @@
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">
         Edição de Detalhe de Orçamento
     </h1>
-    {{-- INFORMAÇÕES DO ORÇAMENTO --}}
     @if(isset($orcamento))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
         <h2 class="text-lg font-bold text-orange-700 mb-4">
@@ -16,9 +15,23 @@
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+
             <div>
-                <p class="text-gray-600">ID</p>
-                <p class="font-semibold">{{ $orcamento->id_orcamento }}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -34,10 +47,18 @@
                     {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
                 </p>
             </div>
+
+            <div>
+                <p class="text-gray-600">Status</p>
+                <p class="font-semibold text-gray-900">
+                    {{ ucfirst($orcamento->orc_status) }}
+                </p>
+            </div>
+
         </div>
     </div>
     @endif
-
+    <x-alert-flash />
 
 
     <form action="{{ route('detalhes_orcamento.update', $detalheOrcamento->id_det) }}" method="POST">
@@ -219,12 +240,9 @@
 
                 <textarea
                     name="det_observacao"
+                    placeholder="Digite alguma observação adicional sobre o produto"
                     class="block w-full px-4 py-2 border border-gray-300 rounded-md"
-                    rows="3">
-
-                {{ $detalheOrcamento->det_observacao }}
-                </textarea>
-
+                    rows="3">{{ $detalheOrcamento->det_observacao }}</textarea>
             </div>
 
             {{-- ANOTAÇÃO --}}
@@ -239,11 +257,8 @@
                 <textarea
                     name="det_anotacao"
                     class="block w-full px-4 py-2 border border-gray-300 rounded-md"
-                    rows="3">
-
-                {{ $detalheOrcamento->det_anotacao }}
-
-                </textarea>
+                    placeholder="Digite alguma anotação interna sobre o produto"
+                    rows="3">{{ old('det_anotacao', $detalheOrcamento->det_anotacao) }}</textarea>
             </div>
         </div>
 
@@ -551,38 +566,48 @@
 
                 div.appendChild(titulo);
 
-                opcoes.forEach(function(opcao, index) {
+                const select = document.createElement('select');
 
-                    const label = document.createElement('label');
-                    label.classList.add('flex', 'items-center', 'space-x-2');
+                select.name = nome + '_grp';
+                select.required = true;
 
-                    const radio = document.createElement('input');
-                    radio.type = 'radio';
-                    radio.name = nome + '_grp';
-                    radio.value = opcao;
+                select.classList.add(
+                    'block',
+                    'w-full',
+                    'px-4',
+                    'py-2',
+                    'border',
+                    'border-gray-300',
+                    'rounded-md'
+                );
 
-                    // REQUIRED (apenas no primeiro radio do grupo)
-                    if (index === 0) {
-                        radio.required = true;
-                    }
+                const optionDefault = document.createElement('option');
+                optionDefault.value = '';
+                optionDefault.textContent = `Selecione ${nome}`;
+                select.appendChild(optionDefault);
 
-                    // marcar automaticamente o que já estava salvo
-                    const valoresSalvos = hiddenCaract.value.split(',').map(v => v.trim());
+                const valoresSalvos = hiddenCaract.value
+                    .split(',')
+                    .map(v => v.trim());
+
+                opcoes.forEach(opcao => {
+
+                    const option = document.createElement('option');
+
+                    option.value = opcao;
+                    option.textContent = opcao;
+
                     if (valoresSalvos.includes(opcao)) {
-                        radio.checked = true;
+                        option.selected = true;
                     }
 
-                    radio.addEventListener('change', atualizarHiddenCaract);
-
-                    const span = document.createElement('span');
-                    span.textContent = opcao;
-
-                    label.appendChild(radio);
-                    label.appendChild(span);
-
-                    div.appendChild(label);
+                    select.appendChild(option);
 
                 });
+
+                select.addEventListener('change', atualizarHiddenCaract);
+
+                div.appendChild(select);
 
                 container.appendChild(div);
 
@@ -591,17 +616,20 @@
             if (grupoManga.length) criarGrupo('manga', grupoManga);
             if (grupoBolso.length) criarGrupo('bolso', grupoBolso);
 
+            atualizarHiddenCaract();
+
         }
 
         function atualizarHiddenCaract() {
-
             const selecionados = [];
+            container.querySelectorAll('select')
+                .forEach(select => {
 
-            container.querySelectorAll('input[type="radio"]:checked')
-                .forEach(r => selecionados.push(r.value));
-
+                    if (select.value) {
+                        selecionados.push(select.value);
+                    }
+                });
             hiddenCaract.value = selecionados.join(', ');
-
         }
         // -------------------------
         // CARREGAR TAMANHO NO EDIT

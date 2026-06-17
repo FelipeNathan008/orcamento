@@ -16,9 +16,9 @@
 
         <div class="flex items-center gap-3">
 
-            <a href="{{ route('dashboard') }}"
+            <a href="{{ route('fluxo_nota_conta.index') }}"
                 class="px-4 py-2 text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400">
-                HOME
+                Voltar
             </a>
 
             <a href="{{ route('fluxo_caixa.create') }}"
@@ -65,12 +65,23 @@
             {{-- DATA --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Filtrar por Data
+                    Data Início
                 </label>
 
                 <input
                     type="date"
-                    id="filterDate"
+                    id="filterDateInicio"
+                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Data Fim
+                </label>
+
+                <input
+                    type="date"
+                    id="filterDateFim"
                     class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
             </div>
 
@@ -99,35 +110,59 @@
         </div>
 
     </div>
+
+
     <h2 class="text-3xl sm:text-[18px] font-bold text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
         Fluxo de Caixa do Dia
     </h2>
 
+    <form method="GET" action="{{ route('fluxo_caixa.index') }}" class="mb-6">
+
+        <select
+            name="conta_bancaria_id"
+            onchange="this.form.submit()"
+            class="w-full border rounded px-3 py-2">
+
+            <option value="">
+                Selecione uma conta
+            </option>
+
+            @foreach($contas as $conta)
+
+            <option
+                value="{{ $conta->id_conta }}"
+                {{ $contaSelecionada == $conta->id_conta ? 'selected' : '' }}>
+
+                {{ $conta->conta_nome_banco }}
+
+            </option>
+
+            @endforeach
+
+        </select>
+
+    </form>
+
+
     <div class="mb-6 p-4 bg-gray-100 rounded-lg flex justify-around text-center">
-
         <div>
-            <span class="font-bold text-lg text-yellow-600">Saldo Caixa Total</span>
+            <span class="font-bold text-lg text-yellow-600">Saldo Atual da Conta</span>
             <span class="block text-gray-900 text-lg">
-                R$ {{ number_format($saldoTotal, 2, ',', '.') }}
+                {{ $contaSelecionada ? 'R$ ' . number_format($saldoConta, 2, ',', '.') : 'Selecione uma conta' }}
             </span>
         </div>
 
         <div>
-            <span class="font-bold text-lg text-yellow-600">Saldo Caixa Dia</span>
+            <span class="font-bold text-lg text-green-600">Entrada Dia</span>
             <span class="block text-gray-900 text-lg">
-                R$ {{ number_format($saldo, 2, ',', '.') }}
+                {{ $contaSelecionada ? 'R$ ' . number_format($entrada, 2, ',', '.') : 'Selecione uma conta' }}
             </span>
         </div>
+
         <div>
-            <span class="font-bold text-lg text-green-600">Entrada Caixa Dia</span>
+            <span class="font-bold text-lg text-red-600">Saída Dia</span>
             <span class="block text-gray-900 text-lg">
-                R$ {{ number_format($entrada, 2, ',', '.') }}
-            </span>
-        </div>
-        <div>
-            <span class="font-bold text-lg text-red-600">Saída Caixa Dia</span>
-            <span class="block text-gray-900 text-lg">
-                R$ {{ number_format($saida, 2, ',', '.') }}
+                {{ $contaSelecionada ? 'R$ ' . number_format($saida, 2, ',', '.') : 'Selecione uma conta' }}
             </span>
         </div>
 
@@ -158,6 +193,12 @@
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Movimentação
                     </th>
+
+                    <th scope="col"
+                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Tipo Fiscal
+                    </th>
+
 
                     <th scope="col"
                         class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
@@ -200,6 +241,9 @@
                     </td>
 
                     <td class="px-4 py-4 text-sm text-gray-700">
+                        {{ $fluxo->flu_tipo_fiscal ?? 'N/A'}}
+                    </td>
+                    <td class="px-4 py-4 text-sm text-gray-700">
                         R$ {{ number_format($fluxo->flu_valor, 2, ',', '.') }}
                     </td>
 
@@ -210,11 +254,6 @@
                             <a href="{{ route('fluxo_caixa.show', $fluxo->id_fluxo) }}"
                                 class="px-2 py-1 text-xs text-white rounded-md bg-blue-600 hover:bg-blue-700">
                                 Ver
-                            </a>
-
-                            <a href="{{ route('fluxo_caixa.edit', $fluxo->id_fluxo) }}"
-                                class="px-2 py-1 text-xs text-white rounded-md bg-button-edit-bg hover:bg-button-edit-hover">
-                                Editar
                             </a>
 
                             <form action="{{ route('fluxo_caixa.destroy', $fluxo->id_fluxo) }}"
@@ -255,58 +294,126 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
-        const filterDate = document.getElementById('filterDate');
+        const filterDateInicio = document.getElementById('filterDateInicio');
+        const filterDateFim = document.getElementById('filterDateFim');
         const filterMov = document.getElementById('filterMov');
         const clearBtn = document.getElementById('clearFiltersFluxo');
 
         const btnPdf = document.getElementById('btnExportarPdf');
 
-        const rows = Array.from(document.querySelectorAll('#fluxoTableBody tr'));
+        const rows = Array.from(
+            document.querySelectorAll('#fluxoTableBody tr')
+        );
+
         const noResults = document.getElementById('noResultsFluxo');
 
         function filter() {
-            const selectedDate = filterDate.value;
+
+            const dataInicio = filterDateInicio.value;
+            const dataFim = filterDateFim.value;
             const selectedMov = filterMov.value.toLowerCase();
 
             let found = false;
-
+            if (
+                dataInicio &&
+                dataFim &&
+                dataFim <= dataInicio
+            ) {
+                alert('A data final deve ser maior que a data inicial.');
+                return;
+            }
             rows.forEach(row => {
+
                 const rowDate = row.dataset.data;
                 const rowMov = row.dataset.mov;
 
-                let matchDate = !selectedDate || rowDate === selectedDate;
-                let matchMov = !selectedMov || rowMov.includes(selectedMov);
+                let matchDate = true;
+
+                if (dataInicio && !dataFim) {
+
+                    matchDate = rowDate === dataInicio;
+
+                } else if (dataInicio && dataFim) {
+
+                    matchDate =
+                        rowDate >= dataInicio &&
+                        rowDate <= dataFim;
+                }
+
+                const matchMov = !selectedMov ||
+                    rowMov.includes(selectedMov);
 
                 if (matchDate && matchMov) {
+
                     row.style.display = '';
                     found = true;
+
                 } else {
+
                     row.style.display = 'none';
                 }
             });
+
             noResults.classList.toggle('hidden', found);
 
-            // 🔥 MOSTRAR BOTÃO SE TEM DATA
-            if (selectedDate) {
+            // PDF
+
+            if (dataInicio) {
+
                 btnPdf.classList.remove('hidden');
 
-                // atualiza link com a data
-                btnPdf.href = `/fluxo-caixa/pdf?data=${selectedDate}`;
+                let url =
+                    `/fluxo-caixa/pdf?data_inicio=${dataInicio}`;
+
+                if (dataFim) {
+
+                    url += `&data_fim=${dataFim}`;
+                }
+
+                btnPdf.href = url;
+
             } else {
+
                 btnPdf.classList.add('hidden');
             }
         }
 
-        filterDate.addEventListener('change', filter);
+        filterDateInicio.addEventListener('change', filter);
+        filterDateFim.addEventListener('change', filter);
         filterMov.addEventListener('change', filter);
 
         clearBtn.addEventListener('click', () => {
-            filterDate.value = '';
+
+            filterDateInicio.value = '';
+            filterDateFim.value = '';
             filterMov.value = '';
+
             filter();
+
             btnPdf.classList.add('hidden');
         });
 
+
+    });
+    filterDateInicio.addEventListener('change', () => {
+
+        if (filterDateInicio.value) {
+
+            let dataMinima = new Date(filterDateInicio.value);
+
+            dataMinima.setDate(dataMinima.getDate() + 1);
+
+            filterDateFim.min = dataMinima.toISOString().split('T')[0];
+
+            if (
+                filterDateFim.value &&
+                filterDateFim.value <= filterDateInicio.value
+            ) {
+                filterDateFim.value = '';
+            }
+        }
+
+        filter();
     });
 </script>
 @endpush

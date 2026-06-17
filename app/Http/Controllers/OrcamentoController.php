@@ -4,27 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Orcamento;
 use App\Models\ClienteOrcamento;
-use App\Models\DetalheOrcamento;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Session;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\AnexarOrcamentoMailable;
 use Exception;
-use Laravel\Pail\ValueObjects\Origin\Console;
-use Throwable; // Adicionado para capturar todos os tipos de erros
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
 
 class OrcamentoController extends Controller
 {
-    /**
-     * Exibe a lista de orçamentos, com opções de filtro.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
-     */
 
     public function previewOrcamento($id)
     {
@@ -52,7 +42,37 @@ class OrcamentoController extends Controller
         $query = Orcamento::with('clienteOrcamento')
             ->where('cliente_orcamento_id_co', $request->cliente_orcamento_id);
 
-        if ($request->status_query) {
+        if ($request->filled('orc_cod_fabrica')) {
+            $query->where(
+                'orc_cod_fabrica',
+                'like',
+                '%' . trim($request->orc_cod_fabrica) . '%'
+            );
+        }
+
+        if ($request->filled('orc_cod_interno')) {
+            $query->where(
+                'orc_cod_interno',
+                'like',
+                '%' . trim($request->orc_cod_interno) . '%'
+            );
+        }
+
+        if ($request->filled('data_inicio')) {
+            $query->whereDate(
+                'orc_data_inicio',
+                $request->data_inicio
+            );
+        }
+
+        if ($request->filled('data_fim')) {
+            $query->whereDate(
+                'orc_data_fim',
+                $request->data_fim
+            );
+        }
+
+        if ($request->filled('status_query')) {
             $query->where('orc_status', $request->status_query);
         }
 
@@ -60,7 +80,6 @@ class OrcamentoController extends Controller
 
         if ($filtroVencimento === 'ativos') {
 
-            // Fluxo Ativos
             $query->where('orc_status', '!=', 'rejeitado')
                 ->where(function ($q) use ($today) {
                     $q->whereIn('orc_status', ['aprovado', 'finalizado'])
@@ -68,10 +87,14 @@ class OrcamentoController extends Controller
                 });
         } elseif ($filtroVencimento === 'vencidos') {
 
-            // Fluxo Vencidos
             $query->where(function ($q) use ($today) {
+
                 $q->where(function ($sub) use ($today) {
-                    $sub->whereIn('orc_status', ['pendente', 'para aprovacao'])
+
+                    $sub->whereIn('orc_status', [
+                        'pendente',
+                        'para aprovacao'
+                    ])
                         ->where('orc_data_fim', '<', $today);
                 })
                     ->orWhere('orc_status', 'rejeitado');
@@ -79,8 +102,9 @@ class OrcamentoController extends Controller
         }
 
         $orcamentos = $query
-            ->orderBy('id_orcamento', 'desc')
-            ->get();
+            ->orderBy('orc_cod_fabrica', 'asc')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('view_orcamento.index', compact(
             'orcamentos',
@@ -88,12 +112,7 @@ class OrcamentoController extends Controller
         ));
     }
 
-    /**
-     * Exibe a view de geração do orçamento.
-     *
-     * @param int $id
-     * @return \Illuminate\View\View
-     */
+
     public function gerarOrcamento(Request $request, $id)
     {
         $orcamento = Orcamento::with(
@@ -111,12 +130,7 @@ class OrcamentoController extends Controller
         );
     }
 
-    /**
-     * Gera o orçamento em PDF e força o download.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function gerarOrcamentoPDF($id)
     {
         // Carrega o orçamento e suas relações
@@ -134,12 +148,6 @@ class OrcamentoController extends Controller
     }
 
 
-    /**
-     * Exibe o formulário para criar um novo orçamento.
-     *
-     * @param Request $request
-     * @return \Illuminate\View\View
-     */
     public function create(Request $request)
     {
 
@@ -159,22 +167,22 @@ class OrcamentoController extends Controller
         return view('view_orcamento.create', compact('clienteSelecionado'));
     }
 
-    /**
-     * Armazena um novo orçamento no banco de dados.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function store(Request $request)
     {
         try {
             $validatedData = $request->validate([
                 'cliente_orcamento_id_co' => 'required|exists:cliente_orcamento,id_co',
                 'orc_data_inicio' => 'required|date',
-                'orc_data_fim' => 'required|date|after_or_equal:orc_data_inicio',
+                'orc_data_fim' => 'required|date|after:orc_data_inicio',
                 'orc_status' => 'required|string|max:20',
+                'orc_cod_fabrica' => 'nullable|string|max:60|unique:orcamento,orc_cod_fabrica',
+                'orc_cod_interno' => 'nullable|string|max:60|unique:orcamento,orc_cod_interno',
                 'anotacoes.*' => 'nullable|string|max:1000',
                 'orc_anotacao_geral' => 'nullable|string|max:1000',
+            ], [
+                'orc_data_fim.after' => 'A data final deve ser maior que a data inicial.',
+                'orc_cod_fabrica.unique' => 'Este código de fábrica já está cadastrado.',
+                'orc_cod_interno.unique' => 'Este código interno já está cadastrado.',
             ]);
 
             // Concatena os 3 campos de anotação específica em um único campo
@@ -188,9 +196,12 @@ class OrcamentoController extends Controller
                 'orc_data_inicio' => $validatedData['orc_data_inicio'],
                 'orc_data_fim' => $validatedData['orc_data_fim'],
                 'orc_status' => $validatedData['orc_status'],
+                'orc_cod_fabrica' => $validatedData['orc_cod_fabrica'] ?? null,
+                'orc_cod_interno' => $validatedData['orc_cod_interno'] ?? null,
                 'orc_anotacao_espec' => $orc_anotacao_espec,
                 'orc_anotacao_geral' => $validatedData['orc_anotacao_geral'] ?? null,
             ]);
+
             return redirect()->route('orcamento.index', [
                 'cliente_orcamento_id' => $orcamento->cliente_orcamento_id_co
             ])->with('success', 'Orçamento criado com sucesso!');
@@ -214,12 +225,6 @@ class OrcamentoController extends Controller
         return view('view_orcamento.show', compact('orcamento'));
     }
 
-    /**
-     * Exibe o formulário para editar o orçamento especificado.
-     *
-     * @param int $id
-     * @return \Illuminate\View\View
-     */
     public function edit($id)
     {
         $orcamento = Orcamento::findOrFail($id);
@@ -236,26 +241,30 @@ class OrcamentoController extends Controller
         );
     }
 
-    /**
-     * Atualiza o orçamento especificado no banco de dados.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function update(Request $request, $id)
     {
         try {
             $orcamento = Orcamento::findOrFail($id);
 
-            // Validação dos dados
             $validatedData = $request->validate([
                 'cliente_orcamento_id_co' => 'sometimes|required|integer|exists:cliente_orcamento,id_co',
                 'orc_data_inicio' => 'sometimes|required|date',
-                'orc_data_fim' => 'sometimes|required|date|after_or_equal:orc_data_inicio',
+                'orc_data_fim' => 'required|date|after:orc_data_inicio',
                 'orc_status' => 'sometimes|required|string|max:20',
+
+                'orc_cod_fabrica' => ['nullable', 'string', 'max:60', Rule::unique('orcamento', 'orc_cod_fabrica')
+                    ->ignore($orcamento->id_orcamento, 'id_orcamento')],
+
+                'orc_cod_interno' => ['nullable', 'string', 'max:60', Rule::unique('orcamento', 'orc_cod_interno')
+                    ->ignore($orcamento->id_orcamento, 'id_orcamento')],
+
                 'anotacoes.*' => 'nullable|string|max:1000',
                 'orc_anotacao_geral' => 'nullable|string|max:1000',
+            ], [
+                'orc_data_fim.after' => 'A data final deve ser maior que a data inicial.',
+                'orc_cod_fabrica.unique' => 'Este código de fábrica já está cadastrado.',
+                'orc_cod_interno.unique' => 'Este código interno já está cadastrado.',
             ]);
 
             // Concatena as anotações específicas
@@ -264,12 +273,13 @@ class OrcamentoController extends Controller
                 $orc_anotacao_espec = implode("\n", array_map('trim', $request->input('anotacoes')));
             }
 
-            // Atualiza orçamento
             $orcamento->update([
                 'cliente_orcamento_id_co' => $validatedData['cliente_orcamento_id_co'] ?? $orcamento->cliente_orcamento_id_co,
                 'orc_data_inicio' => $validatedData['orc_data_inicio'] ?? $orcamento->orc_data_inicio,
                 'orc_data_fim' => $validatedData['orc_data_fim'] ?? $orcamento->orc_data_fim,
                 'orc_status' => $validatedData['orc_status'] ?? $orcamento->orc_status,
+                'orc_cod_fabrica' => $validatedData['orc_cod_fabrica'] ?? $orcamento->orc_cod_fabrica,
+                'orc_cod_interno' => $validatedData['orc_cod_interno'] ?? $orcamento->orc_cod_interno,
                 'orc_anotacao_espec' => $orc_anotacao_espec,
                 'orc_anotacao_geral' => $validatedData['orc_anotacao_geral'] ?? $orcamento->orc_anotacao_geral,
             ]);
@@ -352,15 +362,35 @@ class OrcamentoController extends Controller
     }
 
 
-    /**
-     * Remove o orçamento especificado do banco de dados.
-     *
-     * @param int $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function destroy($id)
     {
         $orcamento = Orcamento::findOrFail($id);
+
+        if (!in_array($orcamento->orc_status, ['pendente', 'rejeitado'])) {
+            return redirect()
+                ->back()
+                ->with('error', 'Somente orçamentos pendentes ou rejeitados podem ser excluídos.');
+        }
+
+        foreach ($orcamento->detalhesOrcamento as $detalhe) {
+
+            foreach ($detalhe->customizacoes as $customizacao) {
+
+                if ($customizacao->cust_imagem) {
+
+                    $caminho = public_path('images_customizacoes/' . $customizacao->cust_imagem);
+
+                    if (File::exists($caminho)) {
+                        File::delete($caminho);
+                    }
+                }
+            }
+
+            $detalhe->customizacoes()->delete();
+        }
+
+        $orcamento->detalhesOrcamento()->delete();
+
         $orcamento->delete();
 
         return redirect()->route('orcamento.index', [

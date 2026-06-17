@@ -14,6 +14,8 @@ use App\Models\ContaBancaria;
 use App\Models\DetalhesCobranca;
 use Carbon\Carbon;
 use App\Models\FluxoCaixa;
+use App\Models\Movimentacao;
+use App\Models\SaldoConta;
 use App\Models\TipoFluxoCaixa;
 
 class FormaPagamentoController extends Controller
@@ -138,9 +140,9 @@ class FormaPagamentoController extends Controller
         $forma = $parcela->formaPagamento;
         $financeiro = $forma->financeiro;
         $tipoVenda = TipoFluxoCaixa::where('tipo_flu_nome', 'Venda')->first();
-        
+
         if ($tipoVenda) {
-            FluxoCaixa::create([
+            $fluxo = FluxoCaixa::create([
                 'flu_data_despesa' => $request->data_pagamento,
                 'flu_id_tipo' => $tipoVenda->id_tipo_fluxo,
                 'flu_id_movimentacao' => 1,
@@ -150,6 +152,26 @@ class FormaPagamentoController extends Controller
                 'flu_num_doc' => $financeiro->orcamento_id_orcamento,
                 'flu_desc' => 'Pagamento de parcela - orçamento ' . $financeiro->orcamento_id_orcamento,
             ]);
+
+            $mov = Movimentacao::find($fluxo->flu_id_movimentacao);
+
+            $saldoConta = SaldoConta::firstOrCreate(
+                [
+                    'id_conta_bancaria_id' => $forma->conta_bancaria_id
+                ],
+                [
+                    'saldo_conta_valor' => 0
+                ]
+            );
+
+            $nomeMov = strtolower(trim($mov->mov_nome));
+
+            if (str_contains($nomeMov, 'entrada')) {
+
+                $saldoConta->saldo_conta_valor += $parcela->det_forma_valor_parcela;
+            }
+
+            $saldoConta->save();
         }
 
         $financeiroId = $parcela->formaPagamento->financeiro_id_fin;
@@ -322,7 +344,7 @@ class FormaPagamentoController extends Controller
                         throw new \Exception('Tipo "Venda" não encontrado na tabela tipo_fluxo_caixa.');
                     }
 
-                    FluxoCaixa::create([
+                    $fluxo = FluxoCaixa::create([
                         'flu_data_despesa' => $validatedData['forma_data'],
                         'flu_id_tipo' => $tipoVenda->id_tipo_fluxo,
                         'flu_id_movimentacao' => 1,
@@ -332,6 +354,32 @@ class FormaPagamentoController extends Controller
                         'flu_num_doc' => $financeiro->orcamento_id_orcamento,
                         'flu_desc' => 'Pagamento da venda recebida do orçamento ' . $financeiro->orcamento_id_orcamento,
                     ]);
+
+                    $mov = Movimentacao::find($fluxo->flu_id_movimentacao);
+
+                    if ($mov && $validatedData['conta_bancaria_id']) {
+
+                        $saldoConta = SaldoConta::firstOrCreate(
+                            [
+                                'id_conta_bancaria_id' => $validatedData['conta_bancaria_id']
+                            ],
+                            [
+                                'saldo_conta_valor' => 0
+                            ]
+                        );
+
+                        $nomeMov = strtolower(trim($mov->mov_nome));
+
+                        if (str_contains($nomeMov, 'entrada')) {
+                            $saldoConta->saldo_conta_valor += $validatedData['forma_valor'];
+                        }
+
+                        if (str_contains($nomeMov, 'saída') || str_contains($nomeMov, 'saida')) {
+                            $saldoConta->saldo_conta_valor -= $validatedData['forma_valor'];
+                        }
+
+                        $saldoConta->save();
+                    }
                 }
 
                 if ($validatedData['forma_prazo'] === 'Parcelado') {

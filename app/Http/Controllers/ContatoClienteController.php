@@ -10,44 +10,40 @@ use Illuminate\Support\Facades\Session;
 
 class ContatoClienteController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View
-     */
+
     public function index(Request $request)
     {
-
         $clienteId = $request->cliente_orcamento;
-
         $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
+        $search = $request->search;
+        $contatosCliente = ContatoCliente::where(
+            'cliente_orcamento_id_co',
+            $clienteId
+        )
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
 
-        $contatosCliente = ContatoCliente::where('cliente_orcamento_id_co', $clienteId)
+                    $q->where('cont_nome', 'like', "%{$search}%")
+                        ->orWhere('cont_email', 'like', "%{$search}%");
+                });
+            })
             ->with('clienteOrcamento')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('view_contato_cliente.index', [
             'contatosCliente' => $contatosCliente,
             'clienteSelecionado' => $clienteSelecionado
         ]);
     }
-    /**
-     * Show the form for creating a new resource.
-     *
-     */
+
     public function create($cliente_orcamento)
     {
         $clienteSelecionado = ClienteOrcamento::findOrFail($cliente_orcamento);
 
         return view('view_contato_cliente.create', compact('clienteSelecionado'));
     }
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function store(Request $request)
     {
         try {
@@ -57,7 +53,7 @@ class ContatoClienteController extends Controller
                 'cont_nome' => 'required|string|max:45',
                 'cont_celular' => 'required|string|max:20',
                 'cont_telefone' => 'nullable|string|max:20',
-                'cont_tipo' => 'required|in:administrativo,comercial,financeiro',
+                'cont_tipo' => 'required|in:administrativo,comercial,financeiro,rh,compras,socio',
                 'cont_email' => 'required|email|max:45',
                 'cont_descricao' => 'nullable|string|max:500',
             ]);
@@ -87,24 +83,14 @@ class ContatoClienteController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
-     */
+
     public function show($id)
     {
         $contatoCliente = ContatoCliente::with('clienteOrcamento')->findOrFail($id);
         return view('view_contato_cliente.show', compact('contatoCliente'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
-     */
+
     public function edit($id)
     {
         $contatoCliente = ContatoCliente::findOrFail($id);
@@ -112,13 +98,7 @@ class ContatoClienteController extends Controller
         return view('view_contato_cliente.edit', compact('contatoCliente', 'clientesOrcamento'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function update(Request $request, $id)
     {
         try {
@@ -129,7 +109,7 @@ class ContatoClienteController extends Controller
                 'cont_nome' => 'required|string|max:45',
                 'cont_celular' => 'required|string|max:20',
                 'cont_telefone' => 'nullable|string|max:20',
-                'cont_tipo' => 'required|in:administrativo,comercial,financeiro',
+                'cont_tipo' => 'required|in:administrativo,comercial,financeiro,rh,compras,socio',
                 'cont_email' => 'required|email|max:45',
                 'cont_descricao' => 'nullable|string|max:500',
             ]);
@@ -155,12 +135,7 @@ class ContatoClienteController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function destroy($id)
     {
         $contatoCliente = ContatoCliente::findOrFail($id);

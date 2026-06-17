@@ -28,11 +28,22 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">ID do Orçamento:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $detalheOrcamento->orcamento_id_orcamento }}
-                </p>
+            <div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $detalheOrcamento->orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $detalheOrcamento->orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div class="md:col-span-2 mb-4">

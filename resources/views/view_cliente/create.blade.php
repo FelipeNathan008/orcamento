@@ -3,18 +3,17 @@
 @section('title', 'Cadastrar Novo Cliente')
 
 @section('content')
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins"> {{-- Contêiner principal para centralizar o formulário --}}
+<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
 
-    {{-- Título do formulário --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Nova Prospecção</h1>
 
+    <x-alert-flash />
 
     <form id="clienteForm" action="{{ route('cliente.store') }}" method="POST" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- PRIMEIRA COLUNA (ESQUERDA) --}}
             <div>
                 {{-- Campo Nome --}}
                 <div>

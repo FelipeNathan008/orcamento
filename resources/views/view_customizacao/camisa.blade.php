@@ -3,8 +3,9 @@
 @section('title', 'Layout da Camisa')
 
 @section('content')
-<div class="max-w-4xl mx-auto p-8 mt-10 mb-10 bg-white shadow-lg rounded-lg">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Layout Customizado da Camisa</h1>
+<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
+
+    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Layout Customizado da Camisa</h1>
 
     @if(isset($customizacao))
     @php
@@ -16,24 +17,34 @@
             Voltar para Lista de Customizações
         </a>
     </div>
+    @if(isset($detalhe))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
         <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Detalhe do Orçamento
+            Informações do Produto
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
-                <p class="text-gray-600">Orçamento</p>
-                <p class="font-semibold">
-                    {{ $detalhe->orcamento->id_orcamento ?? 'N/A' }}
-                </p>
-            </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
 
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
+            </div>
             <div>
                 <p class="text-gray-600">Cliente</p>
-                <p class="font-semibold">
+                <p class="font-semibold text-gray-900">
                     {{ $detalhe->orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
                 </p>
             </div>
@@ -48,7 +59,7 @@
 
             <div>
                 <p class="text-gray-600">Categoria</p>
-                <p class="font-semibold">
+                <p class="font-semibold text-gray-900">
                     {{ $detalhe->produto->prod_categoria ?? 'N/A' }}
                 </p>
             </div>
@@ -56,27 +67,32 @@
             <div>
                 <p class="text-gray-600">Cor / Tamanho</p>
                 <p class="font-semibold">
-                    {{ $detalhe->det_cor ?? 'N/A' }} -
+                    {{ $detalhe->produto->prod_cor ?? 'N/A' }} -
                     {{ $detalhe->det_tamanho ?? 'N/A' }}
                 </p>
             </div>
 
             <div>
-                <p class="text-gray-600">Customizações</p>
+                <p class="text-gray-600">Características</p>
                 <p class="font-semibold">
-                    {{ $allCustomizacoesForDetail->count() }}
+                    {{ $detalhe->det_caract ?? 'N/A' }}
                 </p>
             </div>
 
         </div>
 
     </div>
+    @endif
+
+    <x-alert-flash />
 
 
     @if($allCustomizacoesForDetail->isNotEmpty())
-    {{-- Nova linha para exibir a quantidade de customizações --}}
 
     <ul class="list-disc list-inside ml-4 text-gray-800">
+        <div>
+            Customizações: <span class="font-semibold">{{$allCustomizacoesForDetail->count() }}</span>
+        </div>
         @foreach($allCustomizacoesForDetail as $cust)
         <li class="flex items-center justify-between mb-2"> {{-- Adicionado flexbox para alinhar itens e botões --}}
             <div>
@@ -194,7 +210,7 @@
         }
 
         }
-         else {
+        else {
         // Se NÃO há imagem e a posição é o Rodapé, mostra APENAS o ID da customização.
         if ($isRodapePosition) {
         $content = '<span class="text-xs text-gray-700">' . $cust->id_customizacao . '</span>';

@@ -64,7 +64,13 @@
                     {{ $conta->conta_desc ?? 'N/A' }}
                 </p>
             </div>
-
+           
+            <div class="md:col-span-2">
+                <p class="text-gray-600 text-sm">Saldo</p>
+                <p class="text-lg font-semibold">
+                R$ {{ number_format($conta->saldoConta->saldo_conta_valor ?? 0, 2, ',', '.') }}
+                </p>
+            </div>
         </div>
 
     </div>

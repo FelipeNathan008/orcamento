@@ -1,25 +1,20 @@
 @extends('layouts.app')
 
-{{-- Define o título da página usando o nome do cliente --}}
 @section('title', 'Editar Cliente de Orçamento: ' . $clienteOrcamento->clie_orc_nome)
 
 @section('content')
 
-{{-- Contêiner principal para centralizar o formulário e definir largura máxima --}}
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    {{-- Título do formulário, centralizado e com cor customizada --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Edição de Cliente</h1>
 
-    {{-- Formulário de edição com método PUT para atualização --}}
+    <x-alert-flash />
+
     <form id="editForm" action="{{ route('cliente_orcamento.update', $clienteOrcamento->id_co) }}" method="POST"
         class="space-y-6">
         @csrf
-        @method('PUT') {{-- Importante: Laravel usa PUT para atualizar recursos --}}
-
-        {{-- Seção de campos do formulário organizada em layout de duas colunas (responsivo) --}}
+        @method('PUT')
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- PRIMEIRA COLUNA (ESQUERDA) - Campos Nome, E-mail, Logradouro, Bairro, Cidade --}}
             <div>
                 <!-- Campo Nome -->
                 <div>
@@ -83,6 +78,25 @@
                         placeholder="Nome da cidade" maxlength="60"
                         value="{{ old('clie_orc_cidade', $clienteOrcamento->clie_orc_cidade) }}" required>
                     @error('clie_orc_cidade')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="mt-6">
+                    <label for="clie_orc_cod_interno"
+                        class="block text-sm font-medium text-custom-dark-text mb-1">
+                        Código Interno
+                    </label>
+
+                    <input type="text"
+                        name="clie_orc_cod_interno"
+                        id="clie_orc_cod_interno"
+                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
+                        placeholder="Informe o código interno"
+                        maxlength="60"
+                        value="{{ old('clie_orc_cod_interno', $clienteOrcamento->clie_orc_cod_interno) }}">
+
+                    @error('clie_orc_cod_interno')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -219,30 +233,31 @@
                     @error('clie_orc_uf')
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    <div class="mt-6">
+                        <label for="clie_orc_ie"
+                            class="block text-sm font-medium text-custom-dark-text mb-1">
+                            Inscrição Estadual
+                        </label>
+
+                        <input type="text"
+                            name="clie_orc_ie"
+                            id="clie_orc_ie"
+                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
+                            placeholder="Informe a inscrição estadual"
+                            maxlength="90"
+                            value="{{ old('clie_orc_ie', $clienteOrcamento->clie_orc_ie) }}"
+                            required>
+
+                        @error('clie_orc_ie')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
             </div> {{-- Fim da segunda coluna --}}
 
-        </div> {{-- Fim do grid principal --}}
-        {{-- Campo Código Interno --}}
-        <div class="md:col-span-2 mt-6">
-            <label for="clie_orc_cod_interno"
-                class="block text-sm font-medium text-custom-dark-text mb-1">
-                Código Interno
-            </label>
-
-            <input type="text"
-                name="clie_orc_cod_interno"
-                id="clie_orc_cod_interno"
-                class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                placeholder="Informe o código interno"
-                maxlength="60"
-                value="{{ old('clie_orc_cod_interno', $clienteOrcamento->clie_orc_cod_interno) }}">
-
-            @error('clie_orc_cod_interno')
-            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-            @enderror
         </div>
+
         <!-- Botão de Envio -->
         <div class="flex justify-center mt-8">
             <button type="submit"

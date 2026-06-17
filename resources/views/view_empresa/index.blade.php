@@ -27,60 +27,158 @@
         </div>
 
     </div>
-    {{-- Alerta de sucesso --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
-    {{-- Formulário de Busca com campos separados --}}
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+    <x-alert-flash />
 
-            {{-- Buscar por Nome --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Nome
-                </label>
+    <form method="GET" action="{{ route('empresa.index') }}" class="mb-6">
 
-                <div class="relative">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Nome
+                    </label>
+
                     <input
                         type="text"
-                        id="searchNameInput"
+                        name="nome"
+                        value="{{ request('nome') }}"
                         placeholder="Nome da empresa..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
                 </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        CNPJ
+                    </label>
+
+                    <input
+                        type="text"
+                        id="cnpj"
+                        name="cnpj"
+                        value="{{ request('cnpj') }}"
+                        placeholder="00.000.000/0000-00"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Cidade
+                    </label>
+
+                    <input
+                        type="text"
+                        name="cidade"
+                        value="{{ request('cidade') }}"
+                        placeholder="Cidade..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        UF
+                    </label>
+
+                    <select
+                        name="uf"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todos os Estados</option>
+
+                        @php
+                        $estados = [
+                        'AC' => 'Acre',
+                        'AL' => 'Alagoas',
+                        'AP' => 'Amapá',
+                        'AM' => 'Amazonas',
+                        'BA' => 'Bahia',
+                        'CE' => 'Ceará',
+                        'DF' => 'Distrito Federal',
+                        'ES' => 'Espírito Santo',
+                        'GO' => 'Goiás',
+                        'MA' => 'Maranhão',
+                        'MT' => 'Mato Grosso',
+                        'MS' => 'Mato Grosso do Sul',
+                        'MG' => 'Minas Gerais',
+                        'PA' => 'Pará',
+                        'PB' => 'Paraíba',
+                        'PR' => 'Paraná',
+                        'PE' => 'Pernambuco',
+                        'PI' => 'Piauí',
+                        'RJ' => 'Rio de Janeiro',
+                        'RN' => 'Rio Grande do Norte',
+                        'RS' => 'Rio Grande do Sul',
+                        'RO' => 'Rondônia',
+                        'RR' => 'Roraima',
+                        'SC' => 'Santa Catarina',
+                        'SP' => 'São Paulo',
+                        'SE' => 'Sergipe',
+                        'TO' => 'Tocantins'
+                        ];
+                        @endphp
+
+                        @foreach ($estados as $sigla => $nome)
+                        <option
+                            value="{{ $sigla }}"
+                            {{ request('uf') == $sigla ? 'selected' : '' }}>
+                            {{ $nome }}
+                        </option>
+                        @endforeach
+
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md"
+                        style="background-color:#EA792D;">
+                        Buscar
+                    </button>
+                </div>
+
+                <div class="flex items-end">
+                    <a
+                        href="{{ route('empresa.index') }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
+                    </a>
+                </div>
+
             </div>
 
-            {{-- Botão limpar --}}
-            <div class="flex md:justify-end items-end">
-                <button
-                    type="button"
-                    id="clearFiltersClients"
-                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
-                    Limpar Busca
-                </button>
-            </div>
         </div>
-    </div>
 
+    </form>
 
-
-
-    {{-- Sem empresas --}}
     @if ($empresas->isEmpty())
-    <p class="text-gray-600 text-center py-8" id="noCompaniesMessage">Nenhuma empresa cadastrada ainda.</p>
+
+    @if(
+    request('nome') ||
+    request('cnpj') ||
+    request('cidade') ||
+    request('uf')
+    )
+    <div class="text-center py-8">
+        <p class="text-gray-600 text-lg">
+            Nenhuma empresa encontrada para
+            com os filtros informados. </p>
+
+        <a href="{{ route('empresa.index') }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtro
+        </a>
+    </div>
     @else
+    <p class="text-gray-600 text-center py-8">
+        Nenhuma empresa cadastrada ainda.
+    </p>
+    @endif
+
+    @else
+
     {{-- Tabela --}}
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
         <table class="min-w-full w-full divide-y divide-gray-200">
@@ -137,59 +235,32 @@
                 @endforeach
             </tbody>
         </table>
+
         <p class="text-gray-600 text-center py-8 hidden" id="noResultsMessage">
             Nenhuma empresa encontrada com esse termo de busca.
         </p>
     </div>
+
+    <x-pagination-compact :paginator="$empresas" />
+
     @endif
 </div>
 
-{{-- Script de busca dinâmica --}}
+
+@endsection
 @push('scripts')
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const searchNameInput = document.getElementById('searchNameInput');
-        const companyTableBody = document.getElementById('companyTableBody');
-        const clearBtn = document.getElementById('clearFiltersClients');
-        const noResultsMessage = document.getElementById('noResultsMessage');
-
-        if (!companyTableBody) return;
-
-        const rows = companyTableBody.querySelectorAll('tr');
-
-        function filterTable() {
-
-            const searchTerm = searchNameInput.value.toLowerCase();
-            let foundResults = false;
-
-            rows.forEach(row => {
-
-                const nameCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-
-                if (nameCell.includes(searchTerm)) {
-                    row.style.display = '';
-                    foundResults = true;
-                } else {
-                    row.style.display = 'none';
+    $(document).ready(function() {
+        $('#cnpj').mask('AA.AAA.AAA/AAAA-AA', {
+            translation: {
+                'A': {
+                    pattern: /[A-Za-z0-9]/
                 }
-
-            });
-
-            if (noResultsMessage) {
-                noResultsMessage.classList.toggle('hidden', foundResults);
             }
-        }
-
-        function clearFilters() {
-            searchNameInput.value = '';
-            filterTable();
-        }
-
-        searchNameInput.addEventListener('input', filterTable);
-        clearBtn.addEventListener('click', clearFilters);
-
+        });
     });
 </script>
 @endpush
-@endsection

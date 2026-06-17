@@ -4,20 +4,18 @@
 @section('title', 'Editar Empresa: ' . $empresa->emp_nome)
 
 @section('content')
-{{-- Contêiner principal para centralizar o formulário e definir largura máxima --}}
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    {{-- Título do formulário, centralizado e com cor customizada --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Editar Empresa: {{ $empresa->emp_nome }}</h1>
 
-    {{-- Formulário de edição com método PUT para atualização --}}
+    <x-alert-flash />
+
     <form action="{{ route('empresa.update', $empresa->id_emp) }}" method="POST" class="space-y-6">
         @csrf
-        @method('PUT') {{-- Importante: Laravel usa PUT para atualizar recursos --}}
+        @method('PUT')
 
         {{-- Seção de campos do formulário organizada em layout de duas colunas (responsivo) --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- Campo Nome da Empresa - Agora ocupa duas colunas --}}
             <div class="md:col-span-2">
                 <!-- Campo Nome da Empresa -->
                 <div>

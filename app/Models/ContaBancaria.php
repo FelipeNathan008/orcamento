@@ -27,4 +27,9 @@ class ContaBancaria extends Model
     {
         return $this->hasMany(FluxoCaixa::class, 'conta_bancaria_id');
     }
+
+    public function saldoConta()
+    {
+        return $this->hasOne(SaldoConta::class,'id_conta_bancaria_id', 'id_conta');
+    }
 }

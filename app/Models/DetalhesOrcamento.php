@@ -15,16 +15,12 @@ class DetalhesOrcamento extends Model
 {
     use HasFactory;
 
-    // Define o nome da tabela no banco de dados, conforme sua definição SQL.
     protected $table = 'detalhes_orcamento';
 
-    // Define a chave primária da tabela.
     protected $primaryKey = 'id_det';
 
-    // Indica se a chave primária é auto-incrementável (é um INT NOT NULL AUTO_INCREMENT).
     public $incrementing = true;
 
-    // Define quais atributos são "mass assignable" (podem ser preenchidos via create ou update).
     protected $fillable = [
         'orcamento_id_orcamento',
         'orcamento_cliente_orcamento_id_co',
@@ -43,7 +39,6 @@ class DetalhesOrcamento extends Model
         'det_anotacao',
     ];
 
-    // Define os atributos que devem ser convertidos para tipos de dados específicos.
     protected $casts = [
         'det_valor_unit' => 'decimal:2',
         'orcamento_id_orcamento' => 'integer',
@@ -53,19 +48,13 @@ class DetalhesOrcamento extends Model
         'det_quantidade' => 'integer',
     ];
 
-    /**
-     * Define o relacionamento muitos-para-um com o modelo Produto.
-     * Um DetalhesOrcamento pertence a um Produto.
-     */
+
     public function produto()
     {
         return $this->belongsTo(Produto::class, 'produto_id_produto', 'id_produto');
     }
 
-    /**
-     * Define o relacionamento muitos-para-um com o modelo Orcamento.
-     * Um DetalhesOrcamento pertence a um Orcamento.
-     */
+
     public function orcamento()
     {
         return $this->belongsTo(Orcamento::class, 'orcamento_id_orcamento', 'id_orcamento');
@@ -79,11 +68,6 @@ class DetalhesOrcamento extends Model
         return $this->belongsTo(ClienteOrcamento::class, 'orcamento_cliente_orcamento_id_co', 'id_co');
     }
 
-    /**
-     * Define o relacionamento de um para muitos com o modelo Customizacao.
-     * Um DetalhesOrcamento TEM MUITAS Customizacoes.
-     * A chave estrangeira na tabela de customizações é 'detalhes_orcamento_id_det'.
-     */
     public function customizacoes()
     {
         return $this->hasMany(Customizacao::class, 'detalhes_orcamento_id_det', 'id_det');

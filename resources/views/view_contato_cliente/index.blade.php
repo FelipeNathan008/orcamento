@@ -65,67 +65,86 @@
     </div>
     @endif
 
+    <x-alert-flash />
+
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
 
-            {{-- Buscar Nome --}}
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Nome
+                    Pesquisar Contato
                 </label>
 
-                <div class="relative">
+                <form method="GET"
+                    action="{{ route('contato_cliente.index') }}">
+
                     <input
-                        type="text"
-                        id="searchNomeContato"
-                        placeholder="Nome do contato..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                        type="hidden"
+                        name="cliente_orcamento"
+                        value="{{ request('cliente_orcamento') }}">
 
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
+                    <div class="relative">
+
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ request('search') }}"
+                            placeholder="Nome ou e-mail..."
+                            class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm">
+
+                        <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                clip-rule="evenodd" />
+                        </svg>
+
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="mt-2 px-4 py-2 bg-orange-500 text-white rounded">
+                        Buscar
+                    </button>
+
+                    <a href="{{ route('contato_cliente.index', [
+                        'cliente_orcamento' => request('cliente_orcamento')
+                    ]) }}"
+                        class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                        Limpar Busca
+                    </a>
+                </form>
             </div>
-
-            {{-- Buscar Email --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Email
-                </label>
-
-                <div class="relative">
-                    <input
-                        type="text"
-                        id="searchEmailContato"
-                        placeholder="Email..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-            </div>
-
-            {{-- Botão limpar --}}
-            <div class="flex md:justify-end items-end">
-                <button
-                    type="button"
-                    id="clearFiltersContato"
-                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
-                    Limpar Busca
-                </button>
-            </div>
-
         </div>
     </div>
+
     @if ($contatosCliente->isEmpty())
-    <p class="text-gray-600 text-center py-8" id="noContatosMessage">Nenhum contato de cliente cadastrado ainda.</p>
+
+    @if(request('search'))
+
+    <div class="text-center py-8">
+        <p class="text-gray-600 text-lg">
+            Nenhum contato encontrado para
+            <strong>"{{ request('search') }}"</strong>.
+        </p>
+        <a href="{{ route('contato_cliente.index', [
+                    'cliente_orcamento' => request('cliente_orcamento')
+                ]) }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtro
+        </a>
+    </div>
+
     @else
+    <p class="text-gray-600 text-center py-8">
+        Nenhum contato cadastrado ainda.
+    </p>
+    @endif
+
+    @else
+
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
         <table class="min-w-full w-full divide-y divide-gray-200">
             <thead class="bg-table-header-bg">
@@ -157,16 +176,18 @@
                     <td class="px-4 py-4 text-sm text-gray-700">
                         @php
                         $cores = [
-                        'administrativo' => 'bg-purple-200',
-                        'comercial' => 'bg-yellow-200',
-                        'financeiro' => 'bg-blue-200',
+                        'administrativo' => 'bg-purple-200 text-purple-900',
+                        'comercial' => 'bg-yellow-200 text-yellow-900',
+                        'financeiro' => 'bg-blue-200 text-blue-900',
+                        'rh' => 'bg-pink-200 text-pink-900',
+                        'compras' => 'bg-green-200 text-green-900',
+                        'socio' => 'bg-red-200 text-red-900',
                         ];
-                        $tipoClasse = $cores[$contato->cont_tipo] ?? 'bg-gray-200';
+
+                        $tipoClasse = $cores[$contato->cont_tipo] ?? 'bg-gray-200 text-gray-900';
                         @endphp
-                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-gray-900">
-                            <span aria-hidden="true"
-                                class="absolute inset-0 opacity-50 rounded-full {{ $tipoClasse }}"></span>
-                            <span class="relative">{{ ucfirst($contato->cont_tipo) }}</span>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $tipoClasse }}">
+                            {{ ucfirst($contato->cont_tipo) }}
                         </span>
                     </td>
                     <td class="px-2 py-4 whitespace-nowrap text-center text-sm font-medium">
@@ -191,68 +212,11 @@
                 @endforeach
             </tbody>
         </table>
-        <p class="text-gray-600 text-center py-8 hidden" id="noResultsContatoMessage">Nenhum contato encontrado.</p>
     </div>
+
+    <x-pagination-compact :paginator="$contatosCliente" />
+
     @endif
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const searchNome = document.getElementById('searchNomeContato');
-        const searchEmail = document.getElementById('searchEmailContato');
-        const clearBtn = document.getElementById('clearFiltersContato');
-
-        const tableBody = document.getElementById('contatoTableBody');
-        const noResultsMessage = document.getElementById('noResultsContatoMessage');
-
-        if (!tableBody) return;
-
-        const rows = tableBody.querySelectorAll('tr');
-
-        function filtrar() {
-
-            const nomeTerm = searchNome.value.toLowerCase();
-            const emailTerm = searchEmail.value.toLowerCase();
-
-            let found = false;
-
-            rows.forEach(row => {
-
-                const nome = row.cells[0].textContent.toLowerCase();
-                const email = row.cells[1].textContent.toLowerCase();
-
-                const matchNome = !nomeTerm || nome.includes(nomeTerm);
-                const matchEmail = !emailTerm || email.includes(emailTerm);
-
-                if (matchNome && matchEmail) {
-                    row.style.display = '';
-                    found = true;
-                } else {
-                    row.style.display = 'none';
-                }
-
-            });
-
-            if (noResultsMessage) {
-                noResultsMessage.classList.toggle('hidden', found);
-            }
-
-        }
-
-        function limparBusca() {
-
-            searchNome.value = '';
-            searchEmail.value = '';
-            filtrar();
-
-        }
-
-        searchNome.addEventListener('input', filtrar);
-        searchEmail.addEventListener('input', filtrar);
-
-        clearBtn.addEventListener('click', limparBusca);
-
-    });
-</script>
 @endsection

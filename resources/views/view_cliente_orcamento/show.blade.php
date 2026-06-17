@@ -4,6 +4,9 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Detalhes do Cliente</h1>
+
+        <x-alert-flash />
+
         <div class="flex space-x-3">
             <a href="{{ route('cliente_orcamento.edit', $clienteOrcamento->id_co) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Editar Cliente
@@ -36,7 +39,27 @@
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Celular:</p>
                 <p class="text-gray-900 text-lg font-semibold">
-                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteOrcamento->clie_orc_celular)) }}
+                    @php
+                    $celular = preg_replace('/\D/', '', $clienteOrcamento->clie_orc_celular);
+
+                    if (strlen($celular) == 11) {
+                    $celularFormatado = preg_replace(
+                    '/(\d{2})(\d{5})(\d{4})/',
+                    '($1) $2-$3',
+                    $celular
+                    );
+                    } elseif (strlen($celular) == 10) {
+                    $celularFormatado = preg_replace(
+                    '/(\d{2})(\d{4})(\d{4})/',
+                    '($1) $2-$3',
+                    $celular
+                    );
+                    } else {
+                    $celularFormatado = $clienteOrcamento->clie_orc_celular;
+                    }
+                    @endphp
+
+                    {{ $celularFormatado }}
                 </p>
             </div>
             <div class="mb-4">
@@ -84,6 +107,10 @@
             <div class="mb-4">
                 <p class="text-gray-600 text-sm">Código interno:</p>
                 <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_cod_interno }}</p>
+            </div>
+            <div class="mb-4">
+                <p class="text-gray-600 text-sm">Inscrição Estadual:</p>
+                <p class="text-gray-900 text-lg font-semibold">{{ $clienteOrcamento->clie_orc_ie }}</p>
             </div>
             <div class="md:col-span-2 mb-4">
                 <p class="text-gray-600 text-sm">Criado em:</p>

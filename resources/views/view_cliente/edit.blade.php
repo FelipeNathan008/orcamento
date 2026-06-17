@@ -1,23 +1,20 @@
 @extends('layouts.app')
 
-{{-- Define o título da página usando o nome do cliente --}}
 @section('title', 'Editar Cliente: ' . $cliente->clie_nome)
 
 @section('content')
-{{-- Contêiner principal para centralizar o formulário e definir largura máxima --}}
+
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    {{-- Título do formulário, centralizado e com cor customizada --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Editar Cliente: {{ $cliente->clie_nome }}</h1>
 
-    {{-- Formulário de edição com método PUT para atualização --}}
+    <x-alert-flash />
+
     <form id="editForm" action="{{ route('cliente.update', $cliente->id_cliente) }}" method="POST" class="space-y-6">
         @csrf
-        @method('PUT') {{-- Importante: Laravel usa PUT para atualizar recursos --}}
+        @method('PUT')
 
-        {{-- Seção de campos do formulário organizada em layout de duas colunas (responsivo) --}}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- PRIMEIRA COLUNA (ESQUERDA) - Campos Nome, E-mail, Logradouro, Bairro, Cidade --}}
             <div>
                 <!-- Campo Nome -->
                 <div>

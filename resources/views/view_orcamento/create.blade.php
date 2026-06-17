@@ -40,25 +40,8 @@
         </div>
     </div>
 
+    <x-alert-flash />
 
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
-
-    @if ($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
-        <strong class="font-bold">Opa!</strong>
-        <span class="block sm:inline">Existem alguns problemas com seus dados.</span>
-        <ul class="mt-3 list-disc list-inside">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
 
     <div>
         <form id="orcamentoForm" action="{{ route('orcamento.store') }}" method="POST" class="space-y-6">
@@ -144,6 +127,52 @@
                         @enderror
                     </div>
 
+                    <!-- Códigos -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        <!-- Código da Fábrica -->
+                        <div>
+                            <label for="orc_cod_fabrica"
+                                class="block text-sm font-medium text-custom-dark-text mb-1">
+                                Código da Fábrica
+                            </label>
+
+                            <input type="text"
+                                name="orc_cod_fabrica"
+                                id="orc_cod_fabrica"
+                                maxlength="60"
+                                required
+                                placeholder="Código da fábrica"
+                                value="{{ old('orc_cod_fabrica') }}"
+                                class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+                            @error('orc_cod_fabrica')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Código Interno -->
+                        <div>
+                            <label for="orc_cod_interno"
+                                class="block text-sm font-medium text-custom-dark-text mb-1">
+                                Código Interno
+                            </label>
+
+                            <input type="text"
+                                name="orc_cod_interno"
+                                id="orc_cod_interno"
+                                maxlength="60"
+                                required
+                                placeholder="Código interno"
+                                value="{{ old('orc_cod_interno') }}"
+                                class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+                            @error('orc_cod_interno')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                    </div>
                     <!-- Campo Anotação Geral -->
                     <div>
                         <label for="orc_anotacao_geral"
@@ -195,13 +224,13 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
 
         // BOTÃO SALVAR
         const form = document.getElementById('orcamentoForm');
         const btnSalvar = document.getElementById('BtnSalvarOrcamento');
 
-        form.addEventListener('submit', function () {
+        form.addEventListener('submit', function() {
             btnSalvar.disabled = true;
             btnSalvar.textContent = 'SALVANDO...';
             btnSalvar.classList.remove('hover:bg-button-save-hover');
@@ -213,19 +242,56 @@
         const dataInicioInput = document.getElementById('orc_data_inicio');
         const dataFimInput = document.getElementById('orc_data_fim');
 
-        dataInicioInput.addEventListener('change', function () {
+        dataInicioInput.addEventListener('change', function() {
+
             if (this.value) {
+
                 const dataInicio = new Date(this.value + 'T00:00:00');
 
-                dataInicio.setDate(dataInicio.getDate() + 15);
+                // Data mínima permitida para Data Fim = Data Início + 1 dia
+                const dataMinimaFim = new Date(dataInicio);
+                dataMinimaFim.setDate(dataMinimaFim.getDate() + 1);
 
-                const ano = dataInicio.getFullYear();
-                const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
-                const dia = String(dataInicio.getDate()).padStart(2, '0');
+                const anoMin = dataMinimaFim.getFullYear();
+                const mesMin = String(dataMinimaFim.getMonth() + 1).padStart(2, '0');
+                const diaMin = String(dataMinimaFim.getDate()).padStart(2, '0');
+
+                dataFimInput.min = `${anoMin}-${mesMin}-${diaMin}`;
+
+                // Preenche automaticamente com +15 dias
+                const dataFim = new Date(dataInicio);
+                dataFim.setDate(dataFim.getDate() + 15);
+
+                const ano = dataFim.getFullYear();
+                const mes = String(dataFim.getMonth() + 1).padStart(2, '0');
+                const dia = String(dataFim.getDate()).padStart(2, '0');
 
                 dataFimInput.value = `${ano}-${mes}-${dia}`;
+
             } else {
+
                 dataFimInput.value = '';
+                dataFimInput.removeAttribute('min');
+
+            }
+
+        });
+
+        // Validação extra caso o usuário altere a data fim manualmente
+        dataFimInput.addEventListener('change', function() {
+
+            if (!dataInicioInput.value || !this.value) return;
+
+            const dataInicio = new Date(dataInicioInput.value + 'T00:00:00');
+            const dataFim = new Date(this.value + 'T00:00:00');
+
+            if (dataFim <= dataInicio) {
+
+                alert('A data final deve ser maior que a data inicial.');
+
+                this.value = '';
+
+                this.focus();
             }
         });
 

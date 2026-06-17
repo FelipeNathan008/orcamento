@@ -4,15 +4,15 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    {{-- Título do formulário unificado --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Novo Cliente</h1>
+
+    <x-alert-flash />
 
     <form action="{{ route('cliente_orcamento.store') }}" method="POST" id="clienteOrcamentoForm" class="space-y-6">
         @csrf
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {{-- PRIMEIRA COLUNA (ESQUERDA) --}}
             <div>
                 {{-- Campo Nome --}}
                 <div>
@@ -92,6 +92,25 @@
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+
+                <div class="mt-6">
+                    <label for="clie_orc_ie"
+                        class="block text-sm font-medium text-custom-dark-text mb-1">Inscrição Estadual
+                    </label>
+
+                    <input type="text"
+                        name="clie_orc_ie"
+                        id="clie_orc_ie"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="Informe a inscrição estadual"
+                        maxlength="90"
+                        value="{{ old('clie_orc_ie', $clienteOrcamento->clie_orc_ie ?? '') }}"
+                        required>
+
+                    @error('clie_orc_ie')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             {{-- SEGUNDA COLUNA (DIREITA) --}}
@@ -160,7 +179,7 @@
                     <div>
                         <label for="clie_orc_telefone"
                             class="block text-sm font-medium text-custom-dark-text mb-1">Número
-                            Telefone</label>
+                            Telefone (Opcional)</label>
                         <input type="text" name="clie_orc_telefone" id="clie_orc_telefone"
                             class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
                             placeholder="(XX) XXXX-XXXX" maxlength="14" value="{{ old('clie_orc_telefone') }}">
@@ -176,9 +195,7 @@
                 <div class="mt-6">
                     <label for="clie_orc_cep"
                         class="block text-sm font-medium text-custom-dark-text mb-1">
-
                         CEP
-
                     </label>
 
                     <input type="text"
@@ -235,30 +252,31 @@
                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+                {{-- Campo Código Interno --}}
+                <div class="mt-6">
+                    <label for="clie_orc_cod_interno"
+                        class="block text-sm font-medium text-custom-dark-text mb-1">
+                        Código Interno
+                    </label>
+
+                    <input type="text"
+                        name="clie_orc_cod_interno"
+                        id="clie_orc_cod_interno"
+                        class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
+                        placeholder="Informe o código interno"
+                        maxlength="60"
+                        value="{{ old('clie_orc_cod_interno') }}">
+
+                    @error('clie_orc_cod_interno')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
+
         </div>
 
-        {{-- Campo Código Interno --}}
-        <div class="md:col-span-2 mt-6">
-            <label for="clie_orc_cod_interno"
-                class="block text-sm font-medium text-custom-dark-text mb-1">
 
-                Código Interno
 
-            </label>
-
-            <input type="text"
-                name="clie_orc_cod_interno"
-                id="clie_orc_cod_interno"
-                class="block w-full px-4 py-2 bg-white text-gray-800 placeholder-gray-400 rounded-md border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition duration-150"
-                placeholder="Informe o código interno"
-                maxlength="60"
-                value="{{ old('clie_orc_cod_interno') }}">
-
-            @error('clie_orc_cod_interno')
-            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-            @enderror
-        </div>
         <div class="flex justify-center mt-8">
             <button type="submit" id="btnSalvarClienteOrcamento"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">

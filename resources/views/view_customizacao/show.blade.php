@@ -26,6 +26,7 @@
 
     </div>
 
+    <x-alert-flash />
 
     <div class="bg-white shadow-xl rounded-lg p-8">
 

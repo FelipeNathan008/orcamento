@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ContaBancaria;
 use App\Models\Financeiro;
 use App\Models\Orcamento;
 use App\Models\StatusMercadoria;
@@ -28,7 +29,7 @@ class FinanceiroController extends Controller
         foreach ($financeiro as $fin) {
             $fin->temStatusPendente = $fin->logs->contains('log_situacao', 0);
         }
-
+        $contas = ContaBancaria::all();
        
         $tipos = TipoFluxoCaixa::all();
         $movimentacoes = Movimentacao::all();
@@ -37,7 +38,7 @@ class FinanceiroController extends Controller
 
         $movSaida = Movimentacao::where('mov_nome', 'Saída')->first();
 
-        return view('view_financeiro.index', compact('tipoDespesaUP', 'movSaida', 'financeiro', 'tipos', 'movimentacoes'));
+        return view('view_financeiro.index', compact('tipoDespesaUP', 'movSaida', 'financeiro', 'tipos', 'movimentacoes', 'contas'));
     }
 
 
@@ -58,7 +59,7 @@ class FinanceiroController extends Controller
         return view('view_financeiro.create', compact('orcamentoToCopy'));
     }
 
-    public function prosseguir(Request $request, $id)
+    public function prosseguir(Request $request, string $id)
     {
         $financeiro = Financeiro::findOrFail($id);
 

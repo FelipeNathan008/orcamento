@@ -7,6 +7,8 @@
     <h1 class="text-3xl font-bold text-custom-dark-text mb-2 text-center">
         Novo Contato
     </h1>
+    <x-alert-flash />
+
 
     @if(isset($clienteSelecionado))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
@@ -115,6 +117,15 @@
                         </option>
                         <option value="financeiro" {{ old('cont_tipo') == 'financeiro' ? 'selected' : '' }}>
                             Financeiro
+                        </option>
+                        <option value="rh" {{ old('cont_tipo') == 'rh' ? 'selected' : '' }}>
+                            RH
+                        </option>
+                        <option value="compras" {{ old('cont_tipo') == 'compras' ? 'selected' : '' }}>
+                            Compras
+                        </option>
+                        <option value="socio" {{ old('cont_tipo') == 'socio' ? 'selected' : '' }}>
+                            Sócio
                         </option>
                     </select>
                 </div>

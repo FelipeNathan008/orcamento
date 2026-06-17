@@ -5,12 +5,10 @@
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Detalhes do Fluxo de Caixa</h1>
+    <x-alert-flash />
 
         <div class="flex space-x-3">
-            <a href="{{ route('fluxo_caixa.edit', $fluxo->id_fluxo) }}"
-                class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition">
-                Editar
-            </a>
+           
 
             <a href="{{ route('fluxo_caixa.index') }}"
                 class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition">

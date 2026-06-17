@@ -4,6 +4,9 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Detalhes do Contato do Cliente</h1>
+
+        <x-alert-flash />
+
         <div class="flex space-x-3">
             <a href="{{ route('contato_cliente.edit', $contatoCliente->id_contato) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Editar Contato

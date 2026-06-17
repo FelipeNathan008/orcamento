@@ -3,14 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContaBancaria;
+use App\Models\SaldoConta;
 use Illuminate\Http\Request;
 
 class ContaBancariaController extends Controller
 {
     public function index()
     {
-        $contas = ContaBancaria::all();
+        $contas = ContaBancaria::with('saldoConta')->get();
         return view('view_conta_bancaria.index', compact('contas'));
+    }
+
+    public function adicionarSaldo(Request $request, string $id)
+    {
+        $request->validate([
+            'valor' => 'required|numeric|min:0.01',
+        ]);
+
+        $conta = ContaBancaria::findOrFail($id);
+
+        $valor = $request->valor;
+
+        $saldo = SaldoConta::where(
+            'id_conta_bancaria_id',
+            $conta->id_conta
+        )->first();
+
+        if ($saldo) {
+
+            $saldo->saldo_conta_valor += $valor;
+            $saldo->save();
+        } else {
+
+            SaldoConta::create([
+                'id_conta_bancaria_id' => $conta->id_conta,
+                'saldo_conta_valor' => $valor,
+            ]);
+        }
+
+        return redirect()->route('conta_bancaria.index')
+            ->with('success', 'Saldo adicionado com sucesso!');
     }
 
     public function create()
@@ -37,13 +69,15 @@ class ContaBancariaController extends Controller
 
     public function show(string $id)
     {
-        $conta = ContaBancaria::findOrFail($id);
+        $conta = ContaBancaria::with('saldoConta')->findOrFail($id);
+
         return view('view_conta_bancaria.show', compact('conta'));
     }
 
     public function edit(string $id)
     {
-        $conta = ContaBancaria::findOrFail($id);
+        $conta = ContaBancaria::with('saldoConta')->findOrFail($id);
+
         return view('view_conta_bancaria.edit', compact('conta'));
     }
 
@@ -59,15 +93,22 @@ class ContaBancariaController extends Controller
         ]);
 
         $conta = ContaBancaria::findOrFail($id);
+
         $conta->update($validatedData);
 
         return redirect()->route('conta_bancaria.index')
             ->with('success', 'Conta bancária atualizada com sucesso!');
     }
-
+    
     public function destroy(string $id)
     {
         $conta = ContaBancaria::findOrFail($id);
+
+        SaldoConta::where(
+            'id_conta_bancaria_id',
+            $conta->id_conta
+        )->delete();
+
         $conta->delete();
 
         return redirect()->route('conta_bancaria.index')

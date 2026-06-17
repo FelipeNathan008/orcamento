@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Orçamento #{{ $orcamento->id_orcamento }}</title>
+    <title>Orçamento #{{ $orcamento->orc_cod_interno }}</title>
     <style>
         /* Adicione esta linha no início do CSS */
         * {

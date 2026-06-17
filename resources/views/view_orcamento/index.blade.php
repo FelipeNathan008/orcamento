@@ -1,12 +1,10 @@
-@extends('layouts.app') {{-- Layout principal --}}
-
-@section('title', 'Lista de Orçamentos') {{-- Título da Página --}}
+@extends('layouts.app')
+@section('title', 'Lista de Orçamentos')
 
 @section('content')
 
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
-    {{-- Cabeçalho com título e botões --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
 
         <h1
@@ -68,84 +66,195 @@
     </div>
     @endif
 
-    {{-- Formulários de Busca e Filtro --}}
-    <form method="GET" action="{{ route('orcamento.index') }}" id="filtroForm" class="mb-6">
+    <x-alert-flash />
 
-        <input type="hidden" name="cliente_orcamento_id" value="{{ $clienteSelecionado->id_co }}">
+    <form method="GET" action="{{ route('orcamento.index') }}" class="mb-6">
+
+        <input
+            type="hidden"
+            name="cliente_orcamento_id"
+            value="{{ $clienteSelecionado->id_co }}">
 
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                {{-- Filtro por Status --}}
+                {{-- Código da Fábrica --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Filtrar por Status
+                        Código da Fábrica
                     </label>
 
-                    <select name="status_query"
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-                        <option value="">Mostrar todos</option>
-                        <option value="pendente" {{ request('status_query') == 'pendente' ? 'selected' : '' }}>Pendente</option>
-                        <option value="para aprovacao" {{ request('status_query') == 'para aprovacao' ? 'selected' : '' }}>Para Aprovação</option>
-                        <option value="aprovado" {{ request('status_query') == 'aprovado' ? 'selected' : '' }}>Aprovado</option>
-                        <option value="finalizado" {{ request('status_query') == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                    <input
+                        type="text"
+                        name="orc_cod_fabrica"
+                        value="{{ request('orc_cod_fabrica') }}"
+                        placeholder="Código fábrica..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+                </div>
+
+                {{-- Código Interno --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Código Interno
+                    </label>
+
+                    <input
+                        type="text"
+                        name="orc_cod_interno"
+                        value="{{ request('orc_cod_interno') }}"
+                        placeholder="Código interno..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+                </div>
+
+                {{-- Data Início --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Data Início
+                    </label>
+
+                    <input
+                        type="date"
+                        name="data_inicio"
+                        value="{{ request('data_inicio') }}"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+                </div>
+
+                {{-- Data Fim --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Data Fim
+                    </label>
+
+                    <input
+                        type="date"
+                        name="data_fim"
+                        value="{{ request('data_fim') }}"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+                </div>
+
+                {{-- Status --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Status
+                    </label>
+
+                    <select
+                        name="status_query"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+
+                        <option value="">Todos</option>
+
+                        <option value="pendente"
+                            {{ request('status_query') == 'pendente' ? 'selected' : '' }}>
+                            Pendente
+                        </option>
+
+                        <option value="para aprovacao"
+                            {{ request('status_query') == 'para aprovacao' ? 'selected' : '' }}>
+                            Para Aprovação
+                        </option>
+
+                        <option value="aprovado"
+                            {{ request('status_query') == 'aprovado' ? 'selected' : '' }}>
+                            Aprovado
+                        </option>
+
+                        <option value="finalizado"
+                            {{ request('status_query') == 'finalizado' ? 'selected' : '' }}>
+                            Finalizado
+                        </option>
+
+                        <option value="rejeitado"
+                            {{ request('status_query') == 'rejeitado' ? 'selected' : '' }}>
+                            Rejeitado
+                        </option>
+
                     </select>
                 </div>
 
-                {{-- Filtro por Vencimento --}}
+                {{-- Vencimento --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Filtrar por Vencimento
+                        Vencimento
                     </label>
 
-                    <div class="flex flex-wrap gap-4 h-10 items-center">
+                    <select
+                        name="filtro_vencimento"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+                        <option value="todos"
+                            {{ request('filtro_vencimento', 'todos') == 'todos' ? 'selected' : '' }}>
+                            Todos
+                        </option>
 
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio"
-                                name="filtro_vencimento"
-                                value="ativos"
-                                {{ request('filtro_vencimento', 'ativos') == 'ativos' ? 'checked' : '' }}
-                                class="h-4 w-4 text-orange-600 border-gray-300">
-                            <span class="text-sm text-gray-700">Ativos</span>
-                        </label>
+                        <option value="ativos"
+                            {{ request('filtro_vencimento') == 'ativos' ? 'selected' : '' }}>
+                            Ativos
+                        </option>
 
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio"
-                                name="filtro_vencimento"
-                                value="todos"
-                                {{ request('filtro_vencimento') == 'todos' ? 'checked' : '' }}
-                                class="h-4 w-4 text-orange-600 border-gray-300">
-                            <span class="text-sm text-gray-700">Todos</span>
-                        </label>
+                        <option value="vencidos"
+                            {{ request('filtro_vencimento') == 'vencidos' ? 'selected' : '' }}>
+                            Vencidos
+                        </option>
 
-                        <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio"
-                                name="filtro_vencimento"
-                                value="vencidos"
-                                {{ request('filtro_vencimento') == 'vencidos' ? 'checked' : '' }}
-                                class="h-4 w-4 text-orange-600 border-gray-300">
-                            <span class="text-sm text-gray-700">Vencidos</span>
-                        </label>
-
-                    </div>
+                    </select>
                 </div>
 
-                {{-- Botão Limpar Filtros --}}
-                <div class="flex md:justify-end items-end">
-                    <a href="{{ route('orcamento.index', ['cliente_orcamento_id' => $clienteSelecionado->id_co]) }}"
-                        class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150 ease-in-out">
-                        Limpar Filtros
+                {{-- Buscar --}}
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md"
+                        style="background-color:#EA792D;">
+                        Buscar
+                    </button>
+                </div>
+
+                {{-- Limpar --}}
+                <div class="flex items-end">
+                    <a
+                        href="{{ route('orcamento.index', ['cliente_orcamento_id' => $clienteSelecionado->id_co]) }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
                     </a>
                 </div>
+
             </div>
+
         </div>
+
     </form>
 
-    {{-- Mensagem "Nenhum orçamento" --}}
-    <p class="text-gray-600 text-center py-8 @if (!$orcamentos->isEmpty()) hidden @endif" id="noOrcamentosMessage">
+    @if ($orcamentos->isEmpty())
+
+    @if(
+    request('orc_cod_fabrica') ||
+    request('orc_cod_interno') ||
+    request('data_inicio') ||
+    request('data_fim') ||
+    request('status_query') ||
+    request('filtro_vencimento')
+    )
+    <div class="text-center py-8">
+
+        <p class="text-gray-600 text-center py-8">
+            Nenhum orçamento encontrado para os filtros informados.
+        </p>
+
+        <a href="{{ route('orcamento.index', ['cliente_orcamento_id' => $clienteSelecionado->id_co])  }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtros
+        </a>
+    </div>
+    @else
+
+    <p class="text-gray-600 text-center py-8">
         Nenhum orçamento cadastrado ainda.
     </p>
+
+    @endif
+
+    @endif
 
     {{-- Tabela de Orçamentos --}}
     @if (!$orcamentos->isEmpty())
@@ -153,12 +262,10 @@
         <table class="min-w-full w-full divide-y divide-gray-200">
             <thead class="bg-table-header-bg">
                 <tr>
-                    <th
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        ID</th>
-                    <th
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Cliente</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Cód. Fábrica</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Cód. Interno</th>
                     <th
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Data Início</th>
@@ -176,10 +283,12 @@
             <tbody class="bg-white divide-y divide-gray-200" id="orcamentoTableBody">
                 @foreach ($orcamentos as $orcamento)
                 <tr class="hover:bg-gray-50 transition duration-150">
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">{{ $orcamento->id_orcamento }}
+                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
+                        {{ $orcamento->orc_cod_fabrica }}
                     </td>
-                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
-                        {{ $orcamento->clienteOrcamento->clie_orc_nome ?? 'Cliente Não Encontrado' }}
+
+                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
+                        {{ $orcamento->orc_cod_interno }}
                     </td>
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
                         {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
@@ -251,7 +360,9 @@
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
                                 Editar
                             </a>
-                            {{-- Excluir --}}
+
+                            @if (in_array($orcamento->orc_status, ['pendente', 'rejeitado']))
+
                             <form action="{{ route('orcamento.destroy', $orcamento->id_orcamento) }}" method="POST"
                                 onsubmit="return confirm('Tem certeza que deseja excluir este orçamento?');"
                                 class="inline-block">
@@ -263,35 +374,19 @@
                                 </button>
                             </form>
                             @endif
+
+                            @endif
                         </div>
                     </td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
-        <p class="text-gray-600 text-center py-8 hidden" id="noResultsOrcamentoMessage">Nenhum orçamento encontrado com
-            esse termo de busca.</p>
+
+        <div class="mt-4">
+            <x-pagination-compact :paginator="$orcamentos" />
+        </div>
     </div>
     @endif
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const form = document.getElementById('filtroForm');
-        const statusSelect = document.querySelector('select[name="status_query"]');
-        const radios = document.querySelectorAll('input[name="filtro_vencimento"]');
-
-        statusSelect?.addEventListener('change', function() {
-            form.submit();
-        });
-
-        radios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                form.submit();
-            });
-        });
-
-    });
-</script>
 @endsection

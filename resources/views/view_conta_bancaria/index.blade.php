@@ -15,9 +15,9 @@
 
         <div class="flex items-center gap-3">
 
-            <a href="{{ route('dashboard') }}"
+            <a href="{{ route('fluxo_nota_conta.index') }}"
                 class="px-4 py-2 text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400">
-                HOME
+                Voltar
             </a>
 
             <a href="{{ route('conta_bancaria.create') }}"
@@ -79,28 +79,61 @@
 
     {{-- TABELA --}}
     @if ($contas->isEmpty())
-    <p class="text-center text-gray-600">Nenhuma conta cadastrada.</p>
+
+    <p class="text-center text-gray-600">
+        Nenhuma conta cadastrada.
+    </p>
+
     @else
 
     <div class="w-full rounded-lg shadow-table-shadow-image mb-3 overflow-x-auto">
+
         <table class="min-w-full w-full divide-y divide-gray-200">
+
             <thead class="bg-table-header-bg">
+
                 <tr>
 
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Banco</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Código</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Agência</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Conta</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Dígito</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Descrição</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Banco
+                    </th>
 
-                    <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase">Ações</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Código
+                    </th>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Agência
+                    </th>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Conta
+                    </th>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Dígito
+                    </th>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Saldo
+                    </th>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Descrição
+                    </th>
+
+                    <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase">
+                        Ações
+                    </th>
+
                 </tr>
+
             </thead>
 
             <tbody id="contaTableBody" class="bg-white divide-y divide-gray-200">
 
                 @foreach ($contas as $conta)
+
                 <tr class="hover:bg-gray-50"
                     data-nome="{{ $conta->conta_nome_banco }}"
                     data-desc="{{ $conta->conta_desc }}">
@@ -125,13 +158,17 @@
                         {{ $conta->numero_digito_corrente }}
                     </td>
 
+                    <td class="px-4 py-4 text-sm font-semibold text-green-600">
+                        R$ {{ number_format($conta->saldoConta->saldo_conta_valor ?? 0, 2, ',', '.') }}
+                    </td>
+
                     <td class="px-4 py-4 text-sm text-gray-700">
                         {{ $conta->conta_desc }}
                     </td>
 
                     <td class="px-2 py-4 text-center text-sm">
 
-                        <div class="flex justify-center gap-2">
+                        <div class="flex justify-center gap-2 flex-wrap">
 
                             <a href="{{ route('conta_bancaria.show', $conta->id_conta) }}"
                                 class="px-2 py-1 text-xs text-white bg-blue-600 rounded-md hover:bg-blue-700">
@@ -143,16 +180,29 @@
                                 Editar
                             </a>
 
+                            <button
+                                type="button"
+                                data-id="{{ $conta->id_conta }}"
+                                class="btnAbrirSaldo inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-button-contact-bg hover:bg-button-contact-hover">
+
+                                Saldo
+
+                            </button>
+
                             <form action="{{ route('conta_bancaria.destroy', $conta->id_conta) }}"
                                 method="POST"
                                 onsubmit="return confirm('Deseja excluir esta conta?');">
+
                                 @csrf
                                 @method('DELETE')
 
                                 <button
                                     class="px-2 py-1 text-xs text-white rounded-md bg-button-cancel-bg hover:bg-button-cancel-hover">
+
                                     Excluir
+
                                 </button>
+
                             </form>
 
                         </div>
@@ -160,6 +210,7 @@
                     </td>
 
                 </tr>
+
                 @endforeach
 
             </tbody>
@@ -176,11 +227,69 @@
 
 </div>
 
-{{-- SCRIPT --}}
+{{-- MODAL SALDO --}}
+<div id="modalSaldo"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+
+        <h2 class="text-xl font-bold mb-4">
+            Adicionar Saldo
+        </h2>
+
+        <form id="formSaldo" method="POST">
+
+            @csrf
+
+            <div class="mb-4">
+
+                <label class="block text-sm font-medium mb-2">
+                    Valor
+                </label>
+
+                <input
+                    type="text"
+                    id="valorSaldo"
+                    name="valor"
+                    required
+                    placeholder="0,00"
+                    autocomplete="off"
+                    class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500">
+
+            </div>
+
+            <div class="flex justify-end gap-3">
+
+                <button
+                    type="button"
+                    id="btnCancelarModal"
+                    class="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400">
+
+                    Cancelar
+
+                </button>
+
+                <button
+                    type="submit"
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+
+                    Salvar
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
+        // PESQUISA
         const searchInput = document.getElementById('searchContaInput');
         const clearBtn = document.getElementById('clearFiltersConta');
 
@@ -188,16 +297,21 @@
         const noResults = document.getElementById('noResultsConta');
 
         function filter() {
+
             const term = searchInput.value.toLowerCase();
+
             let found = false;
 
             rows.forEach(row => {
+
                 const nome = row.dataset.nome.toLowerCase();
                 const desc = (row.dataset.desc || '').toLowerCase();
 
                 if (nome.includes(term) || desc.includes(term)) {
+
                     row.style.display = '';
                     found = true;
+
                 } else {
                     row.style.display = 'none';
                 }
@@ -205,12 +319,89 @@
 
             noResults.classList.toggle('hidden', found);
         }
-
         searchInput.addEventListener('input', filter);
-
         clearBtn.addEventListener('click', () => {
             searchInput.value = '';
             filter();
+
+        });
+
+        // MODAL
+        const modal = document.getElementById('modalSaldo');
+        const form = document.getElementById('formSaldo');
+        const valorInput = document.getElementById('valorSaldo');
+        const btnCancelarModal = document.getElementById('btnCancelarModal');
+
+        document.querySelectorAll('.btnAbrirSaldo').forEach(button => {
+
+            button.addEventListener('click', function() {
+
+                const id = this.dataset.id;
+
+                form.action = `/conta_bancaria/${id}/saldo`;
+                valorInput.value = '';
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                valorInput.focus();
+            });
+
+        });
+
+        function fecharModalSaldo() {
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        btnCancelarModal.addEventListener('click', fecharModalSaldo);
+
+        // FECHAR AO CLICAR FORA
+        modal.addEventListener('click', function(e) {
+
+            if (e.target === modal) {
+                fecharModalSaldo();
+            }
+
+        });
+
+        // MÁSCARA MONETÁRIA
+        valorInput.addEventListener('input', function(e) {
+
+            let value = e.target.value.replace(/\D/g, '');
+
+            if (value === '') {
+                e.target.value = '';
+                return;
+            }
+            value = (parseInt(value) / 100).toFixed(2);
+            value = value.replace('.', ',');
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            e.target.value = value;
+
+        });
+
+        // CONFIRMAÇÃO
+        form.addEventListener('submit', function(e) {
+
+            e.preventDefault();
+            const valor = valorInput.value;
+            if (!valor || valor === '0,00') {
+
+                alert('Informe um valor válido.');
+                return;
+
+            }
+            const confirmar = confirm(
+                `Deseja realmente adicionar R$ ${valor} ao saldo desta conta?`
+            );
+
+            if (confirmar) {
+                let valorConvertido = valor
+                    .replace(/\./g, '')
+                    .replace(',', '.');
+
+                valorInput.value = valorConvertido;
+                form.submit();
+            }
         });
 
     });

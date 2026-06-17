@@ -22,6 +22,8 @@
         </div>
     </div>
 
+    <x-alert-flash />
+
     {{-- Card --}}
     <div class="bg-white shadow-xl rounded-lg p-8">
 

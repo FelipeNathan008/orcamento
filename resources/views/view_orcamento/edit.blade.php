@@ -5,6 +5,8 @@
 
 @section('content')
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
+
+
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Editar Orçamento:
         #{{ $orcamento->id_orcamento }}</h1>
 
@@ -41,18 +43,8 @@
         </div>
     </div>
     @endif
+    <x-alert-flash />
 
-    @if ($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Opa!</strong>
-        <span class="block sm:inline">Existem alguns problemas com seus dados.</span>
-        <ul class="mt-3 list-disc list-inside">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
 
     <div>
         <form action="{{ route('orcamento.update', $orcamento->id_orcamento) }}" method="POST" class="space-y-6">
@@ -144,6 +136,49 @@
                         </select>
                     </div>
 
+                    {{-- Códigos --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        {{-- Código da Fábrica --}}
+                        <div>
+                            <label for="orc_cod_fabrica" class="block text-sm font-medium mb-1">
+                                Código da Fábrica
+                            </label>
+
+                            <input type="text"
+                                name="orc_cod_fabrica"
+                                id="orc_cod_fabrica"
+                                maxlength="60"
+                                required
+                                value="{{ old('orc_cod_fabrica', $orcamento->orc_cod_fabrica) }}"
+                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
+
+                            @error('orc_cod_fabrica')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Código Interno --}}
+                        <div>
+                            <label for="orc_cod_interno" class="block text-sm font-medium mb-1">
+                                Código Interno
+                            </label>
+
+                            <input type="text"
+                                name="orc_cod_interno"
+                                id="orc_cod_interno"
+                                maxlength="60"
+                                required
+                                value="{{ old('orc_cod_interno', $orcamento->orc_cod_interno) }}"
+                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
+
+                            @error('orc_cod_interno')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                    </div>
+
                     {{-- Anotação Geral --}}
                     <div>
                         <label for="orc_anotacao_geral" class="block text-sm font-medium mb-1">
@@ -190,6 +225,40 @@
 
 @push('scripts')
 <script>
+    // CONTROLE DAS DATAS
+    const dataInicioInput = document.getElementById('orc_data_inicio');
+    const dataFimInput = document.getElementById('orc_data_fim');
+
+    function validarDatas() {
+
+        if (!dataInicioInput.value) {
+            dataFimInput.removeAttribute('min');
+            return;
+        }
+
+        const dataInicio = new Date(dataInicioInput.value + 'T00:00:00');
+
+        // Data mínima permitida = Data início + 1 dia
+        dataInicio.setDate(dataInicio.getDate() + 1);
+
+        const ano = dataInicio.getFullYear();
+        const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
+        const dia = String(dataInicio.getDate()).padStart(2, '0');
+
+        const dataMinima = `${ano}-${mes}-${dia}`;
+
+        dataFimInput.min = dataMinima;
+
+        // Se a data fim atual for inválida, limpa
+        if (dataFimInput.value && dataFimInput.value < dataMinima) {
+            dataFimInput.value = '';
+        }
+    }
+
+    validarDatas();
+
+    dataInicioInput.addEventListener('change', validarDatas);
+
     document.addEventListener('DOMContentLoaded', function() {
 
         const statusSelect = document.getElementById('orc_status');
@@ -223,7 +292,15 @@
                 if (!statusSelect) return;
 
                 const status = statusSelect.value;
+                // Validação das datas
+                const dataInicio = new Date(dataInicioInput.value);
+                const dataFim = new Date(dataFimInput.value);
 
+                if (dataFim <= dataInicio) {
+                    alert('A Data Fim deve ser maior que a Data Início.');
+                    e.preventDefault();
+                    return;
+                }
                 if (status === 'aprovado') {
                     const confirmar = confirm(
                         "Você deseja colocar como APROVADO e ir para o módulo Financeiro?"

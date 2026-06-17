@@ -28,18 +28,70 @@ class CustomizacaoController extends Controller
             'orcamento.clienteOrcamento'
         ])->findOrFail($request->id_det);
 
-        $customizacoes = Customizacao::with([
+        $query = Customizacao::with([
             'detalhesOrcamento.produto',
             'detalhesOrcamento.orcamento.clienteOrcamento'
         ])
-            ->where('detalhes_orcamento_id_det', $request->id_det)
-            ->get();
+            ->where('detalhes_orcamento_id_det', $request->id_det);
+
+        // Tipo
+        if ($request->filled('tipo')) {
+            $query->where('cust_tipo', $request->tipo);
+        }
+
+        // Local
+        if ($request->filled('local')) {
+            $query->where('cust_local', $request->local);
+        }
+
+        // Posição
+        if ($request->filled('posicao')) {
+            $query->where('cust_posicao', $request->posicao);
+        }
+
+        // Formatação
+        if ($request->filled('formatacao')) {
+            $query->where('cust_formatacao', $request->formatacao);
+        }
+
+        $customizacoes = $query
+            ->orderBy('id_customizacao')
+            ->paginate(10)
+            ->withQueryString();
+
+        $tipos = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+            ->select('cust_tipo')
+            ->distinct()
+            ->orderBy('cust_tipo')
+            ->pluck('cust_tipo');
+
+        $locais = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+            ->select('cust_local')
+            ->distinct()
+            ->orderBy('cust_local')
+            ->pluck('cust_local');
+
+        $posicoes = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+            ->select('cust_posicao')
+            ->distinct()
+            ->orderBy('cust_posicao')
+            ->pluck('cust_posicao');
+
+        $formatacoes = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+            ->select('cust_formatacao')
+            ->distinct()
+            ->orderBy('cust_formatacao')
+            ->pluck('cust_formatacao');
 
         return view('view_customizacao.index', [
             'customizacoes' => $customizacoes,
             'detalhe' => $detalhe,
             'orcamento' => $detalhe->orcamento,
-            'cliente' => $detalhe->orcamento->clienteOrcamento
+            'cliente' => $detalhe->orcamento->clienteOrcamento,
+            'tipos' => $tipos,
+            'locais' => $locais,
+            'posicoes' => $posicoes,
+            'formatacoes' => $formatacoes,
         ]);
     }
 

@@ -7,12 +7,32 @@ use Illuminate\Http\Request;
 
 class EmpresaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $empresas = Empresa::all();
+        $cnpj = preg_replace('/\D/', '', $request->cnpj);
+
+        $empresas = Empresa::query()
+
+            ->when($request->nome, function ($query) use ($request) {
+                $query->where('emp_nome', 'like', '%' . $request->nome . '%');
+            })
+
+            ->when($cnpj, function ($query) use ($cnpj) {
+                $query->whereRaw("REPLACE(REPLACE(REPLACE(REPLACE(emp_cnpj,'.',''),'/',''),'-',''),' ','') LIKE ?", ["%{$cnpj}%"]);
+            })
+            ->when($request->cidade, function ($query) use ($request) {
+                $query->where('emp_cidade', 'like', '%' . $request->cidade . '%');
+            })
+
+            ->when($request->uf, function ($query) use ($request) {
+                $query->where('emp_uf', $request->uf);
+            })
+
+            ->paginate(10)
+            ->withQueryString();
+
         return view('view_empresa.index', compact('empresas'));
     }
-
     public function create()
     {
         return view('view_empresa.create');

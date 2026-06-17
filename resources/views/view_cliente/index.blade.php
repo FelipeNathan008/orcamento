@@ -4,10 +4,8 @@
 
 @section('content')
 
-{{-- Div principal que centraliza o conteúdo e ajusta a largura máxima --}}
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
-    {{-- Cabeçalho da Seção (Título e Botão) --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
 
         <h1
@@ -30,103 +28,166 @@
 
     </div>
 
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
+    <x-alert-flash />
 
-    {{-- Formulário de Busca com campos separados --}}
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+    <form method="GET" action="{{ route('cliente.index') }}" class="mb-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
 
-            {{-- Buscar por Nome --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Nome
-                </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                <div class="relative">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Nome
+                    </label>
+
                     <input
                         type="text"
-                        id="searchNameInput"
+                        name="nome"
+                        value="{{ request('nome') }}"
                         placeholder="Nome do cliente..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
                 </div>
-            </div>
 
-            {{-- Buscar por Telefone --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Telefone
-                </label>
-
-                <div class="relative">
-                    <input
-                        type="text"
-                        id="searchPhoneInput"
-                        placeholder="Telefone..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
-                </div>
-            </div>
-
-            {{-- Buscar por Email --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Email
-                </label>
-
-                <div class="relative">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        E-mail
+                    </label>
 
                     <input
                         type="text"
-                        id="searchEmailInput"
-                        placeholder="Email..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
+                        name="email"
+                        value="{{ request('email') }}"
+                        placeholder="E-mail..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
                 </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Celular
+                    </label>
+
+                    <input
+                        type="text"
+                        name="celular"
+                        value="{{ request('celular') }}"
+                        placeholder="Celular..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Tipo Documento
+                    </label>
+
+                    <select
+                        name="tipo_doc"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todos</option>
+
+                        <option value="CPF"
+                            {{ request('tipo_doc') == 'CPF' ? 'selected' : '' }}>
+                            CPF
+                        </option>
+
+                        <option value="CNPJ"
+                            {{ request('tipo_doc') == 'CNPJ' ? 'selected' : '' }}>
+                            CNPJ
+                        </option>
+
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        CPF/CNPJ
+                    </label>
+
+                    <input
+                        type="text"
+                        name="documento"
+                        value="{{ request('documento') }}"
+                        placeholder="Documento..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+                </div>
+
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md"
+                        style="background-color:#EA792D;">
+                        Buscar
+                    </button>
+                </div>
+
+                <div class="flex items-end">
+                    <a
+                        href="{{ route('cliente.index') }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
+                    </a>
+                </div>
+
             </div>
 
-            {{-- Botão limpar --}}
-            <div class="flex md:justify-end items-end">
-                <button
-                    type="button"
-                    id="clearFiltersClients"
-                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
-                    Limpar Busca
-                </button>
-            </div>
         </div>
-    </div>
+
+    </form>
 
     @if ($clientes->isEmpty())
-    <p class="text-gray-600 text-center py-8" id="noClientsMessage">Nenhum cliente cadastrado ainda.</p>
+
+    @if(
+    request('nome') ||
+    request('email') ||
+    request('celular') ||
+    request('tipo_doc') ||
+    request('documento')
+    )
+
+    <div class="text-center py-8">
+        <p class="text-gray-600">
+            Nenhuma prospecção encontrada para os filtros informados.
+        </p>
+
+        <a href="{{ route('cliente.index') }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtros
+        </a>
+    </div>
+
     @else
+
+    <p class="text-gray-600 text-center py-8">
+        Nenhuma prospecção cadastrada.
+    </p>
+
+    @endif
+
+    @endif
+
+    @if ($clientes->isEmpty())
+
+    @if(request('search'))
+    <div class="text-center py-8">
+        <p class="text-gray-600 text-lg">
+            Nenhum cliente encontrado para
+            <strong>"{{ request('search') }}"</strong>.
+        </p>
+
+        <a href="{{ route('cliente.index') }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtro
+        </a>
+    </div>
+    @else
+    <p class="text-gray-600 text-center py-8">
+        Nenhum cliente cadastrado ainda.
+    </p>
+    @endif
+
+    @else
+
     {{-- TABELA DE CLIENTES --}}
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -221,76 +282,13 @@
                 @endforeach
             </tbody>
         </table>
-        {{-- Mensagem para quando não houver resultados da busca --}}
-        <p class="text-gray-600 text-center py-8 hidden" id="noResultsMessage">Nenhum cliente encontrado com esse termo de busca.</p>
     </div>
+
+    <x-pagination-compact :paginator="$clientes" />
+
     @endif
 </div>
+</div>
 
-{{-- Script JavaScript para a busca ao vivo --}}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
 
-        const searchNameInput = document.getElementById('searchNameInput');
-        const searchPhoneInput = document.getElementById('searchPhoneInput');
-        const searchEmailInput = document.getElementById('searchEmailInput');
-        const clientTableBody = document.getElementById('clientTableBody');
-        const noClientsMessage = document.getElementById('noClientsMessage');
-        const noResultsMessage = document.getElementById('noResultsMessage');
-        const clearBtn = document.getElementById('clearFiltersClients');
-
-        if (!clientTableBody) return;
-
-        const rows = clientTableBody.querySelectorAll('tr');
-
-        const filterTable = () => {
-
-            const searchNameTerm = searchNameInput.value.toLowerCase();
-            const searchPhoneTerm = searchPhoneInput.value.toLowerCase();
-            const searchEmailTerm = searchEmailInput.value.toLowerCase();
-
-            let foundResults = false;
-
-            rows.forEach(row => {
-
-                const nameCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
-                const phoneCell = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                const emailCell = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-
-                const matchesName = !searchNameTerm || nameCell.includes(searchNameTerm);
-                const matchesPhone = !searchPhoneTerm || phoneCell.includes(searchPhoneTerm);
-                const matchesEmail = !searchEmailTerm || emailCell.includes(searchEmailTerm);
-
-                if (matchesName && matchesPhone && matchesEmail) {
-                    row.style.display = '';
-                    foundResults = true;
-                } else {
-                    row.style.display = 'none';
-                }
-
-            });
-
-            if (noResultsMessage) {
-                noResultsMessage.classList.toggle('hidden', foundResults);
-            }
-
-        };
-
-        function clearFilters() {
-            searchNameInput.value = '';
-            searchPhoneInput.value = '';
-            searchEmailInput.value = '';
-            filterTable();
-        }
-
-        searchNameInput.addEventListener('input', filterTable);
-        searchPhoneInput.addEventListener('input', filterTable);
-        searchEmailInput.addEventListener('input', filterTable);
-
-        clearBtn.addEventListener('click', clearFilters);
-
-        $('#searchPhoneInput').mask('(00) 00000-0000');
-
-    });
-</script>
 @endsection

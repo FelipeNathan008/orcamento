@@ -28,58 +28,285 @@
         </div>
     </div>
 
-    {{-- INFORMAÇÕES DO DETALHE --}}
-
+    @if(isset($orcamento))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
         <h2 class="text-lg font-bold text-orange-700 mb-4">
             Informações do Produto
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-700">
-
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
-                <span class="font-semibold">Orçamento:</span>
-                {{ $orcamento->id_orcamento }}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <p class="text-gray-600">Cliente</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $cliente->clie_orc_nome ?? 'N/A' }}
+                </p>
             </div>
 
             <div>
-                <span class="font-semibold">Cliente:</span>
-                {{ $cliente->clie_orc_nome ?? 'N/A' }}
+                <p class="text-gray-600">Produto</p>
+                <p class="font-semibold">
+                    {{ $detalhe->produto->prod_cod ?? 'N/A' }} -
+                    {{ $detalhe->produto->prod_nome ?? 'N/A' }}
+                </p>
             </div>
 
             <div>
-                <span class="font-semibold">Produto:</span>
-                {{ $detalhe->produto->prod_nome ?? 'N/A' }}
+                <p class="text-gray-600">Categoria</p>
+                <p class="font-semibold text-gray-900">
+                    {{ $detalhe->produto->prod_categoria ?? 'N/A' }}
+                </p>
             </div>
 
             <div>
-                <span class="font-semibold">Categoria:</span>
-                {{ $detalhe->produto->prod_categoria ?? 'N/A' }}
+                <p class="text-gray-600">Cor / Tamanho</p>
+                <p class="font-semibold">
+                    {{ $detalhe->produto->prod_cor ?? 'N/A' }} -
+                    {{ $detalhe->det_tamanho ?? 'N/A' }}
+                </p>
             </div>
 
+            <div>
+                <p class="text-gray-600">Características</p>
+                <p class="font-semibold">
+                    {{ $detalhe->det_caract ?? 'N/A' }}
+                </p>
+            </div>
 
         </div>
 
     </div>
-
-
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
-        {{ session('success') }}
-    </div>
     @endif
 
+    @php
+    $totalItem = $detalhe->det_quantidade * $detalhe->det_valor_unit;
+
+    $totalCustomizacoes = 0;
+
+    foreach ($detalhe->customizacoes as $customizacao) {
+    $totalCustomizacoes += $customizacao->cust_valor;
+    }
+
+    $totalGeral = $totalItem + $totalCustomizacoes;
+    @endphp
+    
+    <div id="image-warning-message" class="mt-2 text-sm text-yellow-600">
+        <i class="fas fa-exclamation-triangle mr-1"></i>Os valores abaixo são conforme o produto selecionado.
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+            <p class="text-gray-600 text-sm">
+                Total dos Itens
+            </p>
+
+            <p class="text-lg font-bold text-gray-800">
+                R$ {{ number_format($totalItem, 2, ',', '.') }}
+            </p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+            <p class="text-gray-600 text-sm">
+                Total das Customizações
+            </p>
+
+            <p class="text-lg font-bold text-gray-800">
+                R$ {{ number_format($totalCustomizacoes, 2, ',', '.') }}
+            </p>
+        </div>
+
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm">
+            <p class="text-orange-700 text-sm">
+                Total Geral
+            </p>
+
+            <p class="text-xl font-bold text-orange-700">
+                R$ {{ number_format($totalGeral, 2, ',', '.') }}
+            </p>
+        </div>
+
+    </div>
+    <x-alert-flash />
+
+    <form method="GET" action="{{ route('customizacao.index') }}" class="mb-6">
+
+        <input type="hidden"
+            name="id_det"
+            value="{{ $detalhe->id_det }}">
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                {{-- Tipo --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Tipo
+                    </label>
+
+                    <select
+                        name="tipo"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todos</option>
+
+                        @foreach($tipos as $tipo)
+                        <option
+                            value="{{ $tipo }}"
+                            {{ request('tipo') == $tipo ? 'selected' : '' }}>
+                            {{ $tipo }}
+                        </option>
+                        @endforeach
+
+                    </select>
+                </div>
+
+                {{-- Local --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Local
+                    </label>
+
+                    <select
+                        name="local"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todos</option>
+
+                        @foreach($locais as $local)
+                        <option
+                            value="{{ $local }}"
+                            {{ request('local') == $local ? 'selected' : '' }}>
+                            {{ $local }}
+                        </option>
+                        @endforeach
+
+                    </select>
+                </div>
+
+                {{-- Posição --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Posição
+                    </label>
+
+                    <select
+                        name="posicao"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todas</option>
+
+                        @foreach($posicoes as $posicao)
+                        <option
+                            value="{{ $posicao }}"
+                            {{ request('posicao') == $posicao ? 'selected' : '' }}>
+                            {{ $posicao }}
+                        </option>
+                        @endforeach
+
+                    </select>
+                </div>
+
+                {{-- Formatação --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Formatação
+                    </label>
+
+                    <select
+                        name="formatacao"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todas</option>
+
+                        @foreach($formatacoes as $formatacao)
+                        <option
+                            value="{{ $formatacao }}"
+                            {{ request('formatacao') == $formatacao ? 'selected' : '' }}>
+                            {{ $formatacao }}
+                        </option>
+                        @endforeach
+
+                    </select>
+                </div>
+
+                {{-- Buscar --}}
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md"
+                        style="background-color:#EA792D;">
+                        Buscar
+                    </button>
+                </div>
+
+                {{-- Limpar --}}
+                <div class="flex items-end">
+                    <a
+                        href="{{ route('customizacao.index', ['id_det' => $detalhe->id_det]) }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
 
     {{-- TABELA --}}
 
-    @if($customizacoes->isEmpty())
+    @if ($customizacoes->isEmpty())
 
-    <p class="text-gray-600 text-center py-10">
+    @if(
+    request('tipo') ||
+    request('local') ||
+    request('posicao') ||
+    request('formatacao')
+    )
+
+    <div class="text-center py-8">
+        <p class="text-gray-600">
+            Nenhuma customização encontrada para os filtros informados.
+        </p>
+
+        <a href="{{ route('customizacao.index', [
+                    'id_det' => $detalhe->id_det
+                ]) }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtros
+        </a>
+    </div>
+
+    @else
+
+    <p class="text-gray-600 text-center py-8">
         Nenhuma customização cadastrada para este produto.
     </p>
 
+    @endif
+
     @else
+
 
     <div class="w-full rounded-lg shadow-xl overflow-x-auto border border-gray-200">
 
@@ -103,6 +330,11 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                         Formatação
                     </th>
+
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
+                        Valor
+                    </th>
+
 
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                         Imagem
@@ -134,6 +366,10 @@
 
                     <td class="px-4 py-4 text-sm text-gray-800">
                         {{ $customizacao->cust_formatacao }}
+                    </td>
+
+                    <td class="px-4 py-4 text-sm text-gray-800">
+                        R$ {{ number_format($customizacao->cust_valor, 2, ',', '.') }}
                     </td>
 
                     <td class="px-4 py-4 text-sm text-gray-800">
@@ -186,13 +422,15 @@
                 @endforeach
 
             </tbody>
-
         </table>
 
     </div>
 
-    @endif
+    <div class="mt-4">
+        <x-pagination-compact :paginator="$customizacoes" />
+    </div>
 
+    @endif
 </div>
 
 @endsection

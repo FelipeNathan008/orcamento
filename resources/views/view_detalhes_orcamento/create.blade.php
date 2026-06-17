@@ -9,22 +9,6 @@
         Cadastro de Detalhe de Orçamento
     </h1>
 
-    {{-- ALERTAS --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @if ($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4">
-        <ul class="list-disc list-inside">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
 
     {{-- INFORMAÇÕES DO ORÇAMENTO --}}
     @if(isset($orcamento))
@@ -35,8 +19,21 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-                <p class="text-gray-600">ID</p>
-                <p class="font-semibold">{{ $orcamento->id_orcamento }}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -52,9 +49,18 @@
                     {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
                 </p>
             </div>
+
+            <div>
+                <p class="text-gray-600">Status</p>
+                <p class="font-semibold text-gray-900">
+                    {{ ucfirst($orcamento->orc_status) }}
+                </p>
+            </div>
+
         </div>
     </div>
     @endif
+    <x-alert-flash />
 
     <form id="detalhesOrcamentoForm" action="{{ route('detalhes_orcamento.store') }}" method="POST" class="space-y-6">
         @csrf
@@ -175,7 +181,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium mb-1">Observação</label>
                 <textarea name="det_observacao"
-                    placeholder="Digite alguma observação adicional sobre o produto..."
+                    placeholder="Digite alguma observação adicional sobre o produto"
                     class="block w-full px-4 py-2 border border-gray-300 rounded-md"
                     rows="3"></textarea>
             </div>
@@ -184,7 +190,7 @@
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium mb-1">Anotação</label>
                 <textarea name="det_anotacao"
-                    placeholder="Digite alguma anotação interna (opcional)..."
+                    placeholder="Digite alguma anotação interna sobre o produto"
                     class="block w-full px-4 py-2 border border-gray-300 rounded-md"
                     rows="3"></textarea>
             </div>
@@ -300,28 +306,36 @@
                 titulo.textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
                 div.appendChild(titulo);
 
-                opcoes.forEach((opcao, idx) => {
-                    const label = document.createElement('label');
-                    label.classList.add('flex', 'items-center', 'space-x-2');
+                const select = document.createElement('select');
+                select.name = nome + '_grp';
+                select.required = true;
+                select.classList.add(
+                    'block',
+                    'w-full',
+                    'px-4',
+                    'py-2',
+                    'border',
+                    'border-gray-300',
+                    'rounded-md'
+                );
 
-                    const radio = document.createElement('input');
-                    radio.type = 'radio';
-                    // nome único por grupo
-                    radio.name = nome + '_grp';
-                    radio.value = opcao;
-                    radio.id = nome + '_opt_' + idx;
+                const optionDefault = document.createElement('option');
+                optionDefault.value = '';
+                optionDefault.textContent = `Selecione ${nome}`;
+                select.appendChild(optionDefault);
 
-                    radio.addEventListener('change', function() {
-                        atualizarHiddenCaract();
-                    });
-
-                    const span = document.createElement('span');
-                    span.textContent = opcao;
-
-                    label.appendChild(radio);
-                    label.appendChild(span);
-                    div.appendChild(label);
+                opcoes.forEach(opcao => {
+                    const option = document.createElement('option');
+                    option.value = opcao;
+                    option.textContent = opcao;
+                    select.appendChild(option);
                 });
+
+                select.addEventListener('change', function() {
+                    atualizarHiddenCaract();
+                });
+
+                div.appendChild(select);
 
                 container.appendChild(div);
             }
@@ -332,8 +346,13 @@
 
         function atualizarHiddenCaract() {
             const selecionados = [];
-            container.querySelectorAll('input[type="radio"]:checked')
-                .forEach(r => selecionados.push(r.value));
+
+            container.querySelectorAll('select').forEach(select => {
+                if (select.value) {
+                    selecionados.push(select.value);
+                }
+            });
+
             hiddenCaract.value = selecionados.join(', ');
         }
 

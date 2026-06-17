@@ -5,7 +5,15 @@
 </style>
 
 <h1 id="Titulo">Fluxo de Caixa</h1>
-<h2>{{ \Carbon\Carbon::parse($data)->format('d/m/Y') }}</h2>
+<h2>
+    @if($dataInicio && $dataFim)
+        Período: {{ \Carbon\Carbon::parse($dataInicio)->format('d/m/Y') }}
+        até
+        {{ \Carbon\Carbon::parse($dataFim)->format('d/m/Y') }}
+    @elseif($dataInicio)
+        Data: {{ \Carbon\Carbon::parse($dataInicio)->format('d/m/Y') }}
+    @endif
+</h2>
 
 <table border="1" width="100%" cellspacing="0" cellpadding="5">
     <thead>

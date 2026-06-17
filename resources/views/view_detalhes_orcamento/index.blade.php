@@ -27,12 +27,6 @@
         </div>
 
     </div>
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
 
 
     @if(isset($orcamento))
@@ -45,10 +39,21 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
 
             <div>
-                <p class="text-gray-600">ID</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $orcamento->id_orcamento }}
-                </p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -75,56 +80,196 @@
         </div>
     </div>
     @endif
+    @php
+    $totalDetalhes = 0;
+    $totalCustomizacoes = 0;
+    $totalGeral = 0;
+    @endphp
 
-    <div class="mb-6">
+    @foreach ($orcamento->detalhesOrcamento as $detalhe)
+
+    @php
+    // Total dos detalhes
+    $totalDetalhes += $detalhe->det_quantidade * $detalhe->det_valor_unit;
+
+    // Total das customizações
+    foreach ($detalhe->customizacoes as $customizacao) {
+    $totalCustomizacoes += $customizacao->cust_valor;
+    }
+    @endphp
+
+    @endforeach
+
+    @php
+    $totalGeral = $totalDetalhes + $totalCustomizacoes;
+    @endphp
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+            <p class="text-gray-600 text-sm"> Total dos Itens
+            </p>
+            <p class="text-lg font-bold text-gray-800">
+                R$ {{ number_format($totalDetalhes, 2, ',', '.') }}
+            </p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
+            <p class="text-gray-600 text-sm">
+                Total das Customizações
+            </p>
+            <p class="text-lg font-bold text-gray-800">
+                R$ {{ number_format($totalCustomizacoes, 2, ',', '.') }}
+            </p>
+        </div>
+
+        <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 shadow-sm">
+            <p class="text-orange-700 text-sm">Total Geral</p>
+            <p class="text-xl font-bold text-orange-700">
+                R$ {{ number_format($totalGeral, 2, ',', '.') }}
+            </p>
+        </div>
+
+    </div>
+
+    <x-alert-flash />
+
+    <form method="GET" action="{{ route('detalhes_orcamento.index') }}" class="mb-6">
+
+        <input
+            type="hidden"
+            name="orcamento_id"
+            value="{{ $orcamento->id_orcamento }}">
+
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                <!-- Código -->
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Filtrar por Código
+                        Produto
                     </label>
-                    <input type="text"
-                        id="filtroCodigo"
-                        placeholder="Digite o código"
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
+
+                    <input
+                        type="text"
+                        name="produto"
+                        value="{{ request('produto') }}"
+                        placeholder="Digite o nome..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
                 </div>
 
-                <!-- Categoria -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Filtrar por Categoria
+                        Categoria
                     </label>
-                    <select id="filtroCategoria"
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
-                        <option value="">Todas as Categorias</option>
+
+                    <input
+                        type="text"
+                        name="categoria"
+                        value="{{ request('categoria') }}"
+                        placeholder="Digite a categoria..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Código Ref.
+                    </label>
+
+                    <input
+                        type="text"
+                        name="cod_ref"
+                        value="{{ request('cod_ref') }}"
+                        placeholder="Digite o código..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Família
+                    </label>
+
+                    <select
+                        name="familia"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+
+                        <option value="">Todas</option>
+
+                        @foreach($familias as $familia)
+                        <option
+                            value="{{ $familia }}"
+                            {{ request('familia') == $familia ? 'selected' : '' }}>
+                            {{ $familia }}
+                        </option>
+                        @endforeach
+
                     </select>
                 </div>
 
-                <!-- Limpar -->
-                <div class="flex md:justify-end items-end">
-                    <button type="button"
-                        id="btnLimparFiltro"
-                        class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150 ease-in-out">
-                        Limpar Filtros
+                {{-- Buscar --}}
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md"
+                        style="background-color:#EA792D;">
+                        Buscar
                     </button>
                 </div>
+
+                {{-- Limpar --}}
+                <div class="flex items-end">
+                    <a
+                        href="{{ route('detalhes_orcamento.index', [
+                        'orcamento_id' => $orcamento->id_orcamento
+                    ]) }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
+                    </a>
+                </div>
+
             </div>
+
         </div>
-    </div>
+
+    </form>
 
     @if ($detalhesOrcamento->isEmpty())
-    <p class="text-gray-600 text-center py-8">Nenhum detalhe de orçamento encontrado.</p>
+
+    @if(
+    request('produto') ||
+    request('categoria') ||
+    request('cod_ref') ||
+    request('familia')
+    )
+
+    <div class="text-center py-8">
+        <p class="text-gray-600">
+            Nenhum detalhe encontrado para os filtros informados.
+        </p>
+
+        <a href="{{ route('detalhes_orcamento.index', [
+                    'orcamento_id' => $orcamento->id_orcamento
+                ]) }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtros
+        </a>
+    </div>
+
     @else
+
+    <p class="text-gray-600 text-center py-8">
+        Nenhum detalhe de orçamento cadastrado.
+    </p>
+
+    @endif
+
+    @else
+
+
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
         <table class="min-w-full w-full divide-y divide-gray-200">
             <thead class="bg-table-header-bg">
                 <tr>
 
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Cliente
-                    </th>
                     <th scope="col"
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Produto
@@ -159,9 +304,7 @@
                 @foreach ($detalhesOrcamento as $detalhe)
                 <tr class="hover:bg-gray-50 transition duration-150">
 
-                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
-                        {{ $detalhe->orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
-                    </td>
+
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
                         {{ $detalhe->produto->prod_nome ?? 'N/A' }}
                     </td>
@@ -220,97 +363,16 @@
                     </td>
                 </tr>
                 @endforeach
+
             </tbody>
         </table>
     </div>
+
+    <div class="mt-4">
+        <x-pagination-compact :paginator="$detalhesOrcamento" />
+    </div>
+
     @endif
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const filtroCodigo = document.getElementById('filtroCodigo');
-        const filtroCategoria = document.getElementById('filtroCategoria');
-        const btnLimpar = document.getElementById('btnLimparFiltro');
-        const tbody = document.getElementById('detalhesTableBody');
-        const noMessage = document.getElementById('noOrcamentosMessage');
-
-        if (!tbody) return;
-
-        const linhas = tbody.querySelectorAll('tr');
-
-        // ==============================
-        // POPULAR SELECT DE CATEGORIA
-        // ==============================
-        let categorias = new Set();
-
-        linhas.forEach(linha => {
-            const categoria = linha.children[3].textContent.trim();
-            if (categoria !== '') {
-                categorias.add(categoria);
-            }
-        });
-
-        categorias.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat.trim().toLowerCase();
-            option.textContent = cat.trim();
-            filtroCategoria.appendChild(option);
-        });
-
-        // ==============================
-        // FUNÇÃO DE FILTRO
-        // ==============================
-        function aplicarFiltro() {
-
-            const codigo = filtroCodigo.value.toLowerCase().trim();
-            const categoriaSelecionada = filtroCategoria.value.toLowerCase().trim();
-
-            let algumaVisivel = false;
-
-            linhas.forEach(linha => {
-
-                const codigoLinha = linha.children[2].textContent.toLowerCase().trim();
-                const categoriaLinha = linha.children[3].textContent.toLowerCase().trim();
-
-                const matchCodigo = codigo === '' || codigoLinha.includes(codigo);
-                const matchCategoria = categoriaSelecionada === '' || categoriaLinha === categoriaSelecionada;
-
-                if (matchCodigo && matchCategoria) {
-                    linha.style.display = '';
-                    algumaVisivel = true;
-                } else {
-                    linha.style.display = 'none';
-                }
-
-            });
-
-            // Mostrar mensagem se nada encontrado
-            if (noMessage) {
-                if (!algumaVisivel) {
-                    noMessage.classList.remove('hidden');
-                } else {
-                    noMessage.classList.add('hidden');
-                }
-            }
-        }
-
-        // ==============================
-        // FILTRO AUTOMÁTICO
-        // ==============================
-        filtroCodigo.addEventListener('input', aplicarFiltro);
-        filtroCategoria.addEventListener('change', aplicarFiltro);
-
-        // ==============================
-        // LIMPAR FILTRO
-        // ==============================
-        btnLimpar.addEventListener('click', function() {
-            filtroCodigo.value = '';
-            filtroCategoria.value = '';
-            aplicarFiltro();
-        });
-
-    });
-</script>
 
 @endsection

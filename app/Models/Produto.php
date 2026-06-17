@@ -9,10 +9,9 @@ class Produto extends Model
 {
     use HasFactory;
 
-    // Adicione esta linha para especificar o nome da tabela no singular
-    protected $table = 'produto'; // <-- ESTA LINHA É CRÍTICA E DEVE ESTAR AQUI
+    protected $table = 'produto'; 
 
-    protected $primaryKey = 'id_produto'; // Certifique-se de que a chave primária está correta
+    protected $primaryKey = 'id_produto';
 
     protected $fillable = [
         'prod_nome',
@@ -28,17 +27,11 @@ class Produto extends Model
         'prod_tamanho',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
+
     protected $casts = [
-        'prod_tamanho' => 'array', // Converte a string de tamanhos para array
-        'prod_caract' => 'string',  // Mantido como string, pois é salvo como string separada por vírgulas
-        'prod_preco' => 'float',   // Garante que o preço seja tratado como float
+        'prod_tamanho' => 'array', 
+        'prod_caract' => 'string', 
+        'prod_preco' => 'float', 
     ];
 
-    // Se você estiver salvando 'prod_caract' como uma string separada por vírgulas,
-    // o cast 'string' é o correto aqui. Se você mudar para JSON no futuro, altere para 'array' ou 'json'.
 }

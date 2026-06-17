@@ -373,7 +373,23 @@
                             class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300"
                             required>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Conta Bancária</label>
 
+                        <select name="conta_bancaria_id"
+                            class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
+                            required>
+
+                            <option value="">Selecione</option>
+
+                            @foreach ($contas as $conta)
+                            <option value="{{ $conta->id_conta }}">
+                                {{ $conta->conta_nome_banco }} - {{ $conta->numero_conta_corrente }}
+                            </option>
+                            @endforeach
+
+                        </select>
+                    </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Valor</label>
                         <input type="text" id="valorMask"
@@ -385,12 +401,34 @@
                         <input type="hidden" name="flu_valor" id="valorReal">
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                    {{-- NUM DOC --}}
-                    <div>
-                        <label class="block text-sm font-medium mb-1">Num. Documento (Opcional)</label>
-                        <input type="text" name="flu_num_doc" placeholder="NF 1024, 5501-A"
-                            class="block w-full px-4 py-2 bg-white text-gray-800 rounded-md border border-gray-300">
+                        {{-- TIPO FISCAL --}}
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tipo Fiscal</label>
+
+                            <select name="flu_tipo_fiscal" id="tipoFiscalModal"
+                                class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500"
+                                required>
+
+                                <option value="">Selecione</option>
+                                <option value="NF">Nota Fiscal (NF)</option>
+                                <option value="RC">Recibo (RC)</option>
+                                <option value="CF">Cupom Fiscal (CF)</option>
+                                <option value="BO">Boleto (BO)</option>
+                                <option value="OUT">Outros</option>
+                            </select>
+                        </div>
+
+                        {{-- DOC --}}
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Num. Documento</label>
+
+                            <input type="text" name="flu_num_doc" id="numDocModal"
+                                class="w-full px-4 py-2 border rounded-md" placeholder="Opcional"
+                                disabled>
+                        </div>
+
                     </div>
 
                     {{-- DESCRIÇÃO --}}
@@ -464,7 +502,17 @@
 
         const valorInput = document.getElementById('valorMask');
         const valorReal = document.getElementById('valorReal');
+        const tipoFiscalModal = document.getElementById('tipoFiscalModal');
+        const numDocModal = document.getElementById('numDocModal');
 
+        tipoFiscalModal.addEventListener('change', function() {
+            if (this.value) {
+                numDocModal.disabled = false;
+            } else {
+                numDocModal.disabled = true;
+                numDocModal.value = '';
+            }
+        });
         valorInput.addEventListener('input', function() {
 
             let value = this.value.replace(/\D/g, '');
@@ -483,7 +531,10 @@
 
         // REMOVE MÁSCARA AO ENVIAR
         document.getElementById('formModalFluxo').addEventListener('submit', function() {
-            valorReal.value = value.replace(/\./g, '').replace(',', '.');
+            valorReal.value = valorInput.value
+                .replace('R$ ', '')
+                .replace(/\./g, '')
+                .replace(',', '.');
         });
 
 

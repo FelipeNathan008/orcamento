@@ -14,13 +14,7 @@ use Illuminate\Http\RedirectResponse;
 
 class DetalhesOrcamentoController extends Controller
 {
-    /**
-     * Exibe uma lista de todos os detalhes de orçamento.
-     * Usa eager loading para carregar os produtos e orçamentos relacionados.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View
-     */
+
     public function index(Request $request): View|RedirectResponse
     {
         if (!$request->orcamento_id) {
@@ -32,23 +26,71 @@ class DetalhesOrcamentoController extends Controller
             ->where('id_orcamento', $request->orcamento_id)
             ->firstOrFail();
 
-        $detalhesOrcamento = DetalhesOrcamento::with(['produto'])
-            ->where('orcamento_id_orcamento', $orcamento->id_orcamento)
-            ->get();
+        $query = DetalhesOrcamento::with('produto')
+            ->where('orcamento_id_orcamento', $orcamento->id_orcamento);
 
-        return view('view_detalhes_orcamento.index', compact(
-            'detalhesOrcamento',
-            'orcamento'
-        ));
+        if ($request->filled('produto')) {
+
+            $query->whereHas('produto', function ($q) use ($request) {
+                $q->where(
+                    'prod_nome',
+                    'like',
+                    '%' . trim($request->produto) . '%'
+                );
+            });
+        }
+
+        if ($request->filled('categoria')) {
+
+            $query->whereHas('produto', function ($q) use ($request) {
+                $q->where(
+                    'prod_categoria',
+                    'like',
+                    '%' . trim($request->categoria) . '%'
+                );
+            });
+        }
+
+        if ($request->filled('cod_ref')) {
+
+            $query->whereHas('produto', function ($q) use ($request) {
+                $q->where(
+                    'prod_cod',
+                    'like',
+                    '%' . trim($request->cod_ref) . '%'
+                );
+            });
+        }
+
+        // Família
+        if ($request->filled('familia')) {
+
+            $query->whereHas('produto', function ($q) use ($request) {
+                $q->where('prod_familia', $request->familia);
+            });
+        }
+
+        $detalhesOrcamento = $query
+            ->orderBy('id_det')
+            ->paginate(10)
+            ->withQueryString();
+
+        $familias = Produto::query()
+            ->select('prod_familia')
+            ->distinct()
+            ->orderBy('prod_familia')
+            ->pluck('prod_familia');
+
+        return view(
+            'view_detalhes_orcamento.index',
+            compact(
+                'detalhesOrcamento',
+                'orcamento',
+                'familias'
+            )
+        );
     }
 
-    /**
-     * Exibe o formulário para criar um novo detalhe de orçamento.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int|null  $orcamento_id  Opcional: ID do orçamento para pré-selecionar
-     * @return \Illuminate\View\View
-     */
     public function create(Request $request, $orcamento_id = null)
     {
         $orcamento = Orcamento::with('clienteOrcamento')
@@ -60,12 +102,7 @@ class DetalhesOrcamentoController extends Controller
         return view('view_detalhes_orcamento.create', compact('orcamento', 'produtos', 'selectedOrcamentoId'));
     }
 
-    /**
-     * Armazena um novo detalhe de orçamento no banco de dados.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function store(Request $request)
     {
         try {
@@ -85,9 +122,11 @@ class DetalhesOrcamentoController extends Controller
                 'det_quantidade' => 'required|integer|min:1',
                 'det_valor_unit' => 'required|numeric|min:0|decimal:0,2',
                 'det_genero' => 'required|string|max:20',
-                'det_caract' => 'required|string|max:255', // ALTERADO: Aumentado para 255
+                'det_caract' => 'required|string|max:255',
                 'det_observacao' => 'nullable|string|max:255',
                 'det_anotacao' => 'nullable|string|max:255',
+            ], [
+                'det_caract.required' => 'Selecione uma característica do produto.',
             ]);
 
             // Preencher orcamento_cliente_orcamento_id_co e orcamento_cliente_id_cliente
@@ -114,25 +153,14 @@ class DetalhesOrcamentoController extends Controller
         }
     }
 
-    /**
-     * Exibe os detalhes de um detalhe de orçamento específico.
-     * Usa eager loading para carregar os produtos e orçamentos relacionados.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
-     */
+
     public function show($id)
     {
         $detalheOrcamento = DetalhesOrcamento::with(['produto', 'orcamento.clienteOrcamento'])->findOrFail($id);
         return view('view_detalhes_orcamento.show', compact('detalheOrcamento'));
     }
 
-    /**
-     * Exibe o formulário para editar um detalhe de orçamento específico.
-     *
-     * @param  int  $id
-     * @return \Illuminate\View\View
-     */
+
     public function edit($id)
     {
         $detalheOrcamento = DetalhesOrcamento::findOrFail($id);
@@ -140,16 +168,10 @@ class DetalhesOrcamentoController extends Controller
         $produtos = Produto::all();
         $orcamento = Orcamento::with('clienteOrcamento')
             ->find($detalheOrcamento->orcamento_id_orcamento);
-        return view('view_detalhes_orcamento.edit', compact('detalheOrcamento', 'orcamentos', 'produtos','orcamento'));
+        return view('view_detalhes_orcamento.edit', compact('detalheOrcamento', 'orcamentos', 'produtos', 'orcamento'));
     }
 
-    /**
-     * Atualiza um detalhe de orçamento existente no banco de dados.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function update(Request $request, $id)
     {
         $detalheOrcamento = DetalhesOrcamento::findOrFail($id);
@@ -198,12 +220,6 @@ class DetalhesOrcamentoController extends Controller
         }
     }
 
-    /**
-     * Remove um detalhe de orçamento específico do banco de dados.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function destroy($id)
     {
         $detalheOrcamento = DetalhesOrcamento::findOrFail($id);

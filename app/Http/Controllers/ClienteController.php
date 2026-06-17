@@ -4,18 +4,25 @@ namespace App\Http\Controllers;
 
 use App\Models\Cliente;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule; // Importar para regras de validação 'unique'
+use Illuminate\Validation\Rule;
 
 class ClienteController extends Controller
 {
-    // Listar todos os clientes
-    public function index()
+    public function index(Request $request)
     {
-        $clientes = Cliente::all();
-        return view('view_cliente.index', compact('clientes'));
+        $search = $request->search;
+
+        $clientes = Cliente::when($search, function ($query, $search) {
+            $query->where('clie_nome', 'like', "%{$search}%")
+                ->orWhere('clie_email', 'like', "%{$search}%")
+                ->orWhere('clie_celular', 'like', "%{$search}%");
+        })
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('view_cliente.index', compact('clientes', 'search'));
     }
 
-    // Mostrar o formulário de criação
     public function create()
     {
         return view('view_cliente.create');

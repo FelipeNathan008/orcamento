@@ -5,49 +5,36 @@
 @section('content')
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
 
-    {{-- Título e botão de voltar --}}
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Criar Nova Customização</h1>
 
-
-    {{-- Mensagens de sucesso e erro --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
-
-    @if ($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Opa!</strong>
-        <span class="block sm:inline">Existem alguns problemas com seus dados.</span>
-        <ul class="mt-3 list-disc list-inside">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
-
-
+    @if(isset($detalhe))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+
         <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Detalhe do Orçamento
+            Informações do Produto
         </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
-                <p class="text-gray-600">Orçamento</p>
-                <p class="font-semibold">
-                    {{ $detalhe->orcamento->id_orcamento ?? 'N/A' }}
-                </p>
-            </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->orc_cod_fabrica }}
+                        </p>
+                    </div>
 
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->orc_cod_interno }}
+                        </p>
+                    </div>
+                </div>
+            </div>
             <div>
                 <p class="text-gray-600">Cliente</p>
-                <p class="font-semibold">
+                <p class="font-semibold text-gray-900">
                     {{ $detalhe->orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
                 </p>
             </div>
@@ -62,7 +49,7 @@
 
             <div>
                 <p class="text-gray-600">Categoria</p>
-                <p class="font-semibold">
+                <p class="font-semibold text-gray-900">
                     {{ $detalhe->produto->prod_categoria ?? 'N/A' }}
                 </p>
             </div>
@@ -83,8 +70,11 @@
             </div>
 
         </div>
-    </div>
 
+    </div>
+    @endif
+
+    <x-alert-flash />
 
 
     <form id="customizacaoForm" action="{{ route('customizacao.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">

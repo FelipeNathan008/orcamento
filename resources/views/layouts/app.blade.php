@@ -116,24 +116,30 @@
             {{-- Links de Navegação Principal (lado esquerdo) --}}
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('dashboard') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Dashboard</a>
-                <a href="{{ route('empresa.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Empresas</a>
-                <a href="{{ route('cliente.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Prospecções</a>
-                <a href="{{ route('cliente_orcamento.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Clientes/Orçamentos</a>
-                <a href="{{ route('fluxo_caixa.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Fluxo Caixa</a>
-                </a>
-                <a href="{{ route('administracao.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">Administração</a>
-                </a>
-
-                <a href="{{ route('financeiro.index') }}"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Financeiro</a>
+                    Dashboard</a>
 
+                <a href="{{ route('empresa.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Empresas</a>
+
+                <a href="{{ route('cliente.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Prospecções</a>
+
+                <a href="{{ route('cliente_orcamento.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Clientes/Orçamentos</a>
+
+                <a href="{{ route('fluxo_nota_conta.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Fluxos / Notas / Saldos</a>
+                </a>
+
+                <a href="{{ route('administracao.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Administração</a>
+                </a>
 
             </div>
 
@@ -148,11 +154,6 @@
                     @csrf
                 </form>
 
-                {{-- LINK PARA ADMINISTRAÇÃO DE USUÁRIOS (Cor Alterada) --}}
-                <a href="{{ route('users.index') }}"
-                    class="nav-link text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Users
-                </a>
 
                 <a id="layout-camiseta-nav-link" href="#"
                     class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md hidden">
@@ -224,11 +225,23 @@
                             currentPathname.startsWith('/administracao/') ||
                             currentPathname.startsWith('/produto/') ||
                             currentPathname.startsWith('/preco_customizacao/') ||
-                            currentPathname.startsWith('/tipo_fluxo_caixa/') ||
                             currentPathname.startsWith('/tipo_pagamento/') ||
-                            currentPathname.startsWith('/conta_bancaria')
+                            currentPathname.startsWith('/users/') 
                         ) &&
                         linkPathname === '/administracao/'
+                    ) {
+                        isActive = true;
+                    }
+
+                    /* FLUXOS / NOTAS / CONTAS */
+                    if (
+                        (
+                            currentPathname.startsWith('/fluxo_caixa/') ||
+                            currentPathname.startsWith('/tipo_fluxo_caixa/') ||
+                            currentPathname.startsWith('/conta_bancaria/') ||
+                            currentPathname.startsWith('/nota_fiscal/')
+                        ) &&
+                        linkPathname === '/fluxo_nota_conta/'
                     ) {
                         isActive = true;
                     }
