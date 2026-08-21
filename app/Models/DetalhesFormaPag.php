@@ -13,7 +13,8 @@ class DetalhesFormaPag extends Model
     protected $fillable = [
         'id_forma_pag',
         'det_forma_valor_parcela',
-        'det_forma_data_venc'
+        'det_forma_data_venc',
+        'det_situacao',
     ];
 
     public function formaPagamento()

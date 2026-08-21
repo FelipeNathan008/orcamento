@@ -104,6 +104,12 @@ class ClienteOrcamentoController extends Controller
                 ->with('error', 'Não é possível excluir este cliente porque ele possui orçamentos cadastrados.');
         }
 
+        if ($clienteOrcamento->contatos()->exists()) {
+            return redirect()
+                ->back()
+                ->with('error', 'Não é possível excluir este cliente porque ele possui contatos cadastrados.');
+        }
+
         $clienteOrcamento->delete();
 
         return redirect()

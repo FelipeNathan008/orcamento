@@ -1,7 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
-
+@php
+$orcamentoBloqueado = in_array(
+strtolower(trim($customizacao->detalhesOrcamento->orcamento->orc_status)),
+['aprovado', 'finalizado', 'rejeitado']
+);
+@endphp
 <div class="container mx-auto px-4 py-8">
 
     <div class="flex justify-between items-center mb-6">
@@ -12,11 +17,12 @@
 
         <div class="flex space-x-3">
 
+            @if(!$orcamentoBloqueado)
             <a href="{{ route('customizacao.edit', $customizacao->id_customizacao) }}"
                 class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Editar Customização
             </a>
-
+            @endif
             <a href="{{ route('customizacao.index', ['id_det' => $customizacao->detalhes_orcamento_id_det]) }}"
                 class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Voltar para a Lista
@@ -32,18 +38,35 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+            <div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-gray-600">ID</p>
+                        <p class="font-semibold">
+                            {{ $customizacao->detalhesOrcamento->orcamento->id_orcamento }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $customizacao->detalhesOrcamento->orcamento->orc_cod_fabrica ?: 'N/D' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $customizacao->detalhesOrcamento->orcamento->orc_cod_interno ?: 'N/D' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Orçamento:</p>
+                <p class="text-gray-600 text-sm">Cliente:</p>
                 <p class="text-gray-900 text-lg font-semibold">
-
-                    ID Orçamento:
-                    {{ $customizacao->detalhesOrcamento->orcamento->id_orcamento ?? 'N/A' }}
-
-                    <br>
-
-                    Cliente:
                     {{ $customizacao->detalhesOrcamento->orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
-
                 </p>
             </div>
 
@@ -104,14 +127,23 @@
 
             <div class="md:col-span-2 mb-4">
 
-                <p class="text-gray-600 text-sm">Imagem da Customização:</p>
+                <p class="text-gray-600 text-sm mb-2">
+                    Imagem da Customização:
+                </p>
 
-                @if ($customizacao->cust_imagem)
+                @if (!empty($customizacao->cust_imagem))
 
-                <img
-                    src="data:image/jpeg;base64,{{ base64_encode($customizacao->cust_imagem) }}"
-                    alt="Imagem da Customização"
-                    class="max-w-xs max-h-64 object-contain rounded-md shadow-md">
+                <div class="mt-2">
+                    <img
+                        src="{{ asset('images_customizacoes/' . $customizacao->cust_imagem) }}"
+                        alt="Imagem da Customização"
+                        class="max-w-md max-h-96 object-contain rounded-md shadow-md border border-gray-200"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+                    <p class="text-red-500 text-sm hidden">
+                        Não foi possível carregar a imagem.
+                    </p>
+                </div>
 
                 @else
 

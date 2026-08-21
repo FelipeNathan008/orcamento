@@ -9,7 +9,7 @@ class Produto extends Model
 {
     use HasFactory;
 
-    protected $table = 'produto'; 
+    protected $table = 'produto';
 
     protected $primaryKey = 'id_produto';
 
@@ -29,9 +29,12 @@ class Produto extends Model
 
 
     protected $casts = [
-        'prod_tamanho' => 'array', 
-        'prod_caract' => 'string', 
-        'prod_preco' => 'float', 
+        'prod_tamanho' => 'array',
+        'prod_caract' => 'string',
+        'prod_preco' => 'float',
     ];
-
+    public function detalhesOrcamento()
+    {
+        return $this->hasMany(DetalhesOrcamento::class, 'produto_id_produto', 'id_produto');
+    }
 }

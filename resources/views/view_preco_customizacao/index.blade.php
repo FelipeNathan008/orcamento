@@ -32,14 +32,8 @@
 
     </div>
 
-    {{-- Mensagem de Sucesso (opcional) --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4"
-        role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
+    <x-alert-flash />
+
 
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
 

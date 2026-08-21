@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+@php
+$orcamentoBloqueado = in_array(
+strtolower(trim($detalheOrcamento->orcamento->orc_status)),
+['aprovado', 'finalizado', 'rejeitado']
+);
+@endphp
 <div class="container mx-auto px-4 py-8">
 
     <div class="flex justify-between items-center mb-6">
@@ -10,11 +16,12 @@
 
         <div class="flex space-x-3">
 
+            @if(!$orcamentoBloqueado)
             <a href="{{ route('detalhes_orcamento.edit', $detalheOrcamento->id_det) }}"
                 class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Editar Item
             </a>
-
+            @endif
             <a href="{{ route('detalhes_orcamento.index', ['orcamento_id' => $detalheOrcamento->orcamento_id_orcamento]) }}"
                 class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
                 Voltar para a Lista
@@ -29,18 +36,24 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             <div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-gray-600">ID</p>
+                        <p class="font-semibold">
+                            {{ $detalheOrcamento->orcamento->id_orcamento }}
+                        </p>
+                    </div>
                     <div>
                         <p class="text-gray-600">Cód. Fábrica</p>
                         <p class="font-semibold">
-                            {{ $detalheOrcamento->orcamento->orc_cod_fabrica }}
+                            {{ $detalheOrcamento->orcamento->orc_cod_fabrica ?: 'N/D' }}
                         </p>
                     </div>
 
                     <div>
                         <p class="text-gray-600">Cód. Interno</p>
                         <p class="font-semibold">
-                            {{ $detalheOrcamento->orcamento->orc_cod_interno }}
+                            {{ $detalheOrcamento->orcamento->orc_cod_interno ?: 'N/D' }}
                         </p>
                     </div>
                 </div>

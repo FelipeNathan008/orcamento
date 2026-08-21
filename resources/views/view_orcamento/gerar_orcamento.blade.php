@@ -3,7 +3,6 @@
 @section('title', 'Detalhes do Orçamento')
 
 @section('content')
-
 <div class="max-w-6xl mx-auto mt-10 mb-4 text-right">
     <!-- Novo botão para Voltar -->
     <a href="{{ route('orcamento.index', ['cliente_orcamento_id' => $cliente_orcamento_id]) }}"
@@ -46,7 +45,7 @@
 
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-xl shadow-md mt-10 mb-10 font-poppins">
     <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-gray-900 font-bai-jamjuree mb-6 border-b pb-4">
-        Orçamento #{{ $orcamento->orc_cod_interno }}
+        Orçamento # {{ $orcamento->id_orcamento }}
     </h1>
 
     <div class="space-y-8">
@@ -83,15 +82,22 @@
         <div class="border-b pb-6">
             <h2 class="text-2xl font-bold mb-4 text-gray-800">Dados do Orçamento</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-y-2 gap-x-4 text-gray-700">
-                <p><strong class="text-gray-900">Cód. Fábrica:</strong> {{ $orcamento->orc_cod_fabrica }}</p>
-                <p><strong class="text-gray-900">Cód. Interno:</strong> {{ $orcamento->orc_cod_interno }}</p>
+                <p><strong class="text-gray-900">Cód. Fábrica:</strong> {{ $orcamento->orc_cod_fabrica ?: 'N/D' }}</p>
+                <p><strong class="text-gray-900">Cód. Interno:</strong> {{ $orcamento->orc_cod_interno ?: 'N/D' }}</p>
                 <p><strong class="text-gray-900">Data de Início:</strong>
                     {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
                 </p>
                 <p><strong class="text-gray-900">Data de Fim:</strong> {{ $orcamento->orc_data_fim->format('d/m/Y') }}
                 </p>
-                <p><strong class="text-gray-900">Quantidade de Itens:</strong>
-                    {{ $orcamento->detalhesOrcamento->count() }}
+                @php
+                $quantidadeTotalItens = $orcamento->detalhesOrcamento->sum(function ($detalhe) {
+                return (int) ($detalhe->det_quantidade ?? 0);
+                });
+                @endphp
+
+                <p>
+                    <strong class="text-gray-900">Quantidade Total de Itens:</strong>
+                    {{ $quantidadeTotalItens }}
                 </p>
             </div>
         </div>
@@ -102,23 +108,22 @@
         <h2 class="text-2xl font-bold leading-tight text-gray-900 mb-6 border-b pb-2">
             Detalhes do Orçamento
         </h2>
-        {{-- Inicializa a variável para o total geral --}}
-        @php
-        $totalGeral = 0;
-        @endphp
+
         {{-- Loop para exibir cada detalhe do orçamento --}}
         <div class="space-y-6">
             @foreach ($orcamento->detalhesOrcamento as $detalhe)
             @php
-            // para somar o detalhe
-            $subtotalDetalhe = $detalhe->det_quantidade * $detalhe->det_valor_unit;
-
-            // para somar a customização
+            $quantidade = (int) ($detalhe->det_quantidade ?? 0);
+            // Total dos produtos
+            $totalProduto = $quantidade * (float) ($detalhe->det_valor_unit ?? 0);
+            // Total das customizações para todas as unidades
+            $totalCustomizacoesDetalhe = 0;
             foreach ($detalhe->customizacoes as $customizacao) {
-            $subtotalDetalhe += $customizacao->cust_valor;
+            $totalCustomizacoesDetalhe +=
+            $quantidade * (float) ($customizacao->cust_valor ?? 0);
             }
-
-            $totalGeral += $subtotalDetalhe;
+            // Subtotal do detalhe
+            $subtotalDetalhe = $totalProduto + $totalCustomizacoesDetalhe;
             @endphp
             <div class="border p-6 rounded-lg shadow-sm bg-white hover:shadow-lg transition-shadow duration-300">
                 <p class="mb-2">
@@ -138,16 +143,41 @@
                 {{-- Loop para exibir as customizações de cada detalhe --}}
                 @if ($detalhe->customizacoes->count() > 0)
                 <div class="mt-6 pt-4 border-t border-gray-200">
-                    <h3 class="text-lg font-bold mb-3 text-gray-800">Customizações</h3>
+                    <h3 class="text-lg font-bold mb-3 text-gray-800">Customizações @if ($detalhe->det_quantidade > 1) ({{ $detalhe->det_quantidade }} produtos) @endif</h3>
                     <div class="space-y-2">
                         @foreach ($detalhe->customizacoes as $customizacao)
                         <p class="text-sm text-gray-700">
                             <strong class="text-gray-900">Customização:</strong>
-                            Tipo: <span class="font-bold">{{ $customizacao->cust_tipo }}</span> -
-                            Local: <span class="font-bold">{{ $customizacao->cust_local }}</span> -
-                            Posição: <span class="font-bold">{{ $customizacao->cust_posicao }}</span> -
-                            Valor: <span class="font-bold">R$
-                                {{ number_format($customizacao->cust_valor, 2, ',', '.') }}</span>
+
+                            Tipo:
+                            <span class="font-bold">
+                                {{ $customizacao->cust_tipo }}
+                            </span>
+                            -
+
+                            Local:
+                            <span class="font-bold">
+                                {{ $customizacao->cust_local }}
+                            </span>
+                            -
+
+                            Posição:
+                            <span class="font-bold">
+                                {{ $customizacao->cust_posicao }}
+                            </span>
+                            -
+
+                            Valor unitário:
+                            <span class="font-bold">
+                                R$ {{ number_format($customizacao->cust_valor, 2, ',', '.') }}
+                            </span>
+
+                            × {{ $detalhe->det_quantidade }} produtos =
+
+                            <span class="font-bold">
+                                R$
+                                {{ number_format($customizacao->cust_valor * $detalhe->det_quantidade,2,',','.') }}
+                            </span>
                         </p>
                         @endforeach
                     </div>
@@ -163,10 +193,109 @@
         </div>
     </div>
 
-    <div class="mt-8 text-right">
-        <p class="text-3xl font-extrabold text-gray-900">Total Geral: R$ {{ number_format($totalGeral, 2, ',', '.') }}
+    <!-- Aplicar Desconto-->
+    <div class="border p-6 rounded-lg bg-gray-50 mt-6">
+        <h3 class="text-lg font-bold mb-3 text-gray-800">Aplicar Desconto</h3>
+
+        <form action="{{ route('orcamento.desconto', $orcamento->id_orcamento) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            @csrf
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Tipo</label>
+                <select name="orc_desconto_tipo" class="w-full border rounded p-2">
+                    <option value="">Sem desconto</option>
+                    <option value="valor" {{ $orcamento->orc_desconto_tipo === 'valor' ? 'selected' : '' }}>Valor (R$)</option>
+                    <option value="percentual" {{ $orcamento->orc_desconto_tipo === 'percentual' ? 'selected' : '' }}>Percentual (%)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Valor</label>
+                <input type="number" step="0.01" min="0" name="orc_desconto_valor"
+                    value="{{ $orcamento->orc_desconto_valor }}" class="w-full border rounded p-2">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Motivo</label>
+                <input type="text" name="orc_desconto_motivo"
+                    value="{{ $orcamento->orc_desconto_motivo }}" class="w-full border rounded p-2">
+            </div>
+
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Aplicar
+            </button>
+        </form>
+
+        @error('orc_desconto_valor')
+        <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
+        @enderror
+    </div>
+    @php
+    $totalBrutoCalculado = 0;
+
+    foreach ($orcamento->detalhesOrcamento as $detalhe) {
+
+    $quantidade = (int) ($detalhe->det_quantidade ?? 0);
+
+    // Produtos
+    $totalBrutoCalculado +=
+    $quantidade * (float) ($detalhe->det_valor_unit ?? 0);
+
+    // Customizações
+    foreach ($detalhe->customizacoes as $customizacao) {
+
+    $totalBrutoCalculado +=
+    $quantidade * (float) ($customizacao->cust_valor ?? 0);
+    }
+    }
+
+    // Calcula o desconto
+    $valorDescontoCalculado = 0;
+
+    if ($orcamento->orc_desconto_tipo === 'percentual') {
+
+    $valorDescontoCalculado =
+    $totalBrutoCalculado *
+    ((float) ($orcamento->orc_desconto_valor ?? 0) / 100);
+
+    } elseif ($orcamento->orc_desconto_tipo === 'valor') {
+
+    $valorDescontoCalculado =
+    (float) ($orcamento->orc_desconto_valor ?? 0);
+    }
+
+    // Evita desconto maior que o próprio orçamento
+    $valorDescontoCalculado = min(
+    $valorDescontoCalculado,
+    $totalBrutoCalculado
+    );
+
+    // Total final
+    $totalComDescontoCalculado =
+    $totalBrutoCalculado - $valorDescontoCalculado;
+    @endphp
+    <div class="mt-6 text-right space-y-1">
+        <p class="text-gray-700">
+            Subtotal:
+            R$ {{ number_format($totalBrutoCalculado, 2, ',', '.') }}
+        </p>
+        @if ($valorDescontoCalculado > 0)
+        <p class="text-red-600">
+            Desconto
+            @if ($orcamento->orc_desconto_tipo === 'percentual')
+            ({{ number_format($orcamento->orc_desconto_valor, 2, ',', '.') }}%)
+            @endif
+            :
+            - R$
+            {{ number_format($valorDescontoCalculado, 2, ',', '.') }}
+        </p>
+        @endif
+        <p class="text-2xl font-extrabold text-gray-900">
+            Total:
+            R$ {{ number_format($totalComDescontoCalculado, 2, ',', '.') }}
         </p>
     </div>
+
     @else
     <p class="mt-8 text-gray-600 text-center text-xl">Este orçamento ainda não possui detalhes cadastrados.</p>
     @endif

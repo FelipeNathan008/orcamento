@@ -17,18 +17,24 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
 
             <div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-gray-600">ID</p>
+                        <p class="font-semibold">
+                            {{ $orcamento->id_orcamento }}
+                        </p>
+                    </div>
                     <div>
                         <p class="text-gray-600">Cód. Fábrica</p>
                         <p class="font-semibold">
-                            {{ $orcamento->orc_cod_fabrica }}
+                            {{ $orcamento->orc_cod_fabrica ?: 'N/D' }}
                         </p>
                     </div>
 
                     <div>
                         <p class="text-gray-600">Cód. Interno</p>
                         <p class="font-semibold">
-                            {{ $orcamento->orc_cod_interno }}
+                            {{ $orcamento->orc_cod_interno ?: 'N/D' }}
                         </p>
                     </div>
                 </div>

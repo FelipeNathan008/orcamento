@@ -38,10 +38,11 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     </div>
     @endif
 
-    <form id="formaPagamentoForm" action="{{ route('forma_pagamento.store') }}" method="POST" class="space-y-6">
-        @csrf
+    <form id="formaPagamentoForm" action="{{ route('forma_pagamento.store') }}" method="POST" class="space-y-6"
+        data-valor-faltante="{{ $valorFaltante }}"> @csrf
 
         <input type="hidden" name="financeiro_id_fin" value="{{ $financeiroId }}">
+
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             @if($financeiroSelecionado)
@@ -50,21 +51,33 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                        <p class="text-gray-600">Orçamento</p>
-                        <p class="font-semibold text-gray-900">{{ $financeiroSelecionado->orcamento_id_orcamento }}</p>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <p class="text-gray-600">ID Orcamento</p>
+                                <p class="font-semibold">
+                                    {{ $financeiroSelecionado->orcamento->id_orcamento }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600">Cód. Interno</p>
+                                <p class="font-semibold">
+                                    {{ $financeiroSelecionado->orcamento->orc_cod_interno ?: 'N/D' }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600">Cód. Fábrica</p>
+                                <p class="font-semibold">
+                                    {{ $financeiroSelecionado->orcamento->orc_cod_fabrica ?: 'N/D' }}
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
                         <p class="text-gray-600">Cliente</p>
                         <p class="font-semibold text-gray-900">{{ $financeiroSelecionado->fin_nome_cliente }}</p>
-                    </div>
-
-                    <div>
-                        <p class="text-gray-600">Valor Total</p>
-                        <p class="font-semibold text-gray-900">
-                            R$ {{ number_format($financeiroSelecionado->fin_valor_total, 2, ',', '.') }}
-                        </p>
-
                     </div>
 
                     <div>
@@ -74,6 +87,57 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                 </div>
             </div>
             @endif
+            <div id="valorTotalPedido" class="md:col-span-2 mt-2">
+                <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+
+                    <div class="px-5 py-3 bg-gray-50 border-b border-gray-200">
+                        <h2 class="text-sm font-semibold text-gray-700">
+                            Resumo financeiro
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-200">
+
+                        {{-- Valor Total --}}
+                        <div class="px-5 py-4">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                Valor Total
+                            </p>
+
+                            <p class="mt-1 text-lg font-semibold text-gray-800">
+                                R$ {{ number_format($valorTotal, 2, ',', '.') }}
+                            </p>
+                        </div>
+
+                        {{-- Valor Pago --}}
+                        <div class="px-5 py-4">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                Valor Pago
+                            </p>
+
+                            <p class="mt-1 text-lg font-semibold text-gray-800">
+                                R$ {{ number_format($valorPago, 2, ',', '.') }}
+                            </p>
+                        </div>
+
+                        {{-- Valor Faltante --}}
+                        <div class="px-5 py-4 bg-red-50">
+                            <p class="text-xs font-semibold text-red-600 uppercase tracking-wide">
+                                Valor Faltante
+                            </p>
+
+                            <p class="mt-1 text-xl font-bold text-red-700">
+                                R$ {{ number_format($valorFaltante, 2, ',', '.') }}
+                            </p>
+
+                            <p class="mt-1 text-xs text-red-500">
+                                O pagamento não pode ultrapassar este valor.
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
 
             <div class="md:col-span-1">
                 <label for="tipo_pagamento_id_tipo" class="block text-sm font-medium text-custom-dark-text mb-1">
@@ -100,6 +164,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                     placeholder="R$ 0,00">
                 <p id="msg_valor" class="text-xs text-gray-500 hidden">Preencha o tipo de pagamento primeiro</p>
+                <p id="msg_valor_maximo" class="text-xs text-red-600 hidden mt-1"></p>
                 @error('forma_valor')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -124,6 +189,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                 <select name="forma_prazo" id="forma_prazo" required
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     <option value="">Selecione...</option>
+                    <option value="Entrada" {{ old('forma_prazo') == 'Entrada' ? 'selected' : '' }}>Entrada</option>
                     <option value="À vista" {{ old('forma_prazo') == 'À vista' ? 'selected' : '' }}>À vista</option>
                     <option value="Parcelado" {{ old('forma_prazo') == 'Parcelado' ? 'selected' : '' }}>Parcelado</option>
                 </select>
@@ -211,11 +277,6 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             </div>
         </div>
 
-        <div id="valorTotalPedido" class="mt-6 text-red-600 font-bold text-lg text-center">
-            Valor Total do Pedido: R$ {{ number_format($valorTotal, 2, ',', '.') }}<br>
-            Valor Pago: R$ {{ number_format($valorPago, 2, ',', '.') }}<br>
-            Valor Faltante: R$ {{ number_format($valorFaltante, 2, ',', '.') }}
-        </div>
 
         <div class="flex justify-center mt-8">
             <button type="submit" id="btnSalvarForma"
@@ -234,20 +295,12 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 </div>
 
 <script>
+    // ===== Referências de elementos =====
     const form = document.getElementById('formaPagamentoForm');
     const btnSalvar = document.getElementById('btnSalvarForma');
+    const valorFaltante = parseFloat(form.dataset.valorFaltante || '0');
 
-    form.addEventListener('submit', function() {
-
-        // evita múltiplos cliques
-        if (btnSalvar.disabled) {
-            return false;
-        }
-
-        btnSalvar.disabled = true;
-        btnSalvar.innerText = 'SALVANDO...';
-        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
-    });
+    const msgValorMaximo = document.getElementById('msg_valor_maximo');
 
     const selectPrazo = document.getElementById('forma_prazo');
     const inputParcelas = document.getElementById('forma_qtd_parcela');
@@ -255,11 +308,23 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     const inputDataPrimeiraParcela = document.getElementById('data_primeira_parcela');
     const listaParcelas = document.getElementById('listaParcelas');
     const parcelasHidden = document.getElementById('parcelasHidden');
-    const inputValorTotal = document.getElementById('forma_valor');
+    const inputValorTotal = document.getElementById('forma_valor'); // = "valor"
     const inputValorParcelaPreview = document.getElementById('valor_parcela_preview');
     const campoData = document.getElementById('campo_data');
     const campoDataInput = document.getElementById('forma_data');
 
+    const tipoPagamento = document.getElementById('tipo_pagamento_id_tipo');
+    const valor = inputValorTotal; // mesmo elemento, evita pegar 2x pelo id
+    const prazo = selectPrazo;
+    const parcelas = inputParcelas;
+    const dataPagamento = campoDataInput;
+    const descricao = document.getElementById('forma_descricao');
+
+    const msgValor = document.getElementById('msg_valor');
+    const msgPrazo = document.getElementById('msg_prazo');
+    const msgParcelas = document.getElementById('msg_parcelas');
+
+    // ===== Funções auxiliares =====
     function converterValorBRparaFloat(valor) {
         if (!valor) return 0;
         return parseFloat(valor.replace(/\D/g, '')) / 100;
@@ -272,12 +337,41 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
         });
     }
 
+    function formatarMoedaBR(input) {
+        let v = input.value.replace(/\D/g, '');
+        if (v === '') {
+            input.value = '';
+            return;
+        }
+        v = (parseInt(v) / 100).toFixed(2) + '';
+        v = v.replace('.', ',');
+        v = v.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        input.value = 'R$ ' + v;
+    }
+
+    function validarValorMaximo() {
+        const valorDigitado = converterValorBRparaFloat(inputValorTotal.value);
+
+        if (valorDigitado > valorFaltante) {
+            msgValorMaximo.textContent = `O valor não pode ser maior que o valor faltante (R$ ${formatarBR(valorFaltante)})`;
+            msgValorMaximo.classList.remove('hidden');
+            inputValorTotal.setCustomValidity('Valor maior que o valor faltante');
+            btnSalvar.disabled = true;
+            btnSalvar.classList.add('opacity-50', 'cursor-not-allowed');
+            return false;
+        } else {
+            msgValorMaximo.classList.add('hidden');
+            inputValorTotal.setCustomValidity('');
+            btnSalvar.disabled = false;
+            btnSalvar.classList.remove('opacity-50', 'cursor-not-allowed');
+            return true;
+        }
+    }
+
     function calcularValorParcela() {
         const total = converterValorBRparaFloat(inputValorTotal.value);
         const qtd = parseInt(inputParcelas.value);
-
         if (!total || !qtd || qtd <= 0) return 0;
-
         return Number((total / qtd).toFixed(2));
     }
 
@@ -326,21 +420,13 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     }
 
     function controlarCampos() {
-        if (selectPrazo.value === 'À vista') {
-            inputParcelas.value = 1;
-            inputParcelas.readOnly = true;
-            areaParcelas.classList.add('hidden');
+        const prazoValor = selectPrazo.value;
+        const qtd = parseInt(inputParcelas.value) || 0;
 
-            parcelasHidden.innerHTML = '';
-            listaParcelas.innerHTML = '';
-            inputValorParcelaPreview.value = '';
+        const usaParcelas = prazoValor === 'Parcelado' || (prazoValor === 'Entrada' && qtd > 1);
+        const usaDataUnica = prazoValor === 'À vista' || (prazoValor === 'Entrada' && qtd <= 1);
 
-            inputDataPrimeiraParcela.required = false;
-            inputDataPrimeiraParcela.value = '';
-
-            campoData.classList.remove('hidden');
-            campoDataInput.required = true;
-        } else if (selectPrazo.value === 'Parcelado') {
+        if (usaParcelas) {
             inputParcelas.readOnly = false;
             areaParcelas.classList.remove('hidden');
 
@@ -350,7 +436,27 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 
             inputDataPrimeiraParcela.required = true;
             gerarParcelas();
+        } else if (usaDataUnica) {
+            // só trava em 1 quando for exatamente "À vista"
+            if (prazoValor === 'À vista') {
+                inputParcelas.value = 1;
+                inputParcelas.readOnly = true;
+            } else {
+                inputParcelas.readOnly = false;
+            }
+
+            areaParcelas.classList.add('hidden');
+            parcelasHidden.innerHTML = '';
+            listaParcelas.innerHTML = '';
+            inputValorParcelaPreview.value = '';
+
+            inputDataPrimeiraParcela.required = false;
+            inputDataPrimeiraParcela.value = '';
+
+            campoData.classList.remove('hidden');
+            campoDataInput.required = true;
         } else {
+            // nenhum prazo selecionado
             inputParcelas.readOnly = false;
             areaParcelas.classList.add('hidden');
 
@@ -366,26 +472,6 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             campoDataInput.value = '';
         }
     }
-
-    selectPrazo.addEventListener('change', controlarCampos);
-    inputParcelas.addEventListener('input', gerarParcelas);
-    inputDataPrimeiraParcela.addEventListener('change', gerarParcelas);
-    inputValorTotal.addEventListener('input', gerarParcelas);
-
-    window.addEventListener('DOMContentLoaded', controlarCampos);
-    const tipoPagamento = document.getElementById('tipo_pagamento_id_tipo');
-    const valor = document.getElementById('forma_valor');
-    const competencia = document.getElementById('forma_mes');
-    const prazo = document.getElementById('forma_prazo');
-    const conta = document.querySelector('[name="conta_bancaria_id"]');
-    const parcelas = document.getElementById('forma_qtd_parcela');
-    const dataPagamento = document.getElementById('forma_data');
-    const descricao = document.getElementById('forma_descricao');
-
-    const msgValor = document.getElementById('msg_valor');
-    const msgPrazo = document.getElementById('msg_prazo');
-    const msgParcelas = document.getElementById('msg_parcelas');
-
 
     function toggleMsg(element, condition) {
         element.classList.toggle('hidden', condition);
@@ -399,52 +485,64 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
         parcelas.disabled = !prazo.value;
         toggleMsg(msgParcelas, prazo.value);
 
+        const qtd = parseInt(parcelas.value) || 0;
+        const usaParcelas = prazo.value === 'Parcelado' || (prazo.value === 'Entrada' && qtd > 1);
+        const usaDataUnica = prazo.value === 'À vista' || (prazo.value === 'Entrada' && qtd <= 1);
 
-        // lógica especial para data
-        if (prazo.value === 'À vista') {
-            campoData.classList.remove('hidden');
-            dataPagamento.disabled = !parcelas.value;
-            areaParcelas.classList.add('hidden');
-        } else if (prazo.value === 'Parcelado') {
+        if (usaParcelas) {
             campoData.classList.add('hidden');
             dataPagamento.disabled = true;
             areaParcelas.classList.remove('hidden');
+        } else if (usaDataUnica) {
+            campoData.classList.remove('hidden');
+            dataPagamento.disabled = !parcelas.value;
+            areaParcelas.classList.add('hidden');
         } else {
             campoData.classList.add('hidden');
             dataPagamento.disabled = true;
             areaParcelas.classList.add('hidden');
         }
 
-        descricao.disabled = prazo.value === 'À vista' ?
-            !dataPagamento.value :
-            !parcelas.value;
+        descricao.disabled = usaDataUnica ? !dataPagamento.value : !parcelas.value;
     }
 
-    // eventos
-    tipoPagamento.addEventListener('change', bloquearCampos);
-
-    function formatarMoedaBR(input) {
-        let valor = input.value.replace(/\D/g, '');
-        if (valor === '') {
-            input.value = '';
-            return;
+    // ===== Eventos =====
+    form.addEventListener('submit', function(e) {
+        if (!validarValorMaximo()) {
+            e.preventDefault();
+            return false;
         }
-        valor = (parseInt(valor) / 100).toFixed(2) + '';
-        valor = valor.replace('.', ',');
-        valor = valor.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        if (btnSalvar.disabled) {
+            return false;
+        }
+        btnSalvar.disabled = true;
+        btnSalvar.innerText = 'SALVANDO...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+    });
 
-        input.value = 'R$ ' + valor;
-    }
-    valor.addEventListener('input', function() {
+    tipoPagamento.addEventListener('change', bloquearCampos); // <-- FALTAVA ISSO
+
+    inputValorTotal.addEventListener('input', function() {
         formatarMoedaBR(this);
         bloquearCampos();
+        validarValorMaximo();
+        gerarParcelas();
     });
-    prazo.addEventListener('change', bloquearCampos);
-    parcelas.addEventListener('input', bloquearCampos);
+
+    selectPrazo.addEventListener('change', function() {
+        controlarCampos();
+        bloquearCampos();
+    });
+
+    inputParcelas.addEventListener('input', function() {
+        controlarCampos();
+        bloquearCampos();
+    });
+
+    inputDataPrimeiraParcela.addEventListener('change', gerarParcelas);
     dataPagamento.addEventListener('change', bloquearCampos);
 
     window.addEventListener('DOMContentLoaded', () => {
-
         // começa tudo travado
         valor.disabled = true;
         prazo.disabled = true;
@@ -452,6 +550,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
         dataPagamento.disabled = true;
         descricao.disabled = true;
 
+        controlarCampos();
         bloquearCampos();
     });
 </script>

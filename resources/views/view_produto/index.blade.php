@@ -31,14 +31,8 @@
 
     </div>
 
+    <x-alert-flash />
 
-    {{-- Alerta de sucesso --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-6">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
 
 
     {{-- Área de filtros --}}
@@ -137,11 +131,6 @@
 
             <thead class="bg-table-header-bg">
                 <tr>
-
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                        ID
-                    </th>
-
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
                         Código
                     </th>
@@ -182,10 +171,6 @@
                     data-prod-categoria="{{ $produto->prod_categoria }}"
                     data-prod-nome="{{ $produto->prod_nome }}"
                     data-prod-cod="{{ $produto->prod_cod }}">
-
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900">
-                        {{ $produto->id_produto }}
-                    </td>
 
                     <td class="px-4 py-4 text-sm text-gray-700">
                         {{ $produto->prod_cod }}

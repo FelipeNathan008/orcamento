@@ -4,19 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo; // Importe o BelongsTo
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Orcamento extends Model
+class OrcamentoFracionado extends Model
 {
     use HasFactory;
-    protected $table = 'orcamento';
-    protected $primaryKey = 'id_orcamento';
+
+    protected $table = 'orcamento_fracionado';
+
+    protected $primaryKey = 'id_orcamento_fracionado';
 
     public $incrementing = true;
 
     protected $keyType = 'integer';
 
+
     protected $fillable = [
+        'orcamento_id_orcamento',
+        'orc_fracao',
         'cliente_orcamento_id_co',
         'orc_data_inicio',
         'orc_data_fim',
@@ -30,44 +36,73 @@ class Orcamento extends Model
         'orc_desconto_valor',
         'orc_desconto_motivo',
     ];
+
+
     protected $casts = [
         'orc_data_inicio' => 'date',
         'orc_data_fim' => 'date',
-        'orc_anotacao_espec' => 'string',
-        'orc_anotacao_geral' => 'string',
-        'orc_motivo_rejeicao' => 'string',
-        'orc_cod_fabrica' => 'string',
-        'orc_cod_interno' => 'string',
+        'orc_desconto_valor' => 'decimal:2',
+        'orc_fracao' => 'integer',
     ];
+
+
+    public function orcamento(): BelongsTo
+    {
+        return $this->belongsTo(
+            Orcamento::class,
+            'orcamento_id_orcamento',
+            'id_orcamento'
+        );
+    }
 
 
     public function clienteOrcamento(): BelongsTo
     {
-        return $this->belongsTo(ClienteOrcamento::class, 'cliente_orcamento_id_co', 'id_co');
+        return $this->belongsTo(
+            ClienteOrcamento::class,
+            'cliente_orcamento_id_co',
+            'id_co'
+        );
+    }
+
+
+    public function detalhesOrcamentoFracionado(): HasMany
+    {
+        return $this->hasMany(
+            DetalhesOrcamentoFracionado::class,
+            'orcamento_fracionado_id',
+            'id_orcamento_fracionado'
+        );
     }
 
     public function detalhesOrcamento()
     {
-        return $this->hasMany(DetalhesOrcamento::class, 'orcamento_id_orcamento', 'id_orcamento');
-    }
-
-    public function fracionados()
-    {
-        return $this->hasMany(OrcamentoFracionado::class, 'orcamento_id_orcamento', 'id_orcamento');
+        return $this->hasMany(
+            DetalhesOrcamentoFracionado::class,
+            'orcamento_fracionado_id',
+            'id_orcamento_fracionado'
+        );
     }
 
     public function getTotalBrutoAttribute()
     {
         $total = 0;
-        foreach ($this->detalhesOrcamento as $detalhe) {
-            $subtotal = $detalhe->det_quantidade * $detalhe->det_valor_unit;
+
+        foreach ($this->detalhesOrcamentoFracionado as $detalhe) {
+
+            $subtotal = $detalhe->det_quantidade *
+                $detalhe->det_valor_unit;
+
             foreach ($detalhe->customizacoes as $customizacao) {
                 $subtotal += $customizacao->cust_valor;
             }
+
             $total += $subtotal;
         }
+
         return $total;
     }
+
 
     public function getValorDescontoAttribute()
     {
@@ -77,16 +112,20 @@ class Orcamento extends Model
             return round($totalBruto * ($this->orc_desconto_valor / 100), 2);
         }
 
+
         if ($this->orc_desconto_tipo === 'valor') {
-            // nunca deixa o desconto passar do total bruto
+
             return min($this->orc_desconto_valor, $totalBruto);
         }
+
 
         return 0;
     }
 
+
     public function getTotalComDescontoAttribute()
     {
-        return $this->total_bruto - $this->valor_desconto;
+        return $this->total_bruto -
+            $this->valor_desconto;
     }
 }

@@ -25,7 +25,8 @@ class CustomizacaoController extends Controller
 
         $detalhe = DetalhesOrcamento::with([
             'produto',
-            'orcamento.clienteOrcamento'
+            'orcamento.clienteOrcamento',
+            'customizacoes'
         ])->findOrFail($request->id_det);
 
         $query = Customizacao::with([

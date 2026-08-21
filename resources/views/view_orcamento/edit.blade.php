@@ -47,8 +47,9 @@
 
 
     <div>
-        <form action="{{ route('orcamento.update', $orcamento->id_orcamento) }}" method="POST" class="space-y-6">
-            @csrf
+        <form
+            action="{{ route('orcamento.update', $orcamento->id_orcamento) }}" method="POST" class="space-y-6"
+            data-status-anterior="{{ $orcamento->orc_status }}"> @csrf
             @method('PUT')
 
             <input type="hidden" name="cliente_orcamento_id_co"
@@ -120,24 +121,154 @@
                         <label for="orc_status" class="block text-sm font-medium mb-1">
                             Status
                         </label>
-                        <select name="orc_status" id="orc_status"
-                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
+
+                        @php
+                        $statusAtual = old('orc_status', $orcamento->orc_status);
+
+                        // Valor final do orçamento já considerando desconto
+                        $valorOrcamento = (float) ($orcamento->total_com_desconto ?? 0);
+
+                        $statusBloqueado = in_array($orcamento->orc_status, [
+                        'finalizado',
+                        'rejeitado'
+                        ]);
+                        @endphp
+
+                        <select
+                            name="orc_status"
+                            id="orc_status"
+                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300
+        {{ $statusBloqueado ? 'bg-gray-100 cursor-not-allowed' : '' }}"
+                            {{ $statusBloqueado ? 'disabled' : '' }}
                             required>
-                            <option value="">Selecione</option>
-                            <option value="pendente" {{ old('orc_status', $orcamento->orc_status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
-                            <option value="para aprovacao" {{ old('orc_status', $orcamento->orc_status) == 'para aprovacao' ? 'selected' : '' }}>Para Aprovação</option>
-                            <option value="aprovado" {{ old('orc_status', $orcamento->orc_status) == 'aprovado' ? 'selected' : '' }}>Aprovado</option>
-                            <option value="rejeitado" {{ old('orc_status', $orcamento->orc_status) == 'rejeitado' ? 'selected' : '' }}>Rejeitado</option>
+
+                            @if ($orcamento->orc_status === 'finalizado')
+
+                            <option value="finalizado" selected>
+                                Finalizado
+                            </option>
+
+                            @elseif ($orcamento->orc_status === 'rejeitado')
+
+                            <option value="rejeitado" selected>
+                                Rejeitado
+                            </option>
+
+                            @elseif ($orcamento->orc_status === 'aprovado')
+
+                            <option value="aprovado" selected>
+                                Aprovado
+                            </option>
+
+                            <option value="finalizado">
+                                Finalizado
+                            </option>
+
+                            <option value="rejeitado">
+                                Rejeitado
+                            </option>
+
+                            @else
+
+                            <option value="">
+                                Selecione
+                            </option>
+
+                            <option
+                                value="pendente"
+                                {{ $statusAtual === 'pendente' ? 'selected' : '' }}>
+                                Pendente
+                            </option>
+
+                            <option
+                                value="para aprovacao"
+                                {{ $statusAtual === 'para aprovacao' ? 'selected' : '' }}>
+                                Para Aprovação
+                            </option>
+
+                            {{-- SÓ MOSTRA APROVADO SE O VALOR FOR MAIOR QUE ZERO --}}
+                            @if ($valorOrcamento > 0)
+                            <option
+                                value="aprovado"
+                                {{ $statusAtual === 'aprovado' ? 'selected' : '' }}>
+                                Aprovado
+                            </option>
+                            @endif
+
+                            <option
+                                value="rejeitado"
+                                {{ $statusAtual === 'rejeitado' ? 'selected' : '' }}>
+                                Rejeitado
+                            </option>
+
                             @if (!$financeiroPendente)
-                            <option value="finalizado" {{ old('orc_status', $orcamento->orc_status) == 'finalizado' ? 'selected' : '' }}>
+                            <option
+                                value="finalizado"
+                                {{ $statusAtual === 'finalizado' ? 'selected' : '' }}>
                                 Finalizado
                             </option>
                             @endif
+
+                            @endif
+
                         </select>
+
+                        {{-- Mantém o status quando o select está disabled --}}
+                        @if ($statusBloqueado)
+                        <input
+                            type="hidden"
+                            name="orc_status"
+                            value="{{ $orcamento->orc_status }}">
+                        @endif
+
+                        @if ($orcamento->orc_status === 'finalizado')
+
+                        <p class="mt-2 text-sm text-gray-500">
+                            Este orçamento está finalizado e seu status não pode mais ser alterado.
+                        </p>
+
+                        @elseif ($orcamento->orc_status === 'rejeitado')
+
+                        <p class="mt-2 text-sm text-gray-500">
+                            Este orçamento foi rejeitado e seu status não pode mais ser alterado.
+                        </p>
+
+                        @elseif ($orcamento->orc_status === 'aprovado')
+
+                        <p class="mt-2 text-sm text-orange-600">
+                            Um orçamento aprovado só pode ser finalizado ou rejeitado.
+                        </p>
+
+                        @elseif ($valorOrcamento <= 0)
+
+                            <p class="mt-2 text-sm text-orange-600">
+                            Este orçamento possui valor total igual a R$ 0,00 e não pode ser aprovado.
+                            </p>
+
+                            @endif
                     </div>
 
                     {{-- Códigos --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        {{-- Código Interno --}}
+                        <div>
+                            <label for="orc_cod_interno" class="block text-sm font-medium mb-1">
+                                Código Interno
+                            </label>
+
+                            <input type="text"
+                                name="orc_cod_interno"
+                                id="orc_cod_interno"
+                                maxlength="60" placeholder="Código Interno"
+                                value="{{ old('orc_cod_interno', $orcamento->orc_cod_interno) }}"
+                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
+
+                            @error('orc_cod_interno')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
 
                         {{-- Código da Fábrica --}}
                         <div>
@@ -149,30 +280,11 @@
                                 name="orc_cod_fabrica"
                                 id="orc_cod_fabrica"
                                 maxlength="60"
-                                required
+                                placeholder="Código Fábrica"
                                 value="{{ old('orc_cod_fabrica', $orcamento->orc_cod_fabrica) }}"
                                 class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
 
                             @error('orc_cod_fabrica')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        {{-- Código Interno --}}
-                        <div>
-                            <label for="orc_cod_interno" class="block text-sm font-medium mb-1">
-                                Código Interno
-                            </label>
-
-                            <input type="text"
-                                name="orc_cod_interno"
-                                id="orc_cod_interno"
-                                maxlength="60"
-                                required
-                                value="{{ old('orc_cod_interno', $orcamento->orc_cod_interno) }}"
-                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
-
-                            @error('orc_cod_interno')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
@@ -225,94 +337,136 @@
 
 @push('scripts')
 <script>
-    // CONTROLE DAS DATAS
-    const dataInicioInput = document.getElementById('orc_data_inicio');
-    const dataFimInput = document.getElementById('orc_data_fim');
-
-    function validarDatas() {
-
-        if (!dataInicioInput.value) {
-            dataFimInput.removeAttribute('min');
-            return;
-        }
-
-        const dataInicio = new Date(dataInicioInput.value + 'T00:00:00');
-
-        // Data mínima permitida = Data início + 1 dia
-        dataInicio.setDate(dataInicio.getDate() + 1);
-
-        const ano = dataInicio.getFullYear();
-        const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
-        const dia = String(dataInicio.getDate()).padStart(2, '0');
-
-        const dataMinima = `${ano}-${mes}-${dia}`;
-
-        dataFimInput.min = dataMinima;
-
-        // Se a data fim atual for inválida, limpa
-        if (dataFimInput.value && dataFimInput.value < dataMinima) {
-            dataFimInput.value = '';
-        }
-    }
-
-    validarDatas();
-
-    dataInicioInput.addEventListener('change', validarDatas);
-
     document.addEventListener('DOMContentLoaded', function() {
-
+        const form = document.querySelector('form[data-status-anterior]');
+        const dataInicioInput = document.getElementById('orc_data_inicio');
+        const dataFimInput = document.getElementById('orc_data_fim');
         const statusSelect = document.getElementById('orc_status');
         const motivoContainer = document.getElementById('motivoRejeicaoContainer');
         const motivoInput = document.getElementById('orc_motivo_rejeicao');
 
-        function toggleMotivoRejeicao() {
-            if (!statusSelect) return;
+        if (!form) {
+            return;
+        }
 
-            if (statusSelect.value === 'rejeitado') {
-                motivoContainer.classList.remove('hidden');
-                motivoInput.setAttribute('required', 'required');
-            } else {
-                motivoContainer.classList.add('hidden');
-                motivoInput.removeAttribute('required');
-                motivoInput.value = '';
+        function validarDatas() {
+            if (!dataInicioInput || !dataFimInput) {
+                return;
+            }
+
+            if (!dataInicioInput.value) {
+                dataFimInput.removeAttribute('min');
+                return;
+            }
+
+            const dataInicio = new Date(`${dataInicioInput.value}T00:00:00`);
+
+            dataInicio.setDate(dataInicio.getDate() + 1);
+
+            const dataMinima = [
+                dataInicio.getFullYear(),
+                String(dataInicio.getMonth() + 1).padStart(2, '0'),
+                String(dataInicio.getDate()).padStart(2, '0')
+            ].join('-');
+
+            dataFimInput.min = dataMinima;
+
+            if (dataFimInput.value && dataFimInput.value < dataMinima) {
+                dataFimInput.value = '';
             }
         }
 
+        function toggleMotivoRejeicao() {
+            if (!statusSelect || !motivoContainer) {
+                return;
+            }
+
+            const rejeitado = statusSelect.value === 'rejeitado';
+
+            motivoContainer.classList.toggle('hidden', !rejeitado);
+
+            if (motivoInput) {
+                if (rejeitado) {
+                    motivoInput.setAttribute('required', 'required');
+                } else {
+                    motivoInput.removeAttribute('required');
+                    motivoInput.value = '';
+                }
+            }
+        }
+
+        validarDatas();
         toggleMotivoRejeicao();
+
+        if (dataInicioInput) {
+            dataInicioInput.addEventListener('change', validarDatas);
+        }
 
         if (statusSelect) {
             statusSelect.addEventListener('change', toggleMotivoRejeicao);
         }
 
-        const form = document.querySelector('form[action*="orcamento"]');
+        form.addEventListener('submit', function(e) {
+            const statusAnterior = form.dataset.statusAnterior;
+            const novoStatus = statusSelect ?
+                statusSelect.value :
+                statusAnterior;
 
-        if (form) {
-            form.addEventListener('submit', function(e) {
-
-                if (!statusSelect) return;
-
-                const status = statusSelect.value;
-                // Validação das datas
-                const dataInicio = new Date(dataInicioInput.value);
-                const dataFim = new Date(dataFimInput.value);
+            if (
+                dataInicioInput &&
+                dataFimInput &&
+                dataInicioInput.value &&
+                dataFimInput.value
+            ) {
+                const dataInicio = new Date(`${dataInicioInput.value}T00:00:00`);
+                const dataFim = new Date(`${dataFimInput.value}T00:00:00`);
 
                 if (dataFim <= dataInicio) {
                     alert('A Data Fim deve ser maior que a Data Início.');
                     e.preventDefault();
+                    dataFimInput.focus();
                     return;
                 }
-                if (status === 'aprovado') {
-                    const confirmar = confirm(
-                        "Você deseja colocar como APROVADO e ir para o módulo Financeiro?"
-                    );
+            }
 
-                    if (!confirmar) {
-                        e.preventDefault();
-                    }
+            if (
+                novoStatus === 'rejeitado' &&
+                motivoInput &&
+                !motivoInput.value.trim()
+            ) {
+                alert('Informe o motivo da rejeição.');
+                e.preventDefault();
+                motivoInput.focus();
+                return;
+            }
+
+            if (
+                novoStatus === 'aprovado' &&
+                statusAnterior !== 'aprovado'
+            ) {
+                const confirmar = confirm(
+                    'Você deseja colocar este orçamento como APROVADO e ir para o módulo Financeiro?'
+                );
+
+                if (!confirmar) {
+                    e.preventDefault();
+                    return;
                 }
-            });
-        }
+            }
 
+            if (
+                novoStatus === 'finalizado' &&
+                statusAnterior !== 'finalizado'
+            ) {
+                const confirmar = confirm(
+                    'Você deseja colocar este orçamento como FINALIZADO?'
+                );
+
+                if (!confirmar) {
+                    e.preventDefault();
+                }
+            }
+        });
     });
 </script>
 @endpush

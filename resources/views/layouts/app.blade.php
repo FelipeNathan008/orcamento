@@ -141,6 +141,11 @@
                     Administração</a>
                 </a>
 
+                 <a href="{{ route('financeiro.index') }}"
+                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
+                    Financeiro</a>
+                </a>
+
             </div>
 
             {{-- Bloco da direita (Logout + Layout Camiseta) --}}

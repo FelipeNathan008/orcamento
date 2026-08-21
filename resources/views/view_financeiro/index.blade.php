@@ -217,12 +217,17 @@
                             </button>
 
                             {{-- Forma Pagamento --}}
-                            @if(
-                            $fin->fin_status !== 'Entregue'
-                            )
+                            @if($fin->fin_status !== 'Entregue')
                             <a href="{{ url('/forma_pagamento?' . $fin->id_fin) }}"
                                 class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                 Forma Pagamento
+                            </a>
+                            @endif
+
+                            @if($fin->fin_status == 'Análise pedido')
+                            <a href="{{ route('orcamento.fracionado.index', $fin->orcamento_id_orcamento) }}"
+                                class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                                Fracionar
                             </a>
                             @endif
 

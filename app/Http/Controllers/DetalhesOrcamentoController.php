@@ -22,8 +22,11 @@ class DetalhesOrcamentoController extends Controller
                 ->with('error', 'Selecione um cliente para visualizar os orçamentos.');
         }
 
-        $orcamento = Orcamento::with('clienteOrcamento')
-            ->where('id_orcamento', $request->orcamento_id)
+        $orcamento = Orcamento::with([
+            'clienteOrcamento',
+            'detalhesOrcamento.customizacoes',
+            'detalhesOrcamento.produto'
+        ])->where('id_orcamento', $request->orcamento_id)
             ->firstOrFail();
 
         $query = DetalhesOrcamento::with('produto')
@@ -222,12 +225,17 @@ class DetalhesOrcamentoController extends Controller
 
     public function destroy($id)
     {
-        $detalheOrcamento = DetalhesOrcamento::findOrFail($id);
+        $detalheOrcamento = DetalhesOrcamento::withCount('customizacoes')->findOrFail($id);
+
+        if ($detalheOrcamento->customizacoes_count > 0) {
+            return redirect()->back()
+                ->with('error', 'Não é possível excluir este detalhe pois ele possui ' . $detalheOrcamento->customizacoes_count . ' customização(ões) vinculada(s). Exclua as customizações primeiro.');
+        }
 
         $detalheOrcamento->delete();
 
         return redirect()->route('detalhes_orcamento.index', [
             'orcamento_id' => $detalheOrcamento->orcamento_id_orcamento
-        ])->with('success', 'Detalhe de orçamento atualizado com sucesso!');
+        ])->with('success', 'Detalhe de orçamento excluído com sucesso!');
     }
 }

@@ -1,46 +1,33 @@
-@extends('layouts.app')
+@extends('layouts.app_financeiro')
 
-@section('title', 'Customizações')
+@section('title', 'Customizações do Fracionado')
 
 @section('content')
-@php
-$orcamentoBloqueado = in_array(
-strtolower(trim($detalhe->orcamento->orc_status)),
-['aprovado', 'finalizado', 'rejeitado']
-);
-@endphp
+
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
 
         <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree">
-            Customizações do Produto
+            Customizações do Produto (Fracionado)
         </h1>
 
         <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
 
-            <a href="{{ route('detalhes_orcamento.index', ['orcamento_id' => $orcamento->id_orcamento]) }}"
+            <a href="{{ route('detalhes_orcamento_fracionado.index', $orcamentoFracionado->id_orcamento_fracionado) }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
                 VOLTAR
             </a>
 
-            @if(!$orcamentoBloqueado)
-            <a href="{{ route('customizacao.create', ['detalhe_id' => $detalhe->id_det]) }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 transition duration-150 ease-in-out"
-                style="background-color:#EA792D;">
-                Nova Customização
-            </a>
-            @endif
-
         </div>
     </div>
 
-    @if(isset($orcamento))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
         <h2 class="text-lg font-bold text-orange-700 mb-4">
             Informações do Produto
         </h2>
+
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
@@ -48,20 +35,21 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     <div>
                         <p class="text-gray-600">ID</p>
                         <p class="font-semibold">
-                            {{ $detalhe->orcamento->id_orcamento }}
+                            {{ $orcamento->id_orcamento }}
                         </p>
                     </div>
+
                     <div>
                         <p class="text-gray-600">Cód. Fábrica</p>
                         <p class="font-semibold">
-                            {{ $detalhe->orcamento->orc_cod_fabrica ?: 'N/D' }}
+                            {{ $orcamento->orc_cod_fabrica ?: 'N/D'}}
                         </p>
                     </div>
 
                     <div>
                         <p class="text-gray-600">Cód. Interno</p>
                         <p class="font-semibold">
-                            {{ $detalhe->orcamento->orc_cod_interno ?: 'N/D' }}
+                            {{ $orcamento->orc_cod_interno ?: 'N/D'}}
                         </p>
                     </div>
                 </div>
@@ -70,6 +58,13 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                 <p class="text-gray-600">Cliente</p>
                 <p class="font-semibold text-gray-900">
                     {{ $cliente->clie_orc_nome ?? 'N/A' }}
+                </p>
+            </div>
+
+            <div>
+                <p class="text-gray-600">Fração</p>
+                <p class="font-semibold text-gray-900">
+                    #{{ $orcamentoFracionado->orc_fracao }}
                 </p>
             </div>
 
@@ -110,32 +105,9 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                 </p>
             </div>
 
-
         </div>
 
     </div>
-    @endif
-
-    @php
-    // Quantidade de produtos
-    $quantidade = (int) ($detalhe->det_quantidade ?? 0);
-
-    // Valor total dos produtos
-    $totalItem = $quantidade * (float) ($detalhe->det_valor_unit ?? 0);
-
-    // Soma do valor unitário de todas as customizações
-    $valorUnitarioCustomizacoes = 0;
-
-    foreach ($detalhe->customizacoes as $customizacao) {
-    $valorUnitarioCustomizacoes += (float) ($customizacao->cust_valor ?? 0);
-    }
-
-    // Cada customização deve ser aplicada a CADA unidade do produto
-    $totalCustomizacoes = $quantidade * $valorUnitarioCustomizacoes;
-
-    // Total geral
-    $totalGeral = $totalItem + $totalCustomizacoes;
-    @endphp
 
     <div id="image-warning-message" class="mt-2 text-sm text-yellow-600">
         <i class="fas fa-exclamation-triangle mr-1"></i>Os valores abaixo são conforme o produto selecionado.
@@ -145,7 +117,7 @@ strtolower(trim($detalhe->orcamento->orc_status)),
 
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm">
             <p class="text-gray-600 text-sm">
-                Total dos Itens
+                Total do Item
             </p>
 
             <p class="text-lg font-bold text-gray-800">
@@ -176,17 +148,16 @@ strtolower(trim($detalhe->orcamento->orc_status)),
     </div>
     <x-alert-flash />
 
-    <form method="GET" action="{{ route('customizacao.index') }}" class="mb-6">
+    <form method="GET" action="{{ route('customizacao_fracionado.index') }}" class="mb-6">
 
         <input type="hidden"
-            name="id_det"
-            value="{{ $detalhe->id_det }}">
+            name="id_det_fracionado"
+            value="{{ $detalhe->id_det_fracionado }}">
 
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                {{-- Tipo --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Tipo
@@ -209,7 +180,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     </select>
                 </div>
 
-                {{-- Local --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Local
@@ -232,7 +202,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     </select>
                 </div>
 
-                {{-- Posição --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Posição
@@ -255,7 +224,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     </select>
                 </div>
 
-                {{-- Formatação --}}
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">
                         Formatação
@@ -278,7 +246,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     </select>
                 </div>
 
-                {{-- Buscar --}}
                 <div class="flex items-end">
                     <button
                         type="submit"
@@ -288,10 +255,9 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     </button>
                 </div>
 
-                {{-- Limpar --}}
                 <div class="flex items-end">
                     <a
-                        href="{{ route('customizacao.index', ['id_det' => $detalhe->id_det]) }}"
+                        href="{{ route('customizacao_fracionado.index', ['id_det_fracionado' => $detalhe->id_det_fracionado]) }}"
                         class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
                         Limpar
                     </a>
@@ -302,8 +268,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
         </div>
 
     </form>
-
-    {{-- TABELA --}}
 
     @if ($customizacoes->isEmpty())
 
@@ -319,8 +283,8 @@ strtolower(trim($detalhe->orcamento->orc_status)),
             Nenhuma customização encontrada para os filtros informados.
         </p>
 
-        <a href="{{ route('customizacao.index', [
-                    'id_det' => $detalhe->id_det
+        <a href="{{ route('customizacao_fracionado.index', [
+                    'id_det_fracionado' => $detalhe->id_det_fracionado
                 ]) }}"
             class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
             Limpar filtros
@@ -336,7 +300,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
     @endif
 
     @else
-
 
     <div class="w-full rounded-lg shadow-xl overflow-x-auto border border-gray-200">
 
@@ -364,7 +327,6 @@ strtolower(trim($detalhe->orcamento->orc_status)),
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                         Valor
                     </th>
-
 
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">
                         Imagem
@@ -417,33 +379,11 @@ strtolower(trim($detalhe->orcamento->orc_status)),
 
                         <div class="flex justify-center gap-2">
 
-                            <a href="{{ route('customizacao.camisa', ['id' => $customizacao->id_customizacao]) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-150 ease-in-out">
-                                Layout
-                            </a>
-
-
-                            <a href="{{ route('customizacao.show', $customizacao->id_customizacao) }}"
+                            <a href="{{ route('customizacao_fracionado.show', $customizacao->id_customizacao_fracionada) }}"
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
                                 Ver
                             </a>
 
-                            @if(!$orcamentoBloqueado)
-                            <a href="{{ route('customizacao.edit', $customizacao->id_customizacao) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                                Editar
-                            </a>
-                            <form action="{{ route('customizacao.destroy', $customizacao->id_customizacao) }}" method="POST"
-                                class="inline-block"
-                                onsubmit="return confirm('Tem certeza que deseja excluir esta customização?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-cancel-bg hover:bg-button-cancel-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-cancel-bg transition duration-150 ease-in-out">
-                                    Excluir
-                                </button>
-                            </form>
-                            @endif
                         </div>
 
                     </td>

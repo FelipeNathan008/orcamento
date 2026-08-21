@@ -3,6 +3,12 @@
 @section('title', 'Layout da Camisa')
 
 @section('content')
+@php
+$orcamentoBloqueado = in_array(
+    strtolower(trim($customizacao->detalhesOrcamento->orcamento->orc_status ?? '')),
+    ['aprovado', 'finalizado', 'rejeitado']
+);
+@endphp
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Layout Customizado da Camisa</h1>
@@ -26,18 +32,24 @@
 
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-gray-600">ID</p>
+                        <p class="font-semibold">
+                            {{ $detalhe->orcamento->id_orcamento }}
+                        </p>
+                    </div>
                     <div>
                         <p class="text-gray-600">Cód. Fábrica</p>
                         <p class="font-semibold">
-                            {{ $detalhe->orcamento->orc_cod_fabrica }}
+                            {{ $detalhe->orcamento->orc_cod_fabrica ?: 'N/D' }}
                         </p>
                     </div>
 
                     <div>
                         <p class="text-gray-600">Cód. Interno</p>
                         <p class="font-semibold">
-                            {{ $detalhe->orcamento->orc_cod_interno }}
+                            {{ $detalhe->orcamento->orc_cod_interno ?: 'N/D'}}
                         </p>
                     </div>
                 </div>
@@ -104,6 +116,8 @@
                     class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
                     Ver
                 </a>
+
+                @if(!$orcamentoBloqueado)
                 <a href="{{ route('customizacao.edit', $cust->id_customizacao) }}"
                     class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-150 ease-in-out">
                     Editar
@@ -118,6 +132,7 @@
                         Excluir
                     </button>
                 </form>
+                @endif
             </div>
         </li>
         @endforeach
@@ -160,13 +175,13 @@
         // Isso permite que o sistema saiba onde "desenhar" cada customização.
         $positionMap = [
         'Ombro' => [
-        'Direito' => 'ombro_dir',
-        'Esquerdo' => 'ombro_esq',
+        'Direito' => 'ombro_esq',
+        'Esquerdo' => 'ombro_dir',
         ],
         'Frente' => [
-        'Esquerdo' => 'frente_pos1',
+        'Esquerdo' => 'frente_pos3',
         'Posição 2' => 'frente_pos2',
-        'Direito' => 'frente_pos3',
+        'Direito' => 'frente_pos1',
         'Posição 4' => 'frente_pos4',
         'Centro' => 'frente_pos5',
         'Posição 6' => 'frente_pos6',

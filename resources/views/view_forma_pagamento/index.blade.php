@@ -3,18 +3,7 @@
 @section('title', 'Formas de Pagamento')
 
 @section('content')
-@php
-$idFin = array_key_first(request()->query());
-@endphp
-{{-- RESUMO FINANCEIRO --}}
-@if($idFin)
-@php
-$financeiroSelecionado = $financeiros->firstWhere('id_fin', $idFin);
-$formasDoFinanceiro = $formasPagamento->where('financeiro_id_fin', $idFin);
-$valorPago = $formasDoFinanceiro->sum('forma_valor');
-$valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
-$valorFaltante = max($valorTotal - $valorPago, 0);
-@endphp
+
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
@@ -30,13 +19,11 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                 VOLTAR
             </a>
 
-            @if($valorFaltante > 0)
             <a href="{{ route('forma_pagamento.create', ['financeiro_id' => $id]) }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white"
                 style="background-color: #EA792D;">
                 Nova Forma
             </a>
-            @endif
 
         </div>
 
@@ -49,7 +36,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     </div>
     @endif
 
-    @if($idFin && isset($financeiroSelecionado))
+    @if($id && isset($financeiroSelecionado))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
 
         <h2 class="text-lg font-bold text-orange-700 mb-3">
@@ -66,26 +53,43 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             </div>
 
             <div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <p class="text-gray-600">ID Orcamento</p>
+                        <p class="font-semibold">
+                            {{ $financeiroSelecionado->orcamento->id_orcamento }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Interno</p>
+                        <p class="font-semibold">
+                            {{ $financeiroSelecionado->orcamento->orc_cod_interno ?: 'N/D' }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Cód. Fábrica</p>
+                        <p class="font-semibold">
+                            {{ $financeiroSelecionado->orcamento->orc_cod_fabrica ?: 'N/D' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
                 <p class="text-gray-600">Cliente</p>
                 <p class="font-semibold text-gray-900">
                     {{ $financeiroSelecionado->fin_nome_cliente }}
                 </p>
             </div>
 
-
-            <div>
-                <p class="text-gray-600">ID Orçamento</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $financeiroSelecionado->orcamento_id_orcamento}}
-                </p>
-            </div>
         </div>
 
     </div>
-    @endif
     <div class="mb-6 p-4 bg-gray-100 rounded-lg flex justify-around text-center">
         <div>
-            <span class="font-bold text-lg text-red-600">Valor Total</span>
+            <span class="font-bold text-lg text-yellow-600">Valor Total</span>
             <span class="block text-gray-900 text-lg">R$ {{ number_format($valorTotal, 2, ',', '.') }}</span>
         </div>
         <div>
@@ -93,7 +97,15 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             <span class="block text-gray-900 text-lg">R$ {{ number_format($valorPago, 2, ',', '.') }}</span>
         </div>
         <div>
-            <span class="font-bold text-lg text-yellow-600">Faltante</span>
+            <span class="font-bold text-lg text-blue-600">Valor Entrada</span>
+            <span class="block text-gray-900 text-lg">R$ {{ number_format($entrada, 2, ',', '.') }}</span>
+        </div>
+        <div>
+            <span class="font-bold text-lg text-blue-600">Valor Negociado</span>
+            <span class="block text-gray-900 text-lg">R$ {{ number_format($valorNegociado, 2, ',', '.') }}</span>
+        </div>
+        <div>
+            <span class="font-bold text-lg text-red-600">Saldo Devedor</span>
             <span class="block text-gray-900 text-lg">R$ {{ number_format($valorFaltante, 2, ',', '.') }}</span>
         </div>
     </div>
@@ -161,8 +173,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 
                     <td class="px-2 py-4 text-center">
                         <div class="flex justify-center items-center gap-2 flex-wrap">
-
-                            @if($forma->forma_prazo === 'Parcelado')
+                            @if($forma->forma_prazo === 'Parcelado' || ($forma->forma_prazo === 'Entrada' && $forma->forma_qtd_parcela > 1))
                             <button
                                 class="parcelas-btn px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600"
                                 data-id="{{ $forma->id_forma_pag }}">
@@ -213,52 +224,14 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                                         R$ {{ number_format($parcela->det_forma_valor_parcela,2,',','.') }}
                                     </td>
 
-                                    @php
-                                    $vencimento = \Carbon\Carbon::parse($parcela->det_forma_data_venc);
-                                    $hoje = \Carbon\Carbon::today();
-                                    $diasAtraso = $vencimento->diffInDays($hoje, false);
-
-                                    $classeVencimento = '';
-
-                                    if(!in_array($parcela->det_situacao, ['Pago','Quitado'])){
-
-                                    if($diasAtraso > 3){
-                                    $classeVencimento = 'bg-red-200 text-red-800 font-semibold';
-                                    }
-                                    elseif($diasAtraso > 0){
-                                    $classeVencimento = 'bg-yellow-200 text-yellow-800 font-semibold';
-                                    }
-
-                                    }
-                                    @endphp
-
-                                    <td class="px-4 py-2 text-sm {{ $classeVencimento }}">
-                                        {{ $vencimento->format('d/m/Y') }}
+                                    <td class="px-4 py-2 text-sm {{ $parcela->classe_vencimento }}">
+                                        {{ \Carbon\Carbon::parse($parcela->det_forma_data_venc)->format('d/m/Y') }}
                                     </td>
-                                    @php
-                                    $status = $parcela->det_situacao;
-
-                                    if(
-                                    $diasAtraso > 3 &&
-                                    $status === 'Acordo' &&
-                                    !in_array($status, ['Pago','Quitado'])
-                                    ){
-                                    $status = 'Inadimplencia';
-                                    }
-                                    @endphp
-                                    @php
-                                    $corStatus = match($status) {
-                                    'Pago', 'Quitado' => 'bg-green-100 text-green-700',
-                                    'Não pago' => 'bg-yellow-100 text-yellow-700',
-                                    'Acordo' => 'bg-blue-100 text-blue-700',
-                                    'Inadimplencia' => 'bg-red-100 text-red-700',
-                                    default => 'bg-gray-100 text-gray-700'
-                                    };
-                                    @endphp
 
                                     <td class="px-4 py-2 text-sm">
-                                        <span class="px-2 py-1 rounded-md text-xs font-semibold {{ $corStatus }}">
-                                            {{ $status }} </span>
+                                        <span class="px-2 py-1 rounded-md text-xs font-semibold {{ $parcela->cor_status }}">
+                                            {{ $parcela->status_exibicao }}
+                                        </span>
                                     </td>
 
                                     <td class="px-4 py-2 text-sm">
@@ -284,15 +257,15 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                                             @endif
 
                                             {{-- VOLTAR --}}
-                                            {{-- @if(in_array($parcela->det_situacao, ['Pago','Quitado']))
+                                            @if(in_array($parcela->det_situacao, ['Pago','Quitado']))
                                             <form action="{{ route('parcelas.voltarNaoPago', $parcela->id_det_forma) }}" method="POST"
-                                            onsubmit="return confirm('Tem certeza que deseja Voltar Para Não Pago esta parcela?');">
-                                            @csrf
-                                            <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                                                Voltar Para Não Pago
-                                            </button>
+                                                onsubmit="return confirm('Tem certeza que deseja Voltar Para Não Pago esta parcela?');">
+                                                @csrf
+                                                <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+                                                    Voltar Para Não Pago
+                                                </button>
                                             </form>
-                                            @endif--}}
+                                            @endif
 
                                         </div>
                                     </td>

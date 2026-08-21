@@ -59,17 +59,17 @@ class ClienteOrcamento extends Model
         'clie_orc_ie',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
+    
     protected $casts = [
-        // Adicione casts aqui se houver campos de data, JSON, etc.
-        // 'data_campo' => 'date',
+
     ];
     public function orcamentos()
     {
         return $this->hasMany(Orcamento::class, 'cliente_orcamento_id_co', 'id_co');
+    }
+
+    public function contatos()
+    {
+        return $this->hasMany(ContatoCliente::class, 'cliente_orcamento_id_co', 'id_co');
     }
 }

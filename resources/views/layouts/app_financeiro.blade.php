@@ -187,11 +187,24 @@
 
                 let isActive = false;
 
-                // Financeiro inclui forma_pagamento
+                // FINANCEIRO
                 if (
                     (
                         currentPathname.startsWith('/financeiro/') ||
-                        currentPathname.startsWith('/forma_pagamento/')) &&
+                        currentPathname.startsWith('/forma_pagamento/') ||
+
+                        // Orçamento
+                        currentPathname.startsWith('/orcamento/') ||
+
+                        // Orçamento Fracionado
+                        currentPathname.startsWith('/orcamento-fracionado/') ||
+
+                        // Detalhes do Orçamento Fracionado
+                        currentPathname.startsWith('/detalhes-orcamento-fracionado/') ||
+
+                        // Customizações do Orçamento Fracionado
+                        currentPathname.startsWith('/customizacao-fracionada')
+                    ) &&
                     linkPathname === '/financeiro/'
                 ) {
                     isActive = true;

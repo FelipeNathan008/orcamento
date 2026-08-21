@@ -42,10 +42,21 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
 
             <div>
-                <p class="text-gray-600">Nome</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $clienteSelecionado->clie_orc_nome }}
-                </p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-600">Cód. Cliente</p>
+                        <p class="font-semibold text-gray-900">
+                            {{ $clienteSelecionado->clie_orc_cod_interno }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-gray-600">Nome</p>
+                        <p class="font-semibold text-gray-900">
+                            {{ $clienteSelecionado->clie_orc_nome }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div>
@@ -182,18 +193,15 @@
                     <select
                         name="filtro_vencimento"
                         class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500">
-                        <option value="todos"
-                            {{ request('filtro_vencimento', 'todos') == 'todos' ? 'selected' : '' }}>
+                        <option value="todos" {{ request('filtro_vencimento', 'todos') == 'todos' ? 'selected' : '' }}>
                             Todos
                         </option>
 
-                        <option value="ativos"
-                            {{ request('filtro_vencimento') == 'ativos' ? 'selected' : '' }}>
+                        <option value="ativos" {{ request('filtro_vencimento', 'todos') == 'ativos' ? 'selected' : '' }}>
                             Ativos
                         </option>
 
-                        <option value="vencidos"
-                            {{ request('filtro_vencimento') == 'vencidos' ? 'selected' : '' }}>
+                        <option value="vencidos" {{ request('filtro_vencimento', 'todos') == 'vencidos' ? 'selected' : '' }}>
                             Vencidos
                         </option>
 
@@ -263,9 +271,13 @@
             <thead class="bg-table-header-bg">
                 <tr>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Cód. Fábrica</th>
+                        ID</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Cód. Interno</th>
+                        Cód. Interno
+                    </th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Cód. Fábrica
+                    </th>
                     <th
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
                         Data Início</th>
@@ -274,25 +286,85 @@
                         Data Fim</th>
                     <th
                         class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Status</th>
+                        Status
+                    </th>
+
+                    <th
+                        class="px-4 py-3 text-right text-xs font-medium text-white uppercase tracking-wider font-poppins">
+                        Valor Total Atual
+                    </th>
+
                     <th
                         class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Ações</th>
+                        Ações
+                    </th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200" id="orcamentoTableBody">
                 @foreach ($orcamentos as $orcamento)
+
+                @php
+                $totalBrutoCalculado = 0;
+
+                foreach ($orcamento->detalhesOrcamento as $detalhe) {
+
+                $quantidade = (int) ($detalhe->det_quantidade ?? 0);
+
+                // Valor dos produtos
+                $totalBrutoCalculado +=
+                $quantidade * (float) ($detalhe->det_valor_unit ?? 0);
+
+                // Valor das customizações
+                foreach ($detalhe->customizacoes as $customizacao) {
+
+                $totalBrutoCalculado +=
+                $quantidade * (float) ($customizacao->cust_valor ?? 0);
+                }
+                }
+
+                $valorDescontoCalculado = 0;
+
+                if ($orcamento->orc_desconto_tipo === 'percentual') {
+
+                $valorDescontoCalculado =
+                $totalBrutoCalculado *
+                ((float) ($orcamento->orc_desconto_valor ?? 0) / 100);
+
+                } elseif ($orcamento->orc_desconto_tipo === 'valor') {
+
+                $valorDescontoCalculado =
+                (float) ($orcamento->orc_desconto_valor ?? 0);
+                }
+
+
+                // Nunca permite que o desconto deixe o total negativo
+                $valorDescontoCalculado = min(
+                $valorDescontoCalculado,
+                $totalBrutoCalculado
+                );
+
+                $totalAtual =
+                $totalBrutoCalculado - $valorDescontoCalculado;
+
+                @endphp
+
                 <tr class="hover:bg-gray-50 transition duration-150">
                     <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $orcamento->orc_cod_fabrica }}
+                        {{ $orcamento->id_orcamento }}
                     </td>
 
                     <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $orcamento->orc_cod_interno }}
+                        {{ $orcamento->orc_cod_interno ?: 'N/D' }}
                     </td>
+
+                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
+                        {{ $orcamento->orc_cod_fabrica ?: 'N/D' }}
+                    </td>
+
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
                         {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
                     </td>
+
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
                         {{ $orcamento->orc_data_fim->format('d/m/Y') }}
                     </td>
@@ -326,14 +398,20 @@
                             <span class="relative">{{ ucfirst($orcamento->orc_status) }}</span>
                         </span>
                     </td>
+
+                    <td class="px-4 py-4 text-sm text-right font-semibold text-gray-900 font-poppins whitespace-nowrap">
+                        R$ {{ number_format($totalAtual, 2, ',', '.') }}
+                    </td>
+
                     <td class="px-2 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div class="flex items-center justify-center space-x-1 sm:space-x-2">
-                            @if ($orcamento->orc_status !== 'finalizado')
+
+
 
                             {{-- Visualizar Detalhes --}}
                             <a href="{{ route('detalhes_orcamento.index', ['orcamento_id' => $orcamento->id_orcamento]) }}"
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                                Visualizar Detalhes
+                                Detalhes
                             </a>
 
                             @if (in_array($orcamento->orc_status, ['aprovado', 'para aprovacao']))
@@ -344,11 +422,6 @@
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
                                 style="background-color: #EA792D;">
                                 Gerar Orçamento
-                            </a>
-                            @else
-                            <a href="{{ route('detalhes_orcamento.create', ['orcamento_id' => $orcamento->id_orcamento]) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
-                                Cadastrar Detalhes
                             </a>
                             @endif
 
@@ -373,9 +446,9 @@
                                     Excluir
                                 </button>
                             </form>
-                            @endif
 
                             @endif
+
                         </div>
                     </td>
                 </tr>

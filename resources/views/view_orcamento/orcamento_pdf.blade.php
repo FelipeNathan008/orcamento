@@ -3,9 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Orçamento #{{ $orcamento->orc_cod_interno }}</title>
+    <title>Orçamento # {{ $orcamento->id_orcamento}}</title>
+
     <style>
-        /* Adicione esta linha no início do CSS */
         * {
             box-sizing: border-box;
         }
@@ -25,8 +25,6 @@
             margin: 0 auto;
             padding: 20px;
             background-color: #ffffff;
-            border-radius: 0;
-            box-shadow: none;
         }
 
         h1 {
@@ -58,7 +56,6 @@
         th,
         td {
             padding: 5px;
-            /* Espaçamento interno das células */
             text-align: left;
             border-bottom: 1px solid #dfe6e9;
         }
@@ -66,7 +63,7 @@
         th {
             background-color: #34495e;
             color: #ffffff;
-            font-weight: 700; /* Linha corrigida para dar consistência */
+            font-weight: 700;
             font-size: 14px;
             padding: 5px;
         }
@@ -101,7 +98,6 @@
 
         .anotacao {
             margin-top: 10px;
-            /* Espaço antes da anotação */
             font-size: 12px;
             color: #34495e;
             line-height: 1.6;
@@ -111,11 +107,22 @@
             font-weight: bold;
         }
 
-        /* Nova classe para o espaçamento em branco */
         .spacer {
             height: 5px;
-            /* Altura reduzida para o espaço */
             background-color: transparent;
+        }
+
+        .align-right {
+            text-align: right;
+        }
+
+        .customizacao {
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .subtotal-detalhe {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -128,13 +135,16 @@
                 style="width: 300px; height: 100px; object-fit: contain;">
         </div>
 
-
-        <h1 style="text-transform: uppercase;">ALPHAMEGA STORE - UNIFORMES PROFISSIONAIS</h1>
+        <h1 style="text-transform: uppercase;">
+            ALPHAMEGA STORE - UNIFORMES PROFISSIONAIS
+        </h1>
 
         <table>
             <thead>
                 <tr>
-                    <th colspan="2" class="section-title">Dados da Empresa</th>
+                    <th colspan="2" class="section-title">
+                        Dados da Empresa
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -155,55 +165,87 @@
 
         <div class="spacer"></div>
 
+        @php
+        $quantidadeTotalItens = $orcamento->detalhesOrcamento->sum(function ($detalhe) {
+        return (int) ($detalhe->det_quantidade ?? 0);
+        });
+        @endphp
+
         <table>
             <thead>
                 <tr>
-                    <th colspan="2" class="section-title">Dados do Cliente</th>
-                    <th colspan="2" class="section-title">Dados do Orçamento</th>
+                    <th colspan="2" class="section-title">
+                        Dados do Cliente
+                    </th>
+
+                    <th colspan="2" class="section-title">
+                        Dados do Orçamento
+                    </th>
                 </tr>
             </thead>
+
             <tbody>
+
                 <tr>
                     <td><strong>Nome:</strong></td>
                     <td>{{ $clienteOrcamento->clie_orc_nome }}</td>
+
                     <td><strong>Data de Início:</strong></td>
                     <td>{{ $orcamento->orc_data_inicio->format('d/m/Y') }}</td>
                 </tr>
+
                 <tr>
                     <td><strong>Contato:</strong></td>
-                    <td>{{ $clienteOrcamento->clie_orc_telefone ?? $clienteOrcamento->clie_orc_celular }} |
+                    <td>
+                        {{ $clienteOrcamento->clie_orc_telefone ?? $clienteOrcamento->clie_orc_celular }}
+                        |
                         {{ $clienteOrcamento->clie_orc_email }}
                     </td>
+
                     <td><strong>Validade da Proposta:</strong></td>
                     <td>{{ $orcamento->orc_data_fim->format('d/m/Y') }}</td>
                 </tr>
+
                 @if ($clienteOrcamento->clie_orc_tipo_doc == 'CPF')
-                    <tr>
-                        <td><strong>CPF:</strong></td>
-                        <td>{{ $clienteOrcamento->clie_orc_cpf }}</td>
-                        <td><strong>Qtd. Itens:</strong></td>
-                        <td>{{ $orcamento->detalhesOrcamento->count() }}</td>
-                    </tr>
+
+                <tr>
+                    <td><strong>CPF:</strong></td>
+                    <td>{{ $clienteOrcamento->clie_orc_cpf }}</td>
+
+                    <td><strong>Qtd. Itens:</strong></td>
+                    <td>{{ $quantidadeTotalItens }}</td>
+                </tr>
+
                 @elseif ($clienteOrcamento->clie_orc_tipo_doc == 'CNPJ')
-                    <tr>
-                        <td><strong>CNPJ:</strong></td>
-                        <td>{{ $clienteOrcamento->clie_orc_cnpj }}</td>
-                        <td><strong>Qtd. Itens:</strong></td>
-                        <td>{{ $orcamento->detalhesOrcamento->count() }}</td>
-                    </tr>
+
+                <tr>
+                    <td><strong>CNPJ:</strong></td>
+                    <td>{{ $clienteOrcamento->clie_orc_cnpj }}</td>
+
+                    <td><strong>Qtd. Itens:</strong></td>
+                    <td>{{ $quantidadeTotalItens }}</td>
+                </tr>
+
                 @endif
+
                 <tr>
                     <td><strong>Endereço:</strong></td>
-                    <td colspan="3">{{ $clienteOrcamento->clie_orc_logradouro }},
+
+                    <td colspan="3">
+                        {{ $clienteOrcamento->clie_orc_logradouro }},
                         {{ $clienteOrcamento->clie_orc_bairro }} -
-                        {{ $clienteOrcamento->clie_orc_cidade }}/{{ $clienteOrcamento->clie_orc_uf }}, CEP
-                        {{ $clienteOrcamento->clie_orc_cep }}
+                        {{ $clienteOrcamento->clie_orc_cidade }}/{{ $clienteOrcamento->clie_orc_uf }},
+                        CEP {{ $clienteOrcamento->clie_orc_cep }}
                     </td>
                 </tr>
+
             </tbody>
         </table>
-
         <div class="spacer"></div>
+
+        @php
+        $totalBrutoCalculado = 0;
+        @endphp
 
         <table>
             <thead>
@@ -215,44 +257,154 @@
                     <th>Subtotal</th>
                 </tr>
             </thead>
+
             <tbody>
-                @php $totalGeral = 0; @endphp
                 @foreach ($orcamento->detalhesOrcamento as $detalhe)
-                    @php
-                        $subtotalDetalhe = $detalhe->det_quantidade * $detalhe->det_valor_unit;
-                        $customizacoesTexto = '';
-                        foreach ($detalhe->customizacoes as $customizacao) {
-                            $subtotalDetalhe += $customizacao->cust_valor;
-                            $customizacoesTexto .= "Tipo: {$customizacao->cust_tipo} | Valor: R$ " . number_format($customizacao->cust_valor, 2, ',', '.') . "<br>";
-                        }
-                        $totalGeral += $subtotalDetalhe;
-                    @endphp
-                    <tr>
-                        <td>{{ $detalhe->det_cod }} - {{ $detalhe->det_categoria }} - {{ $detalhe->det_modelo }} -
-                            {{ $detalhe->det_cor }} - {{ $detalhe->det_tamanho }} - {{ $detalhe->det_genero }} -
-                            {{ $detalhe->det_caract }}
-                        </td>
-                        <td class="align-right">{{ $detalhe->det_quantidade }}</td>
-                        <td class="align-right">R$ {{ number_format($detalhe->det_valor_unit, 2, ',', '.') }}</td>
-                        <td>{!! $customizacoesTexto !!}</td>
-                        <td class="align-right">R$ {{ number_format($subtotalDetalhe, 2, ',', '.') }}</td>
-                    </tr>
+                @php
+                $quantidade = (int) ($detalhe->det_quantidade ?? 0);
+                $valorUnitario = (float) ($detalhe->det_valor_unit ?? 0);
+                $totalProduto = $quantidade * $valorUnitario;
+
+                $totalCustomizacoesDetalhe = 0;
+                $customizacoesTexto = '';
+
+                foreach ($detalhe->customizacoes as $customizacao) {
+                $valorCustomizacao = (float) ($customizacao->cust_valor ?? 0);
+                $totalCustomizacao = $quantidade * $valorCustomizacao;
+
+                $totalCustomizacoesDetalhe += $totalCustomizacao;
+
+                $customizacoesTexto .=
+                '<div class="customizacao">' .
+                    '<strong>Tipo:</strong> ' . e($customizacao->cust_tipo) .
+                    '<br>' .
+                    '<strong>Local:</strong> ' . e($customizacao->cust_local) .
+                    '<br>' .
+                    '<strong>Posição:</strong> ' . e($customizacao->cust_posicao) .
+                    '<br>' .
+                    '<strong>Valor unitário:</strong> R$ ' .
+                    number_format($valorCustomizacao, 2, ',', '.') .
+                    '<br>' .
+                    '<strong>' . $quantidade . ' produto(s):</strong> R$ ' .
+                    number_format($totalCustomizacao, 2, ',', '.') .
+                    '</div><br>';
+                }
+
+                $subtotalDetalhe = $totalProduto + $totalCustomizacoesDetalhe;
+                $totalBrutoCalculado += $subtotalDetalhe;
+                @endphp
+
+                <tr>
+                    <td>
+                        {{ $detalhe->det_cod }} -
+                        {{ $detalhe->det_categoria }} -
+                        {{ $detalhe->det_modelo }} -
+                        {{ $detalhe->det_cor }} -
+                        {{ $detalhe->det_tamanho }} -
+                        {{ $detalhe->det_genero }} -
+                        {{ $detalhe->det_caract }}
+                    </td>
+
+                    <td class="align-right">
+                        {{ $quantidade }}
+                    </td>
+
+                    <td class="align-right">
+                        R$ {{ number_format($valorUnitario, 2, ',', '.') }}
+                    </td>
+
+                    <td>
+                        {!! $customizacoesTexto ?: 'Nenhuma' !!}
+                    </td>
+
+                    <td class="align-right subtotal-detalhe">
+                        R$ {{ number_format($subtotalDetalhe, 2, ',', '.') }}
+                    </td>
+                </tr>
                 @endforeach
             </tbody>
+
+            @php
+            $valorDescontoCalculado = 0;
+
+            if ($orcamento->orc_desconto_tipo === 'percentual') {
+            $valorDescontoCalculado =
+            $totalBrutoCalculado *
+            ((float) ($orcamento->orc_desconto_valor ?? 0) / 100);
+            } elseif ($orcamento->orc_desconto_tipo === 'valor') {
+            $valorDescontoCalculado = (float) ($orcamento->orc_desconto_valor ?? 0);
+            }
+
+            $valorDescontoCalculado = min(
+            $valorDescontoCalculado,
+            $totalBrutoCalculado
+            );
+
+            $totalComDescontoCalculado =
+            $totalBrutoCalculado - $valorDescontoCalculado;
+            @endphp
+
             <tfoot>
                 <tr class="total-row">
-                    <td colspan="5" class="total">Total Geral: R$ {{ number_format($totalGeral, 2, ',', '.')}}</td>
-                    
+                    <td colspan="5" style="text-align: right; padding-right: 12px;">
+                        Subtotal:
+                        R$ {{ number_format($totalBrutoCalculado, 2, ',', '.') }}
+                    </td>
+                </tr>
+
+                @if ($valorDescontoCalculado > 0)
+                <tr class="total-row">
+                    <td colspan="5" style="text-align: right; padding-right: 12px; color: #c0392b;">
+                        Desconto
+
+                        @if ($orcamento->orc_desconto_tipo === 'percentual')
+                        (
+                        {{ rtrim(
+                                    rtrim(
+                                        number_format(
+                                            $orcamento->orc_desconto_valor,
+                                            2,
+                                            ',',
+                                            '.'
+                                        ),
+                                        '0'
+                                    ),
+                                    ','
+                                ) }}%)
+                        @endif
+
+                        :
+                        - R$ {{ number_format($valorDescontoCalculado, 2, ',', '.') }}
+                    </td>
+                </tr>
+                @endif
+
+                <tr class="total-row">
+                    <td colspan="5" class="total">
+                        Total Geral:
+                        R$ {{ number_format($totalComDescontoCalculado, 2, ',', '.') }}
+                    </td>
                 </tr>
             </tfoot>
         </table>
 
         <div class="anotacao">
-            <p><strong>Anotação Geral:</strong> {{ $orcamento->orc_anotacao_geral }}</p>
-            <p><strong>Anotação Específica:</strong> {{ $orcamento->orc_anotacao_espec }}</p>
+            @if ($orcamento->orc_anotacao_geral)
+            <p>
+                <strong>Anotação Geral:</strong>
+                {{ $orcamento->orc_anotacao_geral }}
+            </p>
+            @endif
+
+            @if ($orcamento->orc_anotacao_espec)
+            <p>
+                <strong>Anotação Específica:</strong>
+                {{ $orcamento->orc_anotacao_espec }}
+            </p>
+            @endif
         </div>
 
     </div>
 </body>
-                        
+
 </html>

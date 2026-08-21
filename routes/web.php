@@ -30,7 +30,9 @@ use App\Http\Controllers\LogStatusController;
 use App\Http\Controllers\StatusMercadoriaController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\NotaFiscalController;
-
+use App\Http\Controllers\OrcamentoFracionadoController;
+use App\Http\Controllers\DetalhesOrcamentoFracionadoController;
+use App\Http\Controllers\CustomizacaoFracionadaController;
 
 // ROTAS PÚBLICAS
 Route::get('/', function () {
@@ -117,6 +119,8 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     Route::resource('orcamento', OrcamentoController::class);
 
+    Route::post('/orcamento/{id}/desconto', [OrcamentoController::class, 'aplicarDesconto'])
+        ->name('orcamento.desconto');
     Route::get('/orcamento/gerar/{id}', [OrcamentoController::class, 'gerarOrcamento'])
         ->name('gerar_orcamento');
     Route::get('/orcamento/pdf/{id}', [OrcamentoController::class, 'gerarOrcamentoPDF'])
@@ -124,15 +128,35 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::get('/orcamento/preview/{id}', [OrcamentoController::class, 'previewOrcamento'])
         ->name('orcamento_preview');
 
-    Route::get(
-        '/detalhes_orcamento/create/{orcamento_id?}',
-        [DetalhesOrcamentoController::class, 'create']
-    )->name('detalhes_orcamento.create');
 
+    // ORÇAMENTO FRACIONADO
+
+    Route::get('/orcamento-fracionado/{id}/create', [OrcamentoFracionadoController::class, 'create'])->name('orcamento.fracionado.create');
+    Route::post('/orcamento/{orcamento}/fracionado', [OrcamentoFracionadoController::class, 'store'])->name('orcamento.fracionado.store');
+    Route::get('/orcamento-fracionado/visualizar/{id}', [OrcamentoFracionadoController::class, 'visualizar'])->name('orcamento.fracionado.visualizar');
+    Route::delete('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'destroy'])->name('orcamento.fracionado.destroy');
+    Route::get('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'index'])->name('orcamento.fracionado.index');
+
+
+    // DETALHES DO ORÇAMENTO FRACIONADO
+
+    Route::get('/detalhes-orcamento-fracionado/{id}/create', [DetalhesOrcamentoFracionadoController::class, 'create'])->name('detalhes_orcamento_fracionado.create');
+    Route::get('/detalhes-orcamento-fracionado/{id}/show', [DetalhesOrcamentoFracionadoController::class, 'show'])->name('detalhes_orcamento_fracionado.show');
+    Route::post('/detalhes-orcamento-fracionado/{id}', [DetalhesOrcamentoFracionadoController::class, 'store'])->name('detalhes_orcamento_fracionado.store');
+    Route::delete('/detalhes-orcamento-fracionado/{id}', [DetalhesOrcamentoFracionadoController::class, 'destroy'])->name('detalhes_orcamento_fracionado.destroy');
+    Route::get('/detalhes-orcamento-fracionado/{id}', [DetalhesOrcamentoFracionadoController::class, 'index'])->name('detalhes_orcamento_fracionado.index');
+
+
+    // CUSTOMIZAÇÕES DO ORÇAMENTO FRACIONADO
+    Route::get('/customizacao-fracionada', [CustomizacaoFracionadaController::class, 'index'])->name('customizacao_fracionado.index');
+    Route::post('/customizacao-fracionada', [CustomizacaoFracionadaController::class, 'store'])->name('customizacao_fracionado.store');
+    Route::get('/customizacao-fracionada/{customizacaoFracionada}', [CustomizacaoFracionadaController::class, 'show'])->name('customizacao_fracionado.show');
+
+
+    Route::get('/detalhes_orcamento/create/{orcamento_id?}', [DetalhesOrcamentoController::class, 'create'])->name('detalhes_orcamento.create');
     Route::resource('detalhes_orcamento', DetalhesOrcamentoController::class);
 
     // PRODUTOS
-
     Route::get('/produtos/{id}/details', [ProdutoController::class, 'getProdutoDetails'])
         ->name('produto.details');
 
