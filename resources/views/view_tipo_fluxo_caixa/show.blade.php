@@ -4,7 +4,7 @@
 <div class="container mx-auto px-4 py-8">
 
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Detalhes do Tipo de Fluxo de Caixa</h1>
+        <h1 class="text-3xl font-bold text-gray-800">Detalhes do Tipo de Fluxo de Caixa / Nota Fiscal</h1>
 
         <div class="flex space-x-3">
             <a href="{{ route('tipo_fluxo_caixa.edit', $tipoFluxo->id_tipo_fluxo) }}"

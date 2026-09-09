@@ -26,56 +26,63 @@
         </div>
     </div>
 
-    {{-- INFORMAÇÕES DO ORÇAMENTO --}}
-    @if(isset($orcamento))
+    @if(isset($orcamentoFracionado))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+
         <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Orçamento
+            Informações do Orçamento Fracionado
         </h2>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
 
             <div>
                 <div class="grid grid-cols-3 gap-4">
+
                     <div>
                         <p class="text-gray-600">ID</p>
                         <p class="font-semibold">
-                            {{ $orcamento->id_orcamento }}
+                            {{ $orcamentoFracionado->id_orcamento_fracionado }}
                         </p>
                     </div>
-
 
                     <div>
                         <p class="text-gray-600">Cód. Fábrica</p>
                         <p class="font-semibold">
-                            {{ $orcamento->orc_cod_fabrica ?: 'N/D' }}
+                            {{ $orcamentoFracionado->orc_cod_fabrica ?: 'N/D' }}
                         </p>
                     </div>
+
                     <div>
                         <p class="text-gray-600">Cód. Interno</p>
                         <p class="font-semibold">
-                            {{ $orcamento->orc_cod_interno ?: 'N/D' }}
+                            {{ $orcamentoFracionado->orc_cod_interno ?: 'N/D' }}
                         </p>
                     </div>
+
                 </div>
             </div>
+
             <div>
                 <p class="text-gray-600">Cliente</p>
                 <p class="font-semibold text-gray-900">
-                    {{ $orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
+                    {{ $orcamentoFracionado->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
                 </p>
             </div>
+
             <div>
                 <p class="text-gray-600">Fração</p>
                 <p class="font-semibold text-gray-900">
                     #{{ $orcamentoFracionado->orc_fracao }}
                 </p>
             </div>
+
             <div>
                 <p class="text-gray-600">Status</p>
                 <p class="font-semibold text-gray-900">
                     {{ ucfirst($orcamentoFracionado->orc_status) }}
                 </p>
             </div>
+
         </div>
     </div>
     @endif

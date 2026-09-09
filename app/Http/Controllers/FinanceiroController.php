@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ContaBancaria;
 use App\Models\Financeiro;
 use App\Models\Orcamento;
+use App\Models\FormaPagamento;
 use App\Models\StatusMercadoria;
 use App\Models\LogStatus;
 use App\Models\Movimentacao;
@@ -17,11 +18,6 @@ use Illuminate\Support\Facades\DB;
 
 class FinanceiroController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\View\View
-     */
     public function index()
     {
         $financeiro = Financeiro::with(['logs.status'])->get();
@@ -30,7 +26,7 @@ class FinanceiroController extends Controller
             $fin->temStatusPendente = $fin->logs->contains('log_situacao', 0);
         }
         $contas = ContaBancaria::all();
-       
+
         $tipos = TipoFluxoCaixa::all();
         $movimentacoes = Movimentacao::all();
 
@@ -42,13 +38,6 @@ class FinanceiroController extends Controller
     }
 
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     *
-     * @return \Illuminate\View\View
-     */
     public function create(Request $request)
     {
         $orcamentoToCopy = null;
@@ -59,16 +48,94 @@ class FinanceiroController extends Controller
         return view('view_financeiro.create', compact('orcamentoToCopy'));
     }
 
+    private function validarFracionamento(Orcamento $orcamento): ?string
+    {
+        // Se não existem fracionados, não há nada para validar
+        if ($orcamento->fracionados->isEmpty()) {
+            return null;
+        }
+
+        // Valor original do orçamento
+        $valorOriginal = (float) $orcamento->total_com_desconto;
+
+        // Soma dos valores dos fracionados
+        $valorFracionado = $orcamento->fracionados->sum(function ($fracionado) {
+            return (float) $fracionado->total_com_desconto;
+        });
+
+        $diferenca = $valorOriginal - $valorFracionado;
+
+        // Aceita somente diferença inferior a 1 centavo
+        if (abs($diferenca) < 0.01) {
+            return null;
+        }
+
+        if ($diferenca > 0) {
+            return 'Não é possível prosseguir com o status. '
+                . 'Ainda falta R$ '
+                . number_format(abs($diferenca), 2, ',', '.')
+                . ' para que o total dos orçamentos fracionados '
+                . 'corresponda ao valor original do orçamento.';
+        }
+
+        return 'Não é possível prosseguir com o status. '
+            . 'Os orçamentos fracionados ultrapassaram o valor original '
+            . 'em R$ '
+            . number_format(abs($diferenca), 2, ',', '.')
+            . '.';
+    }
+
     public function prosseguir(Request $request, string $id)
     {
-        $financeiro = Financeiro::findOrFail($id);
+        $financeiro = Financeiro::with('orcamento.fracionados')
+            ->findOrFail($id);
 
-        // Buscar todos os logs daquele orçamento
-        $logs = LogStatus::where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
+        $orcamento = $financeiro->orcamento;
+
+        if ($orcamento) {
+
+            $erroFracionamento = $this->validarFracionamento($orcamento);
+
+            if ($erroFracionamento) {
+                return back()->with('error', $erroFracionamento);
+            }
+        }
+
+        $formas = FormaPagamento::where(
+            'financeiro_id_fin',
+            $financeiro->id_fin
+        )->get();
+
+        $valorTotal = (float) $financeiro->fin_valor_total;
+
+        $valorEntrada = $formas
+            ->where('forma_prazo', 'Entrada')
+            ->sum('forma_valor');
+
+        $valorNegociado = $formas
+            ->where('forma_prazo', '!=', 'Entrada')
+            ->sum('forma_valor');
+
+        $valorCompletado = $valorEntrada + $valorNegociado;
+
+        $pagamentoCompleto = abs(
+            $valorCompletado - $valorTotal
+        ) < 0.01;
+
+        if (!$pagamentoCompleto) {
+            return back()->with(
+                'error',
+                'Não é possível prosseguir. O Valor Entrada + Valor Negociado deve ser igual ao Valor Total.'
+            );
+        }
+
+        $logs = LogStatus::where(
+            'log_id_orcamento',
+            $financeiro->orcamento_id_orcamento
+        )
             ->orderBy('status_mercadoria_id_status', 'asc')
             ->get();
 
-        // Encontrar o primeiro log com log_situacao = 0
         $proximoLog = $logs->firstWhere('log_situacao', 0);
 
         if (!$proximoLog) {
@@ -77,16 +144,15 @@ class FinanceiroController extends Controller
                 ->with('error', 'Todos os status já estão concluídos.');
         }
 
-        // Ativar o próximo status
         $proximoLog->update([
             'log_situacao' => 1
         ]);
 
-        // Buscar o nome do status correspondente
-        $statusNome = StatusMercadoria::where('id_status_merc', $proximoLog->status_mercadoria_id_status)
-            ->value('status_merc_nome');
+        $statusNome = StatusMercadoria::where(
+            'id_status_merc',
+            $proximoLog->status_mercadoria_id_status
+        )->value('status_merc_nome');
 
-        // Atualizar o campo fin_status no financeiro
         $financeiro->update([
             'fin_status' => $statusNome
         ]);
@@ -96,13 +162,6 @@ class FinanceiroController extends Controller
             ->with('success', 'Status atualizado com sucesso!');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function store(Request $request)
     {
         try {
@@ -125,26 +184,14 @@ class FinanceiroController extends Controller
         }
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     *
-     * @return \Illuminate\View\View
-     */
+
     public function show($id)
     {
         $financeiro = Financeiro::findOrFail($id);
         return view('view_financeiro.show', compact('financeiro'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     *
-     * @return \Illuminate\View\View
-     */
+
     public function edit($id)
     {
         $financeiro = Financeiro::findOrFail($id);
@@ -152,14 +199,7 @@ class FinanceiroController extends Controller
         return view('view_financeiro.edit', compact('financeiro'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function update(Request $request, $id)
     {
         try {
@@ -184,13 +224,7 @@ class FinanceiroController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
+
     public function destroy($id)
     {
         // Buscar financeiro

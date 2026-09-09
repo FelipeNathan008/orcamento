@@ -53,18 +53,13 @@ class DetalhesCobrancaController extends Controller
         }
     }
 
-    /**
-     * Exibir registro específico
-     */
     public function show($id)
     {
         $detalhe = DetalhesCobranca::findOrFail($id);
         return view('view_detalhes_cobranca.show', compact('detalhe'));
     }
 
-    /**
-     * Form de edição
-     */
+
     public function edit($id)
     {
         $detalhe = DetalhesCobranca::findOrFail($id);
@@ -72,38 +67,48 @@ class DetalhesCobrancaController extends Controller
         return view('view_detalhes_cobranca.edit', compact('detalhe', 'jurosMulta'));
     }
 
+
     public function update(Request $request, $id)
     {
-        // Busca o detalhe da cobrança
         $detalhe = DetalhesCobranca::findOrFail($id);
+        $valorOriginal = (float) $detalhe->det_cobr_valor_parcela;
+        $dataOriginal = \Carbon\Carbon::parse($detalhe->det_cobr_data_venc);
+        $novaData = \Carbon\Carbon::parse($request->det_cobr_data_venc);
+        $diasAtraso = max(0, $dataOriginal->diffInDays($novaData, false));
 
-        // Atualiza DETALHES_COBRANCA
+        $jurosMulta = JurosMulta::first();
+        $indiceMulta = (float) ($jurosMulta->indice_multa ?? 2);
+        $indiceJuros = (float) ($jurosMulta->indice_juros ?? 1);
+
+        $multaCalculada = $valorOriginal * ($indiceMulta / 100);
+        $jurosCalculado = $valorOriginal * ($indiceJuros / 100 / 30) * $diasAtraso;
+
+        $descontoMulta = min($multaCalculada, max(0, (float) ($request->desconto_multa ?? 0)));
+        $descontoJuros = min($jurosCalculado, max(0, (float) ($request->desconto_juros ?? 0)));
+
+        $multaFinal = max(0, $multaCalculada - $descontoMulta);
+        $jurosFinal = max(0, $jurosCalculado - $descontoJuros);
+        $valorFinal = $valorOriginal + $multaFinal + $jurosFinal;
+
         $detalhe->update([
-            'det_cobr_valor_parcela' => $request->det_cobr_valor_parcela,
-            'det_cobr_data_venc'     => $request->det_cobr_data_venc,
-            'det_cobr_status'        => 'Acordo',
+            'det_cobr_valor_parcela' => $valorFinal,
+            'det_cobr_data_venc' => $request->det_cobr_data_venc,
+            'det_cobr_status' => 'Acordo',
         ]);
 
-        // Atualiza DETALHES_FORMA_PAG
         if ($detalhe->id_det_forma) {
-            DetalhesFormaPag::where('id_det_forma', $detalhe->id_det_forma)
-                ->update([
-                    'det_forma_valor_parcela' => $request->det_cobr_valor_parcela,
-                    'det_forma_data_venc'     => $request->det_cobr_data_venc,
-                    'det_situacao'            => 'Acordo',
-                ]);
+            DetalhesFormaPag::where('id_det_forma', $detalhe->id_det_forma)->update([
+                'det_forma_valor_parcela' => $valorFinal,
+                'det_forma_data_venc' => $request->det_cobr_data_venc,
+                'det_situacao' => 'Acordo',
+            ]);
         }
 
-        return redirect()
-            ->route('cobranca.index')
-            ->with('success', 'Acordo realizado com sucesso!');
+        return redirect()->route('cobranca.index')->with('success', 'Acordo realizado com sucesso!');
     }
 
 
 
-    /**
-     * Deletar registro
-     */
     public function destroy($id)
     {
         $detalhe = DetalhesCobranca::findOrFail($id);

@@ -184,10 +184,19 @@ class FormaPagamentoController extends Controller
 
         $valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
 
-        // Soma de TODAS as formas com prazo = Entrada (independente da qtd de parcelas)
         $entrada = $formasPagamento
             ->where('forma_prazo', 'Entrada')
             ->sum('forma_valor');
+
+        $valorNegociado = $formasPagamento
+            ->where('forma_prazo', '!=', 'Entrada')
+            ->sum('forma_valor');
+
+        $valorCompletado = $entrada + $valorNegociado;
+
+        $pagamentoCompleto = abs(
+            (float) $valorCompletado - (float) $valorTotal
+        ) < 0.01;
 
         // Valor pago:
         // 1) Entrada com qtd_parcela = 1 -> conta o forma_valor inteiro (pagamento único)
@@ -216,10 +225,6 @@ class FormaPagamentoController extends Controller
 
         $valorPago = $pagoEntradaUnica + $pagoParcelado + $pagoAVista;
 
-        // Valor negociado: soma de tudo que NÃO é Entrada (ou seja, total de formas - entrada)
-        $valorFormas = $formasPagamento->sum('forma_valor');
-        $valorNegociado = max($valorFormas - $entrada, 0);
-
         // Saldo devedor
         $valorFaltante = max($valorTotal - $valorPago, 0);
 
@@ -235,7 +240,9 @@ class FormaPagamentoController extends Controller
                 'valorTotal',
                 'valorFaltante',
                 'entrada',
-                'valorNegociado'
+                'valorNegociado',
+                'valorCompletado',
+                'pagamentoCompleto'
             )
         );
     }
@@ -450,28 +457,51 @@ class FormaPagamentoController extends Controller
 
                 $financeiro = Financeiro::findOrFail($validatedData['financeiro_id_fin']);
 
-                // Mudanças de status
-                $valorTotal = $financeiro->fin_valor_total;
-                $valorPagoTotal = FormaPagamento::where('financeiro_id_fin', $validatedData['financeiro_id_fin'])
+                // Mudança de Status
+
+                $valorTotal = (float) $financeiro->fin_valor_total;
+
+                $formas = FormaPagamento::where(
+                    'financeiro_id_fin',
+                    $validatedData['financeiro_id_fin']
+                )->get();
+
+                // Valor Entrada
+                $valorEntrada = $formas
+                    ->where('forma_prazo', 'Entrada')
+                    ->sum('forma_valor');
+                // Valor Negociado
+                $valorNegociado = $formas
+                    ->where('forma_prazo', '!=', 'Entrada')
                     ->sum('forma_valor');
 
-                $aguardando = DB::table('status_mercadoria')->where('id_status_merc', 1)->value('status_merc_nome');
-                $realizado  = DB::table('status_mercadoria')->where('id_status_merc', 2)->value('status_merc_nome');
+                $valorCompletado = $valorEntrada + $valorNegociado;
 
-                $financeiro->fin_status = ($valorPagoTotal >= $valorTotal) ? $realizado : $aguardando;
+                $pagamentoCompleto = abs($valorCompletado - $valorTotal) < 0.01;
+
+                $aguardando = DB::table('status_mercadoria')
+                    ->where('id_status_merc', 1)
+                    ->value('status_merc_nome');
+
+                $realizado = DB::table('status_mercadoria')
+                    ->where('id_status_merc', 2)
+                    ->value('status_merc_nome');
+
+                if ($pagamentoCompleto) {
+                    $financeiro->fin_status = $realizado;
+                } else {
+                    $financeiro->fin_status = $aguardando;
+                }
+
                 $financeiro->save();
 
-                if ($valorPagoTotal >= $valorTotal) {
-                    DB::table('log_status')
-                        ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
-                        ->where('status_mercadoria_id_status', 2)
-                        ->update(['log_situacao' => 1]);
-                } else {
-                    DB::table('log_status')
-                        ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
-                        ->where('status_mercadoria_id_status', 2)
-                        ->update(['log_situacao' => 0]);
-                }
+                // Atualiza o log do status "Pagamento realizado"
+                DB::table('log_status')
+                    ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
+                    ->where('status_mercadoria_id_status', 2)
+                    ->update([
+                        'log_situacao' => $pagamentoCompleto ? 1 : 0
+                    ]);
 
                 // Pagamento único (À vista OU Entrada com 1 parcela)
                 if ($usaDataUnica) {
@@ -582,19 +612,43 @@ class FormaPagamentoController extends Controller
 
         $financeiro = Financeiro::findOrFail($financeiroId);
 
-        $valorTotal = $financeiro->fin_valor_total;
-        $valorPagoTotal = FormaPagamento::where('financeiro_id_fin', $financeiroId)->sum('forma_valor');
+        $valorTotal = (float) $financeiro->fin_valor_total;
+        $formas = FormaPagamento::where(
+            'financeiro_id_fin',
+            $financeiroId
+        )->get();
 
-        $aguardando = DB::table('status_mercadoria')->where('id_status_merc', 1)->value('status_merc_nome');
-        $realizado  = DB::table('status_mercadoria')->where('id_status_merc', 2)->value('status_merc_nome');
+        $valorEntrada = $formas
+            ->where('forma_prazo', 'Entrada')
+            ->sum('forma_valor');
+        $valorNegociado = $formas
+            ->where('forma_prazo', '!=', 'Entrada')
+            ->sum('forma_valor');
 
-        $financeiro->fin_status = ($valorPagoTotal >= $valorTotal) ? $realizado : $aguardando;
+        $valorCompletado = $valorEntrada + $valorNegociado;
+
+        $pagamentoCompleto = abs($valorCompletado - $valorTotal) < 0.01;
+
+        $aguardando = DB::table('status_mercadoria')
+            ->where('id_status_merc', 1)
+            ->value('status_merc_nome');
+
+        $realizado = DB::table('status_mercadoria')
+            ->where('id_status_merc', 2)
+            ->value('status_merc_nome');
+
+        $financeiro->fin_status = $pagamentoCompleto
+            ? $realizado
+            : $aguardando;
+
         $financeiro->save();
 
         DB::table('log_status')
             ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
             ->where('status_mercadoria_id_status', 2)
-            ->update(['log_situacao' => ($valorPagoTotal >= $valorTotal) ? 1 : 0]);
+            ->update([
+                'log_situacao' => $pagamentoCompleto ? 1 : 0
+            ]);
 
         return redirect('/forma_pagamento?' . $financeiroId)
             ->with('success', 'Forma de Pagamento removida com sucesso!');

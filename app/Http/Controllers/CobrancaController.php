@@ -8,9 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 class CobrancaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         $cobrancas = Cobranca::with([
@@ -34,17 +32,12 @@ class CobrancaController extends Controller
         return view('view_cobranca.index', compact('cobrancas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('view_cobranca.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
     public function store(Request $request)
     {
         try {

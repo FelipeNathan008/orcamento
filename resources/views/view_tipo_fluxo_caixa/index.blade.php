@@ -10,7 +10,7 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
 
         <h1 class="text-3xl sm:text-[32px] font-bold text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
-            Tipos de Fluxo de Caixa
+            Tipos de Fluxo de Caixa / Nota Fiscal
         </h1>
 
         <div class="flex items-center gap-3">

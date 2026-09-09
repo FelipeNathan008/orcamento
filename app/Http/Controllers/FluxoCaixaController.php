@@ -335,7 +335,7 @@ class FluxoCaixaController extends Controller
                 }
             }
 
-            if (str_contains($nomeMov, 'e   ntrada')) {
+            if (str_contains($nomeMov, 'entrada')) {
 
                 $saldoConta->saldo_conta_valor += $validatedData['flu_valor'];
             } elseif (

@@ -29,9 +29,9 @@
 
         <a href="{{ route('tipo_fluxo_caixa.index') }}"
             class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition border border-gray-200">
-            <h2 class="text-xl font-bold text-orange-600">Tipo Fluxo Caixa</h2>
+            <h2 class="text-xl font-bold text-orange-600">Tipo Fluxo Caixa / Nota Fiscal</h2>
             <p class="text-gray-600 mt-2">
-                Gerenciar os tipos de fluxo de caixa.
+                Gerenciar os tipos de fluxo de caixa / nota fiscal.
             </p>
         </a>
 

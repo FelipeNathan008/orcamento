@@ -19,7 +19,6 @@ class OrcamentoFracionado extends Model
 
     protected $keyType = 'integer';
 
-
     protected $fillable = [
         'orcamento_id_orcamento',
         'orc_fracao',
@@ -37,14 +36,12 @@ class OrcamentoFracionado extends Model
         'orc_desconto_motivo',
     ];
 
-
     protected $casts = [
         'orc_data_inicio' => 'date',
         'orc_data_fim' => 'date',
         'orc_desconto_valor' => 'decimal:2',
         'orc_fracao' => 'integer',
     ];
-
 
     public function orcamento(): BelongsTo
     {
@@ -55,7 +52,6 @@ class OrcamentoFracionado extends Model
         );
     }
 
-
     public function clienteOrcamento(): BelongsTo
     {
         return $this->belongsTo(
@@ -65,17 +61,7 @@ class OrcamentoFracionado extends Model
         );
     }
 
-
     public function detalhesOrcamentoFracionado(): HasMany
-    {
-        return $this->hasMany(
-            DetalhesOrcamentoFracionado::class,
-            'orcamento_fracionado_id',
-            'id_orcamento_fracionado'
-        );
-    }
-
-    public function detalhesOrcamento()
     {
         return $this->hasMany(
             DetalhesOrcamentoFracionado::class,
@@ -90,42 +76,51 @@ class OrcamentoFracionado extends Model
 
         foreach ($this->detalhesOrcamentoFracionado as $detalhe) {
 
-            $subtotal = $detalhe->det_quantidade *
-                $detalhe->det_valor_unit;
+            $quantidade = (int) ($detalhe->det_quantidade ?? 0);
 
+            // Valor dos produtos
+            $total +=
+                $quantidade *
+                (float) ($detalhe->det_valor_unit ?? 0);
+
+            // Valor das customizações
             foreach ($detalhe->customizacoes as $customizacao) {
-                $subtotal += $customizacao->cust_valor;
-            }
 
-            $total += $subtotal;
+                $total +=
+                    $quantidade *
+                    (float) ($customizacao->cust_valor ?? 0);
+            }
         }
 
         return $total;
     }
-
 
     public function getValorDescontoAttribute()
     {
         $totalBruto = $this->total_bruto;
 
         if ($this->orc_desconto_tipo === 'percentual') {
-            return round($totalBruto * ($this->orc_desconto_valor / 100), 2);
-        }
 
+            return round(
+                $totalBruto *
+                ((float) $this->orc_desconto_valor / 100),
+                2
+            );
+        }
 
         if ($this->orc_desconto_tipo === 'valor') {
 
-            return min($this->orc_desconto_valor, $totalBruto);
+            return min(
+                (float) $this->orc_desconto_valor,
+                $totalBruto
+            );
         }
-
 
         return 0;
     }
 
-
     public function getTotalComDescontoAttribute()
     {
-        return $this->total_bruto -
-            $this->valor_desconto;
+        return $this->total_bruto - $this->valor_desconto;
     }
 }

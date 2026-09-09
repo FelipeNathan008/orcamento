@@ -6,7 +6,7 @@
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
 
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">
-        Criar Tipo Fluxo de Caixa
+        Criar Tipo Fluxo de Caixa / Nota Fiscal
     </h1>
 
     {{-- SUCESSO --}}

@@ -38,6 +38,8 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     </div>
     @endif
 
+
+
     <form id="formaPagamentoForm" action="{{ route('forma_pagamento.store') }}" method="POST" class="space-y-6"
         data-valor-faltante="{{ $valorFaltante }}"> @csrf
 
@@ -233,13 +235,29 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             <div id="areaParcelas" class="hidden md:col-span-2 bg-gray-50 border border-gray-200 rounded-lg p-5">
                 <h2 class="text-lg font-bold text-gray-700 mb-4">Parcelas geradas</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label for="data_primeira_parcela" class="block text-sm font-medium text-custom-dark-text mb-1">
-                            Data da 1ª parcela
+                            Data de vencimento da 1ª parcela
                         </label>
                         <input type="date" id="data_primeira_parcela"
                             class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    {{-- NOVO: intervalo entre parcelas --}}
+                    <div>
+                        <label for="intervalo_dias_parcela" class="block text-sm font-medium text-custom-dark-text mb-1">
+                            Intervalo entre parcelas (dias)
+                        </label>
+                        <select id="intervalo_dias_parcela"
+                            class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="5">5 dias</option>
+                            <option value="10">10 dias</option>
+                            <option value="15">15 dias</option>
+                            <option value="20">20 dias</option>
+                            <option value="25">25 dias</option>
+                            <option value="30" selected>30 dias</option>
+                        </select>
                     </div>
 
                     <div>
@@ -277,6 +295,29 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             </div>
         </div>
 
+        <div class="mb-6 bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="w-5 h-5 text-yellow-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.763-1.36 2.723-1.36 3.486 0l5.58 9.968c.75 1.34-.213 2.983-1.743 2.983H4.42c-1.53 0-2.493-1.643-1.743-2.983l5.58-9.968zM10 7a1 1 0 01.993.883L11 8v2a1 1 0 11-2 0V8a1 1 0 011-1zm0 6a1 1 0 100-2 1 1 0 000 2z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-semibold text-yellow-800">
+                        Atenção antes de salvar
+                    </h3>
+
+                    <p class="mt-1 text-sm text-yellow-700">
+                        Após o cadastro, os dados desta forma de pagamento
+                        <strong>não poderão ser editados</strong>.
+                        Confira cuidadosamente os valores, datas, parcelas e demais
+                        informações antes de clicar em <strong>SALVAR</strong>.
+                    </p>
+                </div>
+            </div>
+        </div>
 
         <div class="flex justify-center mt-8">
             <button type="submit" id="btnSalvarForma"
@@ -324,6 +365,8 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     const msgPrazo = document.getElementById('msg_prazo');
     const msgParcelas = document.getElementById('msg_parcelas');
 
+    const inputIntervaloDias = document.getElementById('intervalo_dias_parcela');
+
     // ===== Funções auxiliares =====
     function converterValorBRparaFloat(valor) {
         if (!valor) return 0;
@@ -368,16 +411,27 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
         }
     }
 
-    function calcularValorParcela() {
+    function calcularValoresParcelas() {
         const total = converterValorBRparaFloat(inputValorTotal.value);
         const qtd = parseInt(inputParcelas.value);
-        if (!total || !qtd || qtd <= 0) return 0;
-        return Number((total / qtd).toFixed(2));
+
+        if (!total || !qtd || qtd <= 0) return [];
+
+        const valorBase = Math.floor((total / qtd) * 100) / 100; // arredonda pra baixo, em centavos
+        const valores = new Array(qtd).fill(valorBase);
+
+        const somaBase = valorBase * qtd;
+        const diferenca = Number((total - somaBase).toFixed(2)); // centavos que sobraram
+
+        // joga a diferença (resto dos centavos) na última parcela
+        valores[qtd - 1] = Number((valores[qtd - 1] + diferenca).toFixed(2));
+
+        return valores;
     }
 
-    function add30dias(data) {
+    function adicionarDias(data, dias) {
         const nova = new Date(data);
-        nova.setDate(nova.getDate() + 30);
+        nova.setDate(nova.getDate() + dias);
         return nova;
     }
 
@@ -387,14 +441,16 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 
         const qtd = parseInt(inputParcelas.value);
         const dataInicial = inputDataPrimeiraParcela.value;
-        const valorParcela = calcularValorParcela();
+        const valores = calcularValoresParcelas(); // <-- array de valores, não mais um único número
+        const intervaloDias = parseInt(inputIntervaloDias.value) || 30;
 
-        if (!qtd || !dataInicial || !valorParcela) {
+        if (!qtd || !dataInicial || valores.length === 0) {
             inputValorParcelaPreview.value = '';
             return;
         }
 
-        inputValorParcelaPreview.value = 'R$ ' + formatarBR(valorParcela);
+        // Preview mostra o valor "padrão" (a maioria das parcelas usa esse valor)
+        inputValorParcelaPreview.value = 'R$ ' + formatarBR(valores[0]);
 
         let data = new Date(dataInicial + 'T00:00:00');
 
@@ -402,20 +458,21 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             const dia = String(data.getDate()).padStart(2, '0');
             const mes = String(data.getMonth() + 1).padStart(2, '0');
             const ano = data.getFullYear();
+            const valorParcela = valores[i - 1]; // <-- valor individual dessa parcela
 
             listaParcelas.innerHTML += `
-                <div class="p-3 bg-white rounded border border-gray-300 flex justify-between">
-                    <span>Parcela ${i}</span>
-                    <span><strong>${dia}/${mes}/${ano}</strong> - R$ ${formatarBR(valorParcela)}</span>
-                </div>
-            `;
+            <div class="p-3 bg-white rounded border border-gray-300 flex justify-between">
+                <span>Parcela ${i}</span>
+                <span><strong>${dia}/${mes}/${ano}</strong> - R$ ${formatarBR(valorParcela)}</span>
+            </div>
+        `;
 
             parcelasHidden.innerHTML += `
-                <input type="hidden" name="datas_parcelas[]" value="${ano}-${mes}-${dia}">
-                <input type="hidden" name="valores_parcelas[]" value="${valorParcela}">
-            `;
+            <input type="hidden" name="datas_parcelas[]" value="${ano}-${mes}-${dia}">
+            <input type="hidden" name="valores_parcelas[]" value="${valorParcela}">
+        `;
 
-            data = add30dias(data);
+            data = adicionarDias(data, intervaloDias);
         }
     }
 
@@ -506,21 +563,40 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
         descricao.disabled = usaDataUnica ? !dataPagamento.value : !parcelas.value;
     }
 
-    // ===== Eventos =====
     form.addEventListener('submit', function(e) {
+        // Verifica se o valor não ultrapassa o valor faltante
         if (!validarValorMaximo()) {
             e.preventDefault();
             return false;
         }
+
         if (btnSalvar.disabled) {
             return false;
         }
+
+        // Confirmação antes de salvar
+        const confirmar = confirm(
+            'Atenção!\n\n' +
+            'Após salvar, os dados desta forma de pagamento NÃO poderão ser editados.\n' +
+            'Confira os valores, datas, parcelas e demais informações antes de continuar.\n' +
+            'Deseja realmente salvar esta forma de pagamento?'
+        );
+
+        // Se o usuário cancelar, não envia o formulário
+        if (!confirmar) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Se confirmou, evita duplo clique
         btnSalvar.disabled = true;
         btnSalvar.innerText = 'SALVANDO...';
         btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
+
     });
 
-    tipoPagamento.addEventListener('change', bloquearCampos); // <-- FALTAVA ISSO
+    tipoPagamento.addEventListener('change', bloquearCampos);
+    inputIntervaloDias.addEventListener('change', gerarParcelas);
 
     inputValorTotal.addEventListener('input', function() {
         formatarMoedaBR(this);

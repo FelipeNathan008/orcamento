@@ -243,7 +243,7 @@
                                         <div class="flex justify-center items-center gap-2 flex-wrap">
 
                                             {{-- DAR BAIXA --}}
-                                            @if(in_array($parcela->det_situacao, ['Não pago','Acordo','Inadimplencia']))
+                                            @if(in_array($parcela->det_situacao, ['Não Pago','Acordo','Inadimplencia']))
                                             <form method="POST">
                                                 @csrf
                                                 <button

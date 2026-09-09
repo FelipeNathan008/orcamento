@@ -119,14 +119,10 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     Route::resource('orcamento', OrcamentoController::class);
 
-    Route::post('/orcamento/{id}/desconto', [OrcamentoController::class, 'aplicarDesconto'])
-        ->name('orcamento.desconto');
-    Route::get('/orcamento/gerar/{id}', [OrcamentoController::class, 'gerarOrcamento'])
-        ->name('gerar_orcamento');
-    Route::get('/orcamento/pdf/{id}', [OrcamentoController::class, 'gerarOrcamentoPDF'])
-        ->name('gerar_orcamento_pdf');
-    Route::get('/orcamento/preview/{id}', [OrcamentoController::class, 'previewOrcamento'])
-        ->name('orcamento_preview');
+    Route::post('/orcamento/{id}/desconto', [OrcamentoController::class, 'aplicarDesconto'])->name('orcamento.desconto');
+    Route::get('/orcamento/gerar/{id}', [OrcamentoController::class, 'gerarOrcamento'])->name('gerar_orcamento');
+    Route::get('/orcamento/pdf/{id}', [OrcamentoController::class, 'gerarOrcamentoPDF'])->name('gerar_orcamento_pdf');
+    Route::get('/orcamento/preview/{id}', [OrcamentoController::class, 'previewOrcamento'])->name('orcamento_preview');
 
 
     // ORÇAMENTO FRACIONADO
@@ -136,6 +132,9 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::get('/orcamento-fracionado/visualizar/{id}', [OrcamentoFracionadoController::class, 'visualizar'])->name('orcamento.fracionado.visualizar');
     Route::delete('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'destroy'])->name('orcamento.fracionado.destroy');
     Route::get('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'index'])->name('orcamento.fracionado.index');
+    Route::get('/orcamento-fracionado/{id}/editar', [OrcamentoFracionadoController::class, 'edit'])->name('orcamento.fracionado.edit');
+    Route::put('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'update'])->name('orcamento.fracionado.update');
+    Route::post('/orcamento-fracionado/{id}/desconto', [OrcamentoFracionadoController::class, 'aplicarDesconto'])->name('orcamento.fracionado.desconto');
 
 
     // DETALHES DO ORÇAMENTO FRACIONADO

@@ -138,7 +138,30 @@
             <tbody class="bg-white divide-y divide-gray-200" id="financeiroTableBody">
 
                 @foreach ($financeiro as $fin)
-                <tr class="hover:bg-gray-50 transition duration-150"
+
+                @php
+                $orcamento = $fin->orcamento;
+
+                $fracionadoValido = true;
+                $valorOriginal = 0;
+                $valorFracionado = 0;
+                $diferencaFracionado = 0;
+
+                if ($orcamento && $orcamento->fracionados->isNotEmpty()) {
+
+                $valorOriginal = (float) $orcamento->total_com_desconto;
+
+                $valorFracionado = $orcamento->fracionados->sum(function ($fracionado) {
+                return (float) $fracionado->total_com_desconto;
+                });
+
+                $diferencaFracionado = $valorOriginal - $valorFracionado;
+
+                $fracionadoValido = abs($diferencaFracionado) < 0.01;
+                    }
+                    @endphp
+
+                    <tr class="hover:bg-gray-50 transition duration-150"
                     data-status="{{ strtolower($fin->fin_status) }}">
 
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
@@ -216,18 +239,18 @@
                                 Status
                             </button>
 
+                            @if($fin->fin_status == 'Análise pedido')
+                            <a href="{{ route('orcamento.fracionado.index', $fin->orcamento_id_orcamento) }}"
+                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-budget-bg hover:bg-button-budget-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-budget-bg transition duration-150 ease-in-out">
+                                Fracionar
+                            </a>
+                            @endif
+
                             {{-- Forma Pagamento --}}
                             @if($fin->fin_status !== 'Entregue')
                             <a href="{{ url('/forma_pagamento?' . $fin->id_fin) }}"
                                 class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                 Forma Pagamento
-                            </a>
-                            @endif
-
-                            @if($fin->fin_status == 'Análise pedido')
-                            <a href="{{ route('orcamento.fracionado.index', $fin->orcamento_id_orcamento) }}"
-                                class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                                Fracionar
                             </a>
                             @endif
 
@@ -238,60 +261,100 @@
                             ->exists();
                             @endphp
 
-                            {{-- Prosseguir Status --}}
-                            @if(
-                            $fin->fin_status !== 'Aguardando pagamento' &&
-                            $fin->fin_status !== 'Entregue'
-                            )
-                            <form action="{{ route('financeiro.prosseguir', $fin->id_fin) }}"
-                                method="POST"
-                                class="form-prosseguir"
-                                data-status="{{ $fin->fin_status }}">
-                                @csrf
+                            @php
 
-                                <button type="button"
-                                    class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                                    data-id-fin="{{ $fin->id_fin }}"
-                                    data-valor="{{ $fin->fin_valor_total }}"
-                                    data-orcamento="{{ $fin->orcamento_id_orcamento }}">
-                                    Prosseguir Status
-                                </button>
-                            </form>
+                            $formasDoFinanceiro = \App\Models\FormaPagamento::where('financeiro_id_fin',$fin->id_fin)->get();
+                            $valorEntrada = $formasDoFinanceiro->where('forma_prazo', 'Entrada')->sum('forma_valor');
+
+                            $valorNegociado = $formasDoFinanceiro->where('forma_prazo', '!=', 'Entrada')->sum('forma_valor');
+
+                            $valorCompletado = $valorEntrada + $valorNegociado;
+
+                            $pagamentoCompleto = abs((float) $valorCompletado - (float) $fin->fin_valor_total) < 0.01;
+
+                                @endphp
+
+                                @if(
+                                $fin->fin_status !== 'Aguardando pagamento' &&
+                                $fin->fin_status !== 'Entregue' &&
+                                $pagamentoCompleto
+                                )
+
+                                <form action="{{ route('financeiro.prosseguir', $fin->id_fin) }}"
+                                    method="POST"
+                                    class="form-prosseguir"
+                                    data-status="{{ $fin->fin_status }}"
+                                    data-pagamento-completo="{{ $pagamentoCompleto ? '1' : '0' }}">
+
+                                    @csrf
+
+                                    @if($fin->orcamento->fracionados->isEmpty())
+
+                                    <button type="button"
+                                        class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                        data-id-fin="{{ $fin->id_fin }}"
+                                        data-valor="{{ $fin->fin_valor_total }}"
+                                        data-orcamento="{{ $fin->orcamento_id_orcamento }}">
+                                        Prosseguir Status
+                                    </button>
+
+                                    @elseif($fracionadoValido)
+
+                                    <button type="button"
+                                        class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                        data-id-fin="{{ $fin->id_fin }}"
+                                        data-valor="{{ $fin->fin_valor_total }}"
+                                        data-orcamento="{{ $fin->orcamento_id_orcamento }}">
+                                        Prosseguir Status
+                                    </button>
+
+                                    @else
+
+                                    <button type="button"
+                                        class="btn-prosseguir-bloqueado px-2 py-1 text-xs font-medium rounded-md text-white bg-gray-400 cursor-not-allowed"
+                                        data-diferenca="{{ number_format(abs($diferencaFracionado), 2, ',', '.') }}"
+                                        data-tipo="{{ $diferencaFracionado > 0 ? 'falta' : 'excesso' }}">
+                                        Prosseguir Status
+                                    </button>
+
+                                    @endif
+                                </form>
+
+                                @endif
+
+                        </div>
+                    </td>
+                    </tr>
+
+                    {{-- LINHA OCULTA STATUS --}}
+                    <tr id="status-{{ $fin->id_fin }}" class="hidden">
+                        <td colspan="6" class="px-6 py-4 text-sm text-gray-700">
+
+                            @if($fin->logs->isEmpty())
+                            <p class="text-center text-gray-500">Nenhum status encontrado.</p>
+                            @else
+                            <div class="grid grid-cols-6 gap-4">
+                                @foreach ($fin->logs as $log)
+                                @php
+                                $status = $log->status_mercadoria_id_status;
+                                $situacao = $log->log_situacao;
+                                $img = $status . $situacao . '.png';
+                                @endphp
+
+                                <div class="flex flex-col items-center">
+                                    <img src="/imagens_status/{{ $img }}" class="w-16 h-16 object-contain">
+                                    <p class="text-sm text-gray-700 mt-2">
+                                        {{$log->log_nome_status}}
+                                    </p>
+                                </div>
+                                @endforeach
+                            </div>
                             @endif
 
-                        </div>
-                    </td>
-                </tr>
+                        </td>
+                    </tr>
 
-                {{-- LINHA OCULTA STATUS --}}
-                <tr id="status-{{ $fin->id_fin }}" class="hidden">
-                    <td colspan="6" class="px-6 py-4 text-sm text-gray-700">
-
-                        @if($fin->logs->isEmpty())
-                        <p class="text-center text-gray-500">Nenhum status encontrado.</p>
-                        @else
-                        <div class="grid grid-cols-6 gap-4">
-                            @foreach ($fin->logs as $log)
-                            @php
-                            $status = $log->status_mercadoria_id_status;
-                            $situacao = $log->log_situacao;
-                            $img = $status . $situacao . '.png';
-                            @endphp
-
-                            <div class="flex flex-col items-center">
-                                <img src="/imagens_status/{{ $img }}" class="w-16 h-16 object-contain">
-                                <p class="text-sm text-gray-700 mt-2">
-                                    {{$log->log_nome_status}}
-                                </p>
-                            </div>
-                            @endforeach
-                        </div>
-                        @endif
-
-                    </td>
-                </tr>
-
-                @endforeach
+                    @endforeach
 
             </tbody>
         </table>
@@ -655,7 +718,37 @@
         });
 
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        document.querySelectorAll('.btn-prosseguir-bloqueado').forEach(function(btn) {
+
+            btn.addEventListener('click', function() {
+
+                const diferenca = this.dataset.diferenca;
+                const tipo = this.dataset.tipo;
+
+                if (tipo === 'falta') {
+
+                    alert(
+                        'Não é possível prosseguir com o status.\n\n' +
+                        'Ainda falta R$ ' + diferenca +
+                        ' para que os valores dos orçamentos fracionados ' +
+                        'correspondam ao orçamento original.'
+                    );
+
+                } else {
+
+                    alert(
+                        'Não é possível prosseguir com o status.\n\n' +
+                        'Os orçamentos fracionados ultrapassaram o valor ' +
+                        'original em R$ ' + diferenca + '.'
+                    );
+                }
+            });
+
+        });
+
+    });
 </script>
-
-
 @endsection

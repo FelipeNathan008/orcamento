@@ -59,13 +59,19 @@ class Orcamento extends Model
     public function getTotalBrutoAttribute()
     {
         $total = 0;
+
         foreach ($this->detalhesOrcamento as $detalhe) {
-            $subtotal = $detalhe->det_quantidade * $detalhe->det_valor_unit;
+            $quantidade = (int) ($detalhe->det_quantidade ?? 0);
+
+            $subtotal = $quantidade * (float) ($detalhe->det_valor_unit ?? 0);
+
             foreach ($detalhe->customizacoes as $customizacao) {
-                $subtotal += $customizacao->cust_valor;
+                $subtotal += $quantidade * (float) ($customizacao->cust_valor ?? 0);
             }
+
             $total += $subtotal;
         }
+
         return $total;
     }
 

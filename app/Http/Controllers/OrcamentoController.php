@@ -437,47 +437,22 @@ class OrcamentoController extends Controller
                     ->exists();
 
                 if (!$existeFinanceiro) {
-                    $totalGeral = 0;
-
                     $orcamento->load([
                         'detalhesOrcamento.customizacoes',
                         'clienteOrcamento'
                     ]);
 
-                    foreach ($orcamento->detalhesOrcamento as $detalhe) {
-                        $quantidade = (int) ($detalhe->det_quantidade ?? 0);
-
-                        $totalProduto =
-                            $quantidade *
-                            (float) ($detalhe->det_valor_unit ?? 0);
-
-                        $totalCustomizacoes = 0;
-
-                        foreach ($detalhe->customizacoes as $customizacao) {
-                            $valorCustomizacao =
-                                (float) ($customizacao->cust_valor ?? 0);
-
-                            $totalCustomizacoes +=
-                                $quantidade *
-                                $valorCustomizacao;
-                        }
-
-                        $totalGeral +=
-                            $totalProduto +
-                            $totalCustomizacoes;
-                    }
-
                     $status = \App\Models\StatusMercadoria::find(1);
 
                     DB::table('financeiro')->insert([
                         'orcamento_id_orcamento' => $orcamento->id_orcamento,
-                        'id_orcamento' => $orcamento->id_orcamento,
-                        'id_cliente' => $orcamento->cliente_orcamento_id_co,
-                        'fin_nome_cliente' => $orcamento->clienteOrcamento->clie_orc_nome,
-                        'fin_valor_total' => $orcamento->total_com_desconto,
-                        'fin_status' => $status->status_merc_nome,
-                        'created_at' => now(),
-                        'updated_at' => now(),
+                        'id_orcamento'           => $orcamento->id_orcamento,
+                        'id_cliente'             => $orcamento->cliente_orcamento_id_co,
+                        'fin_nome_cliente'       => $orcamento->clienteOrcamento->clie_orc_nome,
+                        'fin_valor_total'        => $orcamento->total_com_desconto, // agora correto
+                        'fin_status'             => $status->status_merc_nome,
+                        'created_at'             => now(),
+                        'updated_at'             => now(),
                     ]);
 
                     $statusList = DB::table('status_mercadoria')
