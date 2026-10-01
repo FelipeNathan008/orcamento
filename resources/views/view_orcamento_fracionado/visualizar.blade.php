@@ -69,11 +69,7 @@
                 <p><strong class="text-gray-900">Cód. Fábrica:</strong> {{ $orcamento->orc_cod_fabrica ?: 'N/D' }}</p>
                 <p><strong class="text-gray-900">Cód. Interno:</strong> {{ $orcamento->orc_cod_interno ?: 'N/D' }}</p>
                 <p><strong class="text-gray-900">Status:</strong> {{ ucfirst($orcamento->orc_status) }}</p>
-                <p><strong class="text-gray-900">Data de Início:</strong>
-                    {{ $orcamento->orc_data_inicio->format('d/m/Y') }}
-                </p>
-                <p><strong class="text-gray-900">Data de Fim:</strong> {{ $orcamento->orc_data_fim->format('d/m/Y') }}
-                </p>
+
                 @php
                 $quantidadeTotalItens = $orcamento->detalhesOrcamentoFracionado->sum(function ($detalhe) {
                 return (int) ($detalhe->det_quantidade ?? 0);
@@ -112,7 +108,7 @@
             @endphp
             <div class="border p-6 rounded-lg shadow-sm bg-white hover:shadow-lg transition-shadow duration-300">
                 <p class="mb-2">
-                    <strong class="text-gray-900">Item:</strong> {{ $detalhe->det_cod }} - {{ $detalhe->det_categoria }}
+                    <strong class="text-gray-900">Item:</strong> {{ $detalhe->det_cod }} - {{ $detalhe->det_nome }} - {{ $detalhe->det_categoria }}
                     - {{ $detalhe->det_modelo }} - {{ $detalhe->det_cor }} - {{ $detalhe->det_tamanho }} -
                     {{ $detalhe->det_genero }}
                 </p>
@@ -178,49 +174,10 @@
         </div>
     </div>
 
-    <!-- Aplicar Desconto -->
-    <div class="border p-6 rounded-lg bg-gray-50 mt-6">
-        <h3 class="text-lg font-bold mb-3 text-gray-800">Aplicar Desconto</h3>
-
-        <form action="{{ route('orcamento.fracionado.desconto', $orcamento->id_orcamento_fracionado) }}" method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            @csrf
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Tipo</label>
-                <select name="orc_desconto_tipo" class="w-full border rounded p-2">
-                    <option value="">Sem desconto</option>
-                    <option value="valor" {{ $orcamento->orc_desconto_tipo === 'valor' ? 'selected' : '' }}>Valor (R$)</option>
-                    <option value="percentual" {{ $orcamento->orc_desconto_tipo === 'percentual' ? 'selected' : '' }}>Percentual (%)</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Valor</label>
-                <input type="number" step="0.01" min="0" name="orc_desconto_valor"
-                    value="{{ $orcamento->orc_desconto_valor }}" class="w-full border rounded p-2">
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700">Motivo</label>
-                <input type="text" name="orc_desconto_motivo"
-                    value="{{ $orcamento->orc_desconto_motivo }}" class="w-full border rounded p-2">
-            </div>
-
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                Aplicar
-            </button>
-        </form>
-
-        @error('orc_desconto_valor')
-        <p class="text-red-600 text-sm mt-2">{{ $message }}</p>
-        @enderror
-    </div>
-
     @php
     $totalBrutoCalculado = 0;
 
     foreach ($orcamento->detalhesOrcamentoFracionado as $detalhe) {
-
     $quantidade = (int) ($detalhe->det_quantidade ?? 0);
 
     // Produtos
@@ -229,59 +186,19 @@
 
     // Customizações
     foreach ($detalhe->customizacoes as $customizacao) {
-
     $totalBrutoCalculado +=
     $quantidade * (float) ($customizacao->cust_valor ?? 0);
     }
     }
-
-    // Calcula o desconto
-    $valorDescontoCalculado = 0;
-
-    if ($orcamento->orc_desconto_tipo === 'percentual') {
-
-    $valorDescontoCalculado =
-    $totalBrutoCalculado *
-    ((float) ($orcamento->orc_desconto_valor ?? 0) / 100);
-
-    } elseif ($orcamento->orc_desconto_tipo === 'valor') {
-
-    $valorDescontoCalculado =
-    (float) ($orcamento->orc_desconto_valor ?? 0);
-    }
-
-    // Evita desconto maior que o próprio orçamento
-    $valorDescontoCalculado = min(
-    $valorDescontoCalculado,
-    $totalBrutoCalculado
-    );
-
-    // Total final
-    $totalComDescontoCalculado =
-    $totalBrutoCalculado - $valorDescontoCalculado;
     @endphp
-    <div class="mt-6 text-right space-y-1">
-        <p class="text-gray-700">
-            Subtotal:
-            R$ {{ number_format($totalBrutoCalculado, 2, ',', '.') }}
-        </p>
-        @if ($valorDescontoCalculado > 0)
-        <p class="text-red-600">
-            Desconto
-            @if ($orcamento->orc_desconto_tipo === 'percentual')
-            ({{ number_format($orcamento->orc_desconto_valor, 2, ',', '.') }}%)
-            @endif
-            :
-            - R$
-            {{ number_format($valorDescontoCalculado, 2, ',', '.') }}
-        </p>
-        @endif
+
+    <div class="mt-6 text-right">
         <p class="text-2xl font-extrabold text-gray-900">
             Total:
-            R$ {{ number_format($totalComDescontoCalculado, 2, ',', '.') }}
+            R$ {{ number_format($totalBrutoCalculado, 2, ',', '.') }}
         </p>
     </div>
-
+    
     @else
     <p class="mt-8 text-gray-600 text-center text-xl">Este orçamento fracionado ainda não possui detalhes cadastrados.</p>
     @endif

@@ -1,425 +1,484 @@
-{{-- resources/views/view_cobranca/index.blade.php --}}
 @extends('layouts.app_financeiro')
 
 @section('title', 'Cobranças')
 
 @section('content')
+
 <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
-    {{-- Cabeçalho --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h1
-            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
+
+        <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
             Cobranças
         </h1>
+
         <div class="flex items-center gap-3">
+
             <a href="{{ route('dashboard') }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
                 HOME
             </a>
-        </div>
-
-    </div>
-
-    {{-- Alerta de sucesso --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4" role="alert">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
-
-    {{-- Filtros --}}
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
-
-        <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
-
-            {{-- ID Fin --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    ID Fin
-                </label>
-
-                <input
-                    type="text"
-                    id="searchFinInput"
-                    placeholder="ID financeiro..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-
-            {{-- ID Orçamento --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    ID Orçamento
-                </label>
-
-                <input
-                    type="text"
-                    id="searchOrcInput"
-                    placeholder="ID orçamento..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-
-            {{-- Cliente --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Cliente
-                </label>
-
-                <input
-                    type="text"
-                    id="searchClienteInput"
-                    placeholder="Nome do cliente..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-
-            {{-- Tipo --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Tipo
-                </label>
-
-                <input
-                    type="text"
-                    id="searchTipoInput"
-                    placeholder="Tipo pagamento..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-
-            {{-- Botão limpar --}}
-            <div class="flex items-end">
-                <button
-                    type="button"
-                    id="clearFiltersCobranca"
-                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
-                    Limpar
-                </button>
-            </div>
 
         </div>
 
     </div>
 
-    {{-- Nenhuma cobrança --}}
-    @if ($cobrancas->isEmpty())
-    <p class="text-gray-600 text-center py-8" id="noCobrancasMessage">Nenhuma cobrança cadastrada ainda.</p>
+    <x-alert-flash />
+
+    {{-- FILTROS --}}
+    <form method="GET" action="{{ route('cobranca.index') }}" class="mb-6">
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                {{-- ID Financeiro --}}
+                <div>
+
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        ID Financeiro
+                    </label>
+
+                    <input
+                        type="number"
+                        name="id_financeiro"
+                        value="{{ request('id_financeiro') }}"
+                        placeholder="Digite o ID..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                </div>
+
+                {{-- ID Orçamento --}}
+                <div>
+
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        ID Orçamento
+                    </label>
+
+                    <input
+                        type="number"
+                        name="id_orcamento"
+                        value="{{ request('id_orcamento') }}"
+                        placeholder="Digite o ID..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                </div>
+
+                {{-- Cliente --}}
+                <div>
+
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Cliente
+                    </label>
+
+                    <input
+                        type="text"
+                        name="cliente"
+                        value="{{ request('cliente') }}"
+                        placeholder="Digite o nome..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                </div>
+
+                {{-- Forma de Pagamento --}}
+                <div>
+
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Forma Pagamento
+                    </label>
+
+                    <select
+                        name="tipo_pagamento"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+
+                        <option value="">Todas</option>
+
+                        @foreach ($tiposPagamento as $tipo)
+                        <option
+                            value="{{ $tipo->tipo_plano_fin }}"
+                            {{ request('tipo_pagamento') == $tipo->tipo_plano_fin ? 'selected' : '' }}>
+                            {{ $tipo->tipo_plano_fin }}
+                        </option>
+                        @endforeach
+
+                    </select>
+
+                </div>
+
+                {{-- Buscar --}}
+                <div class="flex items-end">
+
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md hover:opacity-90 transition"
+                        style="background-color:#EA792D;">
+                        Buscar
+                    </button>
+
+                </div>
+
+                {{-- Limpar --}}
+                <div class="flex items-end">
+
+                    <a
+                        href="{{ route('cobranca.index') }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </form>
+
+    @if ($formasPagamento->isEmpty())
+
+    @if(request('id_financeiro') || request('id_orcamento') || request('cliente') || request('tipo_pagamento'))
+
+    <div class="text-center py-8">
+
+        <p class="text-gray-600 text-lg">
+            Nenhuma cobrança encontrada com os filtros informados.
+        </p>
+
+        <a
+            href="{{ route('cobranca.index') }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtros
+        </a>
+
+    </div>
+
     @else
-
-    {{-- Tabela --}}
+    <p class="text-gray-600 text-center py-8">
+        Nenhuma cobrança cadastrada ainda.
+    </p>
+    @endif
+    @else
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
+
         <table class="min-w-full divide-y divide-gray-200">
+
             <thead class="bg-table-header-bg">
+
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">ID Fin</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">ID Orcamento</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">Cliente</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">Tipo</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">Status</th>
-                    <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">Ações</th>
+
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                        ID Financeiro
+                    </th>
+
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                        ID Orçamento
+                    </th>
+
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                        Cliente
+                    </th>
+
+                    <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
+                        Forma Pagamento
+                    </th>
+
+                    <th class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
+                        Parcelas
+                    </th>
+
+                    <th class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">
+                        Ações
+                    </th>
+
                 </tr>
+
             </thead>
 
             <tbody class="bg-white divide-y divide-gray-200" id="cobrancaTableBody">
-                @foreach ($cobrancas as $cobranca)
-                <tr>
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $cobranca->cobr_id_fin }}
+
+                @foreach ($formasPagamento as $forma)
+
+                <tr class="hover:bg-gray-50 transition duration-150">
+
+                    {{-- ID Financeiro --}}
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                        {{ $forma->financeiro_id_fin }}
                     </td>
 
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $cobranca->cobr_id_orc }}
+                    {{-- ID Orçamento --}}
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+
+                        <div>
+                            {{ $forma->financeiro?->orcamento_id_orcamento ?? 'N/A' }}
+                        </div>
+
+                        @if($forma->financeiro?->orcamento?->orc_cod_interno || $forma->financeiro?->orcamento?->orc_cod_fabrica)
+
+                        <div class="text-xs text-gray-500 mt-1">
+
+                            @if($forma->financeiro?->orcamento?->orc_cod_interno)
+                            Interno: {{ $forma->financeiro->orcamento->orc_cod_interno }}
+                            @endif
+
+                            @if(
+                            $forma->financeiro?->orcamento?->orc_cod_interno &&
+                            $forma->financeiro?->orcamento?->orc_cod_fabrica
+                            )
+                            <span class="mx-1">|</span>
+                            @endif
+
+                            @if($forma->financeiro?->orcamento?->orc_cod_fabrica)
+                            Fábrica: {{ $forma->financeiro->orcamento->orc_cod_fabrica }}
+                            @endif
+
+                        </div>
+
+                        @endif
+
                     </td>
 
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $cobranca->cobr_cliente }}
+                    {{-- Cliente --}}
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                        {{ $forma->financeiro?->fin_nome_cliente ?? 'N/A' }}
                     </td>
 
-                    <td class="px-4 py-4 text-sm font-medium text-gray-900 font-poppins">
-                        {{ $cobranca->tipoPagamento->tipo_plano_fin ?? 'Não informado' }}
+                    {{-- Forma de Pagamento --}}
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                        {{ $forma->tipoPagamento?->tipo_plano_fin ?? 'N/A' }}
                     </td>
 
-                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
+                    {{-- Quantidade de parcelas --}}
+                    <td class="px-6 py-4 text-sm text-center">
 
-                        @php
-                        $normalizedStatus = strtolower(str_replace(' ', '_', $cobranca->cobr_status));
-
-                        switch ($normalizedStatus) {
-                        case 'inadimplencia':
-                        $statusClass = 'bg-red-400';
-                        break;
-
-                        case 'débito':
-                        case 'debito':
-                        $statusClass = 'bg-yellow-400';
-                        break;
-
-                        case 'quitado':
-                        $statusClass = 'bg-green-400';
-                        break;
-
-                        default:
-                        $statusClass = 'bg-gray-400';
-                        break;
-                        }
-                        @endphp
-
-                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-gray-900">
-                            <span aria-hidden="true"
-                                class="absolute inset-0 opacity-50 rounded-full {{ $statusClass }}">
-                            </span>
-
-                            <span class="relative">
-                                {{ ucfirst($cobranca->cobr_status) }}
-                            </span>
+                        <span class="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700">
+                            {{ $forma->detalhes->count() }}
+                            {{ $forma->detalhes->count() == 1 ? 'parcela' : 'parcelas' }}
                         </span>
 
                     </td>
 
+                    {{-- Ações --}}
                     <td class="px-2 py-4 text-center">
+
                         <button
-                            class="detalhes-btn px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition"
-                            data-id="{{ $cobranca->id_cobranca }}">
-                            Ver Detalhes
+                            type="button"
+                            class="detalhes-btn inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition"
+                            data-id="{{ $forma->id_forma_pag }}">
+                            Detalhes
                         </button>
+
                     </td>
+
                 </tr>
 
-                {{-- LINHA EXPANDIDA DOS DETALHES DE COBRANÇA --}}
-                <tr id="detalhes-{{ $cobranca->id_cobranca }}" class="hidden">
-                    <td colspan="6" class="bg-blue-50 p-4">
+                {{-- DETALHES DA COBRANÇA --}}
+                <tr id="detalhes-{{ $forma->id_forma_pag }}" class="hidden">
 
-                        <h3 class="text-lg font-bold text-blue-800 mb-3">
-                            Detalhes da Cobrança
-                        </h3>
+                    <td colspan="6" class="bg-orange-50 p-4">
 
-                        @php
-                        $detalhes = $cobranca->detalhesCobranca; // Relationship
-                        @endphp
+                        <div class="bg-white border border-orange-200 rounded-lg shadow-sm overflow-x-auto">
 
-                        @if($detalhes->isEmpty())
-                        <p class="text-gray-600 text-sm">Nenhum detalhe encontrado para esta cobrança.</p>
-                        @else
-                        <table class="min-w-full divide-y divide-gray-200 bg-white shadow rounded-md">
-                            <thead class="bg-gray-200">
-                                <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Valor</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Vencimento</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Status</th>
-                                    <th class="px-4 py-2 text-left text-xs font-bold uppercase">Ações</th>
-                                </tr>
-                            </thead>
+                            <div class="px-4 py-3 bg-orange-100 border-b border-orange-200">
+
+                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+                                    <div>
+
+                                        <h3 class="text-base font-bold text-orange-800">
+                                            Detalhes da Cobrança
+                                        </h3>
+
+                                        <p class="text-xs text-orange-700 mt-1">
+                                            Forma de pagamento:
+                                            {{ $forma->tipoPagamento?->tipo_plano_fin ?? 'N/A' }}
+                                        </p>
+
+                                    </div>
+
+                                    <span class="text-sm text-orange-700">
+                                        {{ $forma->detalhes->count() }}
+                                        {{ $forma->detalhes->count() == 1 ? 'parcela' : 'parcelas' }}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
                             @php
-                            $hoje = \Carbon\Carbon::today()->format('d/m/Y');
+                            $detalhes = $forma->detalhes;
                             @endphp
 
-                            <tbody class="divide-y divide-gray-200">
-                                @foreach($detalhes as $item)
-                                <tr>
-                                    <td class="px-4 py-2 text-sm">
-                                        R$ {{ number_format($item->det_cobr_valor_parcela, 2, ',', '.') }}
-                                    </td>
+                            @if($detalhes->isEmpty())
 
-                                    <td class="px-4 py-2 text-sm">
-                                        {{ \Carbon\Carbon::parse($item->det_cobr_data_venc)->format('d/m/Y') }}
-                                    </td>
+                            <div class="p-4 flex items-center justify-between">
 
-                                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
+                                <p class="text-gray-600 text-sm">
+                                    Nenhuma parcela atrasada encontrada.
+                                </p>
 
-                                        @php
-                                        $normalizedStatus = strtolower(str_replace(' ', '_', $item->det_cobr_status));
+                                <a
+                                    href="{{ route('notificacao.create', ['id_financeiro' => $forma->financeiro_id_fin]) }}"
+                                    class="px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 transition">
+                                    Cadastrar Notificação
+                                </a>
 
-                                        switch ($normalizedStatus) {
-                                        case 'inadimplencia':
-                                        $statusClass = 'bg-red-400';
-                                        break;
+                            </div>
 
-                                        case 'débito':
-                                        case 'debito':
-                                        $statusClass = 'bg-yellow-400';
-                                        break;
+                            @else
 
-                                        case 'quitado':
-                                        $statusClass = 'bg-green-400';
-                                        break;
+                            <table class="min-w-full divide-y divide-gray-200">
 
-                                        default:
-                                        $statusClass = 'bg-gray-400';
-                                        break;
-                                        }
-                                        @endphp
+                                <thead class="bg-gray-200">
 
-                                        <span class="relative inline-block px-3 py-1 font-semibold leading-tight text-gray-900">
-                                            <span aria-hidden="true"
-                                                class="absolute inset-0 opacity-50 rounded-full {{ $statusClass }}">
+                                    <tr>
+
+                                        <th class="px-4 py-2 text-left text-xs font-bold uppercase">
+                                            Parcela
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-bold uppercase">
+                                            Valor Original
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-bold uppercase">
+                                            Valor Atual
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-bold uppercase">
+                                            Vencimento
+                                        </th>
+
+                                        <th class="px-4 py-2 text-left text-xs font-bold uppercase">
+                                            Status
+                                        </th>
+
+                                        <th class="px-4 py-2 text-center text-xs font-bold uppercase">
+                                            Ações
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody class="divide-y divide-gray-200">
+
+                                    @foreach($detalhes as $item)
+
+                                    <tr class="hover:bg-gray-50 transition duration-150">
+
+                                        {{-- Parcela --}}
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                                            #{{ $item->id_det_forma }}
+                                        </td>
+
+                                        {{-- Valor Original --}}
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            R$ {{ number_format($item->det_forma_valor_original, 2, ',', '.') }}
+                                        </td>
+
+                                        {{-- Valor Atual --}}
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900">
+                                            R$ {{ number_format($item->det_forma_valor_parcela, 2, ',', '.') }}
+                                        </td>
+
+                                        {{-- Vencimento --}}
+                                        <td class="px-4 py-3 text-sm text-gray-900">
+                                            {{ \Carbon\Carbon::parse($item->det_forma_data_venc)->format('d/m/Y') }}
+                                        </td>
+
+                                        {{-- Status --}}
+                                        <td class="px-4 py-3 text-sm">
+
+                                            <span class="px-2 py-1 rounded-md text-xs font-semibold {{ $item->cor_status }}">
+                                                {{ $item->det_situacao }}
                                             </span>
 
-                                            <span class="relative">
-                                                {{ ucfirst($item->det_cobr_status) }}
-                                            </span>
-                                        </span>
+                                        </td>
 
-                                    </td>
+                                        {{-- Ações --}}
+                                        <td class="px-4 py-3 text-center">
 
-                                    <td class="px-4 py-2 text-center">
+                                            <div class="flex justify-center items-center gap-2 flex-wrap">
 
-                                        @if ($item->det_cobr_status === 'Inadimplencia')
+                                                <a
+                                                    href="{{ route('cobranca.edit', ['cobranca' => $item->id_det_forma, 'id_financeiro' => request('id_financeiro'),
+                                                        'id_orcamento' => request('id_orcamento'), 'cliente' => request('cliente'),
+                                                        'tipo_pagamento' => request('tipo_pagamento'),'page' => request('page'),
+                                                    ]) }}"
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                                                    Acordo
+                                                </a>
 
-                                        @php
-                                        $totalNotificacoes = $cobranca->notificacoes->count();
-                                        @endphp
-                                        <div class="flex flex-col gap-2">
-
-                                            {{-- CADASTRAR NOTIFICAÇÃO (somente se ainda não completou as 4) --}}
-                                            @if ($item->det_cobr_status === 'Inadimplencia')
-
-                                            @php
-                                            $totalNotificacoes = $cobranca->notificacoes->count();
-                                            @endphp
-                                            <div class="flex flex-col gap-2">
-
-                                                @if ($totalNotificacoes < 4)
-                                                    <a href="{{ route('notificacao.create', ['cobranca_id' => $cobranca->id_cobranca]) }}"
-                                                    class="px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 transition text-center">
+                                                <a
+                                                    href="{{ route('notificacao.create', ['id_det_forma' => $item->id_det_forma]) }}"
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
                                                     Cadastrar Notificação
-                                                    </a> @endif
+                                                </a>
 
-                                                    <a href="{{ route('notificacao.index', ['cobranca_id' => $cobranca->id_cobranca]) }}"
-                                                        class="px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition text-center">
-                                                        Ver Notificações ({{ $totalNotificacoes }})
-                                                    </a>
+                                                @if($item->notificacoes->isNotEmpty())
+
+                                                <a
+                                                    href="{{ route('notificacao.index', ['id_det_forma' => $item->id_det_forma]) }}"
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600">
+                                                    Ver Notificações
+                                                </a>
+
+                                                @endif
+
                                             </div>
-                                            @endif
 
-                                            @endif
-                                            @if ($item->det_cobr_status != 'Quitado')
-                                            <a href="{{ url('/detalhes_cobranca/' . $item->id_det_cobranca . '/edit') }}"
-                                                class="px-3 py-1 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 transition block mx-auto text-center">
-                                                Acordo
-                                            </a>
-                                            @endif
-                                    </td>
+                                        </td>
 
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        @endif
+                                    </tr>
+
+                                    @endforeach
+
+                                </tbody>
+
+                            </table>
+
+                            @endif
+
+                        </div>
 
                     </td>
+
                 </tr>
 
                 @endforeach
-            </tbody>
-        </table>
 
-        <p class="text-gray-600 text-center py-8 hidden" id="noResultsMessage">
-            Nenhuma cobrança encontrada com esse termo de busca.
-        </p>
+            </tbody>
+
+        </table>
     </div>
 
+    <x-pagination-compact :paginator="$formasPagamento" />
+
     @endif
+
 </div>
 
-{{-- Script de busca dinâmica --}}
 @push('scripts')
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchCobrancaInput');
-        const tableBody = document.getElementById('cobrancaTableBody');
-        const noInitialMessage = document.getElementById('noCobrancasMessage');
-        const noResultsMessage = document.getElementById('noResultsMessage');
-
-        // LIGA OS BOTÕES "Ver Detalhes"
         document.querySelectorAll('.detalhes-btn').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const id = btn.dataset.id;
-
-                // Fecha todas as outras linhas de detalhes
                 document.querySelectorAll('[id^="detalhes-"]').forEach(function(row) {
                     if (row.id !== 'detalhes-' + id) {
                         row.classList.add('hidden');
                     }
                 });
-
-                // Alterna a linha clicada
                 const row = document.getElementById('detalhes-' + id);
-                if (row) row.classList.toggle('hidden');
+                if (row) {
+                    row.classList.toggle('hidden');
+                }
             });
         });
-
-        const searchFinInput = document.getElementById('searchFinInput');
-        const searchOrcInput = document.getElementById('searchOrcInput');
-        const searchClienteInput = document.getElementById('searchClienteInput');
-        const searchTipoInput = document.getElementById('searchTipoInput');
-        const searchStatusInput = document.getElementById('searchStatusInput');
-
-        const clearBtn = document.getElementById('clearFiltersCobranca');
-
-        if (!tableBody) return;
-
-        const rows = tableBody.querySelectorAll('tr');
-
-        const filterTable = () => {
-
-            const fin = searchFinInput.value.toLowerCase();
-            const orc = searchOrcInput.value.toLowerCase();
-            const cliente = searchClienteInput.value.toLowerCase();
-            const tipo = searchTipoInput.value.toLowerCase();
-            const status = searchStatusInput.value.toLowerCase();
-
-            let found = false;
-
-            rows.forEach(row => {
-
-                const cells = row.querySelectorAll('td');
-
-                if (cells.length < 5) return;
-
-                const finCell = cells[0].textContent.toLowerCase();
-                const orcCell = cells[1].textContent.toLowerCase();
-                const clienteCell = cells[2].textContent.toLowerCase();
-                const tipoCell = cells[3].textContent.toLowerCase();
-                const statusCell = cells[4].textContent.toLowerCase();
-
-                const matchFin = !fin || finCell.includes(fin);
-                const matchOrc = !orc || orcCell.includes(orc);
-                const matchCliente = !cliente || clienteCell.includes(cliente);
-                const matchTipo = !tipo || tipoCell.includes(tipo);
-                const matchStatus = !status || statusCell.includes(status);
-
-                if (matchFin && matchOrc && matchCliente && matchTipo && matchStatus) {
-                    row.style.display = '';
-                    found = true;
-                } else {
-                    row.style.display = 'none';
-                }
-
-            });
-
-            if (noResultsMessage) {
-                noResultsMessage.classList.toggle('hidden', found);
-            }
-
-        };
-
-        function clearFilters() {
-            searchFinInput.value = '';
-            searchOrcInput.value = '';
-            searchClienteInput.value = '';
-            searchTipoInput.value = '';
-            searchStatusInput.value = '';
-            filterTable();
-        }
-
-        searchFinInput.addEventListener('input', filterTable);
-        searchOrcInput.addEventListener('input', filterTable);
-        searchClienteInput.addEventListener('input', filterTable);
-        searchTipoInput.addEventListener('input', filterTable);
-        searchStatusInput.addEventListener('change', filterTable);
-
-        clearBtn.addEventListener('click', clearFilters);
-
     });
 </script>
+
 @endpush
+
 @endsection

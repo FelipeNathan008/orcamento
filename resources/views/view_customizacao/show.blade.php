@@ -1,179 +1,186 @@
 @extends('layouts.app')
 
-@section('content')
+@section('title', 'Detalhes da Customização')
+
 @php
+use App\Helpers\CryptHelper;
+
+$detalhe = $customizacao->detalhesOrcamento;
+$orcamento = $detalhe->orcamento;
+$cliente = $orcamento->clienteOrcamento;
+
 $orcamentoBloqueado = in_array(
-strtolower(trim($customizacao->detalhesOrcamento->orcamento->orc_status)),
+strtolower(trim($orcamento->orc_status)),
 ['aprovado', 'finalizado', 'rejeitado']
 );
+
+$urlVoltar = $urlVoltar ?? route('customizacao.index', [
+'id' => CryptHelper::encrypt($detalhe->id_det),
+]);
 @endphp
-<div class="container mx-auto px-4 py-8">
 
-    <div class="flex justify-between items-center mb-6">
+@section('content')
 
-        <h1 class="text-3xl font-bold text-gray-800">
-            Detalhes da Customização
-        </h1>
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-        <div class="flex space-x-3">
-
+        <x-page-header
+            title="Detalhes da Customização"
+            :back-url="$urlVoltar">
             @if(!$orcamentoBloqueado)
-            <a href="{{ route('customizacao.edit', $customizacao->id_customizacao) }}"
-                class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
+            <x-header-action href="{{ route('customizacao.edit', [
+                'customizacao' => CryptHelper::encrypt($customizacao->id_customizacao),
+                'return_url' => $urlVoltar,
+            ]) }}">
                 Editar Customização
-            </a>
+            </x-header-action>
             @endif
-            <a href="{{ route('customizacao.index', ['id_det' => $customizacao->detalhes_orcamento_id_det]) }}"
-                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
-                Voltar para a Lista
-            </a>
+        </x-page-header>
 
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
 
-    </div>
+        <div class="px-6 sm:px-8 pt-6 pb-8">
 
-    <x-alert-flash />
+            <x-info-card
+                title="Informações do Orçamento"
+                :name="'Orçamento #' . $orcamento->id_orcamento"
+                type="Orçamento"
+                :fields="[
+                    [
+                        'label' => 'Cód. Interno',
+                        'value' => $orcamento->orc_cod_interno ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'Cód. Fábrica',
+                        'value' => $orcamento->orc_cod_fabrica ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'Cliente',
+                        'value' => $cliente->clie_orc_nome ?? 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Status',
+                        'value' => ucfirst($orcamento->orc_status),
+                    ],
+                ]" />
 
-    <div class="bg-white shadow-xl rounded-lg p-8">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6 mt-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <div>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
+                    </div>
                     <div>
-                        <p class="text-gray-600">ID</p>
-                        <p class="font-semibold">
-                            {{ $customizacao->detalhesOrcamento->orcamento->id_orcamento }}
+                        <h2 class="text-lg font-bold text-gray-800">Informações da Customização</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Confira os dados cadastrados desta customização.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                    <div class="sm:col-span-2 lg:col-span-4 bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Produto</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $detalhe->det_nome ?: 'Não informado' }}
                         </p>
                     </div>
 
-                    <div>
-                        <p class="text-gray-600">Cód. Fábrica</p>
-                        <p class="font-semibold">
-                            {{ $customizacao->detalhesOrcamento->orcamento->orc_cod_fabrica ?: 'N/D' }}
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Código</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $detalhe->det_cod ?: 'Não informado' }}
                         </p>
                     </div>
 
-                    <div>
-                        <p class="text-gray-600">Cód. Interno</p>
-                        <p class="font-semibold">
-                            {{ $customizacao->detalhesOrcamento->orcamento->orc_cod_interno ?: 'N/D' }}
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tipo</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $customizacao->cust_tipo ?: 'Não informado' }}
                         </p>
                     </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Local</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $customizacao->cust_local ?: 'Não informado' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Posição</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $customizacao->cust_posicao ?: 'Não informado' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Tamanho</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $customizacao->cust_tamanho ?: 'Não informado' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Formatação</p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $customizacao->cust_formatacao ?: 'Não informado' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-orange-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-[#EA792D] uppercase tracking-wide mb-1">Valor</p>
+                        <p class="text-base font-bold text-[#EA792D]">
+                            R$ {{ number_format((float) $customizacao->cust_valor, 2, ',', '.') }}
+                        </p>
+                    </div>
+
+                    <div class="sm:col-span-2 lg:col-span-4 bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Descrição</p>
+                        <p class="text-sm font-semibold text-gray-800 whitespace-pre-line">
+                            {{ $customizacao->cust_descricao ?: 'Sem descrição' }}
+                        </p>
+                    </div>
+
+                    <div class="sm:col-span-2 lg:col-span-4 bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-3">Imagem da Customização</p>
+
+                        @if(!empty($customizacao->cust_imagem))
+                        <div class="flex justify-center sm:justify-start">
+                            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                                <img
+                                    src="{{ asset('images_customizacoes/' . $customizacao->cust_imagem) }}"
+                                    alt="Imagem da Customização"
+                                    class="max-w-full w-auto max-h-96 object-contain rounded-lg"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+
+                                <p class="text-red-500 text-sm hidden">
+                                    Não foi possível carregar a imagem.
+                                </p>
+                            </div>
+                        </div>
+                        @else
+                        <p class="text-sm font-semibold text-gray-500">
+                            Sem imagem cadastrada.
+                        </p>
+                        @endif
+                    </div>
+
                 </div>
             </div>
 
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Cliente:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->detalhesOrcamento->orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
-                </p>
-            </div>
-
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Tipo:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->cust_tipo }}
-                </p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Local:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->cust_local }}
-                </p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Posição:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->cust_posicao }}
-                </p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Tamanho:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->cust_tamanho }}
-                </p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Formatação:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->cust_formatacao }}
-                </p>
-            </div>
-
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Valor:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    R$ {{ number_format($customizacao->cust_valor, 2, ',', '.') }}
-                </p>
-            </div>
-
-
-            <div class="md:col-span-2 mb-4">
-
-                <p class="text-gray-600 text-sm">Descrição:</p>
-
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->cust_descricao ?? 'Sem descrição' }}
-                </p>
-
-            </div>
-
-
-            <div class="md:col-span-2 mb-4">
-
-                <p class="text-gray-600 text-sm mb-2">
-                    Imagem da Customização:
-                </p>
-
-                @if (!empty($customizacao->cust_imagem))
-
-                <div class="mt-2">
-                    <img
-                        src="{{ asset('images_customizacoes/' . $customizacao->cust_imagem) }}"
-                        alt="Imagem da Customização"
-                        class="max-w-md max-h-96 object-contain rounded-md shadow-md border border-gray-200"
-                        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-
-                    <p class="text-red-500 text-sm hidden">
-                        Não foi possível carregar a imagem.
-                    </p>
-                </div>
-
-                @else
-
-                <p class="text-gray-500 text-lg">
-                    Sem imagem
-                </p>
-
-                @endif
-
-            </div>
-
-
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Criado em:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->created_at->format('d/m/Y H:i') }}
-                </p>
-            </div>
-
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Última Atualização:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $customizacao->updated_at->format('d/m/Y H:i') }}
-                </p>
+            <div class="flex justify-end mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
             </div>
 
         </div>
-
     </div>
-
 </div>
 
 @endsection

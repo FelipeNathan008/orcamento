@@ -29,12 +29,7 @@
 
     </div>
 
-    {{-- ALERTA --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
-        {{ session('success') }}
-    </div>
-    @endif
+    <x-alert-flash />
 
     @if($id && isset($financeiroSelecionado))
     <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
@@ -206,6 +201,7 @@
 
                             <thead class="bg-gray-200">
                                 <tr>
+                                    <th class="px-4 py-2 text-xs font-bold uppercase">ID</th>
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Valor</th>
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Vencimento</th>
                                     <th class="px-4 py-2 text-xs font-bold uppercase">Situação</th>
@@ -219,6 +215,9 @@
                                 @foreach($forma->detalhes as $parcela)
 
                                 <tr>
+                                    <td class="px-4 py-2 text-sm">
+                                        #{{ $parcela->id_det_forma }}
+                                    </td>
 
                                     <td class="px-4 py-2 text-sm">
                                         R$ {{ number_format($parcela->det_forma_valor_parcela,2,',','.') }}
@@ -243,13 +242,13 @@
                                         <div class="flex justify-center items-center gap-2 flex-wrap">
 
                                             {{-- DAR BAIXA --}}
-                                            @if(in_array($parcela->det_situacao, ['Não Pago','Acordo','Inadimplencia']))
+                                            @if(in_array($parcela->det_situacao, ['Não Pago','Acordo','Inadimplencia','Atrasado']))
                                             <form method="POST">
                                                 @csrf
                                                 <button
                                                     type="button"
                                                     data-id="{{ $parcela->id_det_forma }}"
-                                                    onclick="abrirModal(this)"
+                                                    onclick="abrirModalPagamento(this)"
                                                     class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                                     Dar Baixa
                                                 </button>
@@ -257,11 +256,16 @@
                                             @endif
 
                                             {{-- VOLTAR --}}
-                                            @if(in_array($parcela->det_situacao, ['Pago','Quitado']))
-                                            <form action="{{ route('parcelas.voltarNaoPago', $parcela->id_det_forma) }}" method="POST"
-                                                onsubmit="return confirm('Tem certeza que deseja Voltar Para Não Pago esta parcela?');">
+                                            @if($parcela->det_situacao === 'Pago')
+                                            <form id="formVoltarNaoPago{{ $parcela->id_det_forma }}"
+                                                action="{{ route('parcelas.voltarNaoPago', $parcela->id_det_forma) }}"
+                                                method="POST">
                                                 @csrf
-                                                <button class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+
+                                                <button
+                                                    type="button"
+                                                    onclick="abrirModal('modalVoltarNaoPago', () => document.getElementById('formVoltarNaoPago{{ $parcela->id_det_forma }}').submit())"
+                                                    class="px-2 py-1 text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
                                                     Voltar Para Não Pago
                                                 </button>
                                             </form>
@@ -288,8 +292,16 @@
 <div id="modalPagamento" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white p-6 rounded-lg shadow-lg w-96">
 
-        <h2 class="text-lg font-bold mb-4">Data do Pagamento</h2>
+        <h2 class="text-lg font-bold mb-3">Data do Pagamento</h2>
 
+        <div class="bg-yellow-50 border-2 border-yellow-400 rounded-md p-3 mb-4">
+            <p class="text-sm font-bold text-yellow-800">
+                ⚠️ ATENÇÃO: confira a data do pagamento.
+            </p>
+            <p class="text-sm text-yellow-700 mt-1">
+                A data selecionada será registrada no sistema como a data em que esta parcela foi paga.
+            </p>
+        </div>
         <form id="formBaixa" method="POST">
             @csrf
 
@@ -300,11 +312,11 @@
             </div>
 
             <div class="flex justify-end gap-2">
-                <button type="button" onclick="fecharModal()" class="bg-gray-400 text-white px-3 py-1 rounded">
+                <button type="button" onclick="fecharModalPagamento()" class="bg-gray-400 text-white px-3 py-1 rounded">
                     Cancelar
                 </button>
 
-                <button type="button" onclick="confirmarData()" class="bg-green-600 text-white px-3 py-1 rounded">
+                <button type="button" id="btnConfirmarBaixa" onclick="confirmarData()" class="bg-green-600 text-white px-3 py-1 rounded">
                     Confirmar
                 </button>
             </div>
@@ -312,21 +324,78 @@
         </form>
     </div>
 </div>
+
+<div id="modalConfirmarBaixa"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <h2 class="text-xl font-bold mb-4">
+            Confirmar baixa
+        </h2>
+        <p class="text-gray-700 mb-6">
+            A data que será registrada no sistema é:
+            <span id="dataConfirmacaoBaixa" class="font-bold text-green-600"></span>.
+            <br><br>
+            Após confirmar, a parcela será marcada como paga.
+            <br><br>
+            Deseja realmente confirmar esta data?
+        </p>
+
+        <div class="flex justify-end gap-3">
+            <button
+                type="button"
+                id="btnConfirmarBaixaFinal"
+                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                Confirmar
+            </button>
+            <button
+                type="button"
+                id="btnCancelarConfirmacaoBaixa"
+                class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-400">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<x-modal-confirmacao
+    id="modalVoltarNaoPago"
+    titulo="Voltar para não pago"
+    mensagem="Tem certeza que deseja voltar esta parcela para Não Pago?"
+    textoConfirmar="Confirmar" />
+
 <script>
     let parcelaId = null;
+    let enviandoBaixa = false;
 
-    function abrirModal(element) {
-        const id = element.dataset.id;
-        parcelaId = id;
+    function abrirModalPagamento(element) {
+        parcelaId = element.dataset.id;
+        enviandoBaixa = false;
 
+        const btn = document.getElementById('btnConfirmarBaixa');
+
+        btn.disabled = false;
+        btn.innerText = 'Confirmar';
+        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+
+        document.getElementById('data_pagamento').value = '';
         document.getElementById('modalPagamento').classList.remove('hidden');
+        document.getElementById('modalPagamento').classList.add('flex');
     }
 
-    function fecharModal() {
+    function fecharModalPagamento() {
+        if (enviandoBaixa) {
+            return;
+        }
+
         document.getElementById('modalPagamento').classList.add('hidden');
+        document.getElementById('modalPagamento').classList.remove('flex');
     }
 
     function confirmarData() {
+        if (enviandoBaixa) {
+            return;
+        }
+
         const data = document.getElementById('data_pagamento').value;
 
         if (!data) {
@@ -334,17 +403,61 @@
             return;
         }
 
-        if (!confirm('Confirma essa data de pagamento?')) {
+        const partes = data.split('-');
+        const dataFormatada = partes[2] + '/' + partes[1] + '/' + partes[0];
+
+        document.getElementById('dataConfirmacaoBaixa').innerText = dataFormatada;
+
+        const modal = document.getElementById('modalConfirmarBaixa');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    document.getElementById('btnCancelarConfirmacaoBaixa').addEventListener('click', function() {
+        if (enviandoBaixa) {
             return;
         }
 
+        const modal = document.getElementById('modalConfirmarBaixa');
+
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    });
+
+    document.getElementById('btnConfirmarBaixaFinal').addEventListener('click', function() {
+        if (enviandoBaixa || this.disabled) {
+            return;
+        }
+
+        enviandoBaixa = true;
+
+        this.disabled = true;
+        this.innerText = 'Salvando...';
+        this.classList.add('opacity-70', 'cursor-not-allowed');
+
+        const btnBaixa = document.getElementById('btnConfirmarBaixa');
+
+        btnBaixa.disabled = true;
+        btnBaixa.innerText = 'SALVANDO...';
+        btnBaixa.classList.add('opacity-70', 'cursor-not-allowed');
+
+        const data = document.getElementById('data_pagamento').value;
         const form = document.getElementById('formBaixa');
+
         form.action = `/parcelas/${parcelaId}/dar-baixa`;
+        form.querySelector('#data_pagamento').value = data;
 
         form.submit();
-    }
-</script>
+    });
 
+    document.getElementById('modalConfirmarBaixa').addEventListener('click', function(e) {
+        if (e.target === this && !enviandoBaixa) {
+            this.classList.add('hidden');
+            this.classList.remove('flex');
+        }
+    });
+</script>
 {{-- SCRIPT --}}
 <script>
     document.querySelectorAll('.parcelas-btn').forEach(btn => {

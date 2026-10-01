@@ -4,199 +4,149 @@
 
 @section('content')
 
-{{-- Div principal que centraliza o conteúdo e ajusta a largura máxima --}}
-<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
-
-    {{-- Cabeçalho da Seção (Título e Botão) --}}
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-
-        <h1
-            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
-            Preços Customizações Cadastrados
-        </h1>
-
-        <div class="flex items-center gap-3">
-
-            <a href="{{ route('dashboard') }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                HOME
-            </a>
-
-            <a href="{{ route('preco_customizacao.create') }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
-                style="background-color: #EA792D;">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <x-page-header title="Preços de Customização Cadastrados">
+            <x-header-action href="{{ route('preco_customizacao.create') }}">
                 Novo Preço
-            </a>
+            </x-header-action>
+        </x-page-header>
 
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
 
-    </div>
+        <div class="px-6 sm:px-8 pt-4 pb-6">
+            <form method="GET" action="{{ route('preco_customizacao.index') }}">
+                <x-filter-card>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="tipo" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Tipo</label>
+                            <input type="text" id="tipo" name="tipo" value="{{ request('tipo') }}" placeholder="Tipo de customização..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
 
-    <x-alert-flash />
+                        <div>
+                            <label for="tamanho" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Tamanho</label>
+                            <input type="text" id="tamanho" name="tamanho" value="{{ request('tamanho') }}" placeholder="Tamanho..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
 
+                        <div class="flex items-end">
+                            <x-primary-button class="w-full h-11">
+                                <x-icons.search />
+                                Buscar
+                            </x-primary-button>
+                        </div>
+                    </div>
 
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+                    <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+                        <a href="{{ route('preco_customizacao.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-200 hover:text-gray-800 transition">
+                            <x-icons.reset />
+                            Limpar filtros
+                        </a>
+                    </div>
+                </x-filter-card>
+            </form>
+        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Customização
-                </label>
-
-                <div class="relative">
-
-                    <input
-                        type="text"
-                        id="searchPrecoInput"
-                        placeholder="Tipo ou tamanho..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
-
+        <div class="px-6 sm:px-8 pb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 class="text-lg font-bold text-gray-800">Lista de preços</h2>
+                <div class="inline-flex items-center gap-2 self-start px-3 py-2 rounded-lg bg-orange-50 border border-orange-100">
+                    <span class="w-2 h-2 rounded-full" style="background-color:#EA792D;"></span>
+                    <span class="text-xs font-semibold text-orange-700">{{ $precosCustomizacao->total() }} preço(s)</span>
                 </div>
             </div>
 
-            <div class="flex md:justify-end items-end">
+            @if ($precosCustomizacao->isEmpty())
+            @if (request('tipo') || request('tamanho'))
+            <x-empty-state
+                title="Nenhum preço encontrado"
+                message="Não existem preços de customização correspondentes aos filtros informados."
+                route="preco_customizacao.index"
+                button-text="Limpar filtros" />
+            @else
+            <x-empty-state
+                title="Nenhum preço cadastrado"
+                message="Ainda não existem preços de customização cadastrados no sistema."
+                route="preco_customizacao.create"
+                button-text="Cadastrar preço" />
+            @endif
+            @else
+            <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead style="background-color:#343A40;">
+                            <tr>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Tipo</th>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Tamanho</th>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Valor</th>
+                                <th class="px-5 py-4 text-center text-[11px] font-bold text-white uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
 
-                <button
-                    type="button"
-                    id="clearFiltersPreco"
-                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @foreach ($precosCustomizacao as $preco)
+                            <tr class="group hover:bg-orange-50/40 transition">
+                                <td class="px-5 py-5">
+                                    <span class="text-sm font-bold text-gray-800">{{ $preco->preco_tipo }}</span>
+                                </td>
 
-                    Limpar Busca
+                                <td class="px-5 py-5 whitespace-nowrap">
+                                    <span class="text-sm text-gray-700">{{ $preco->preco_tamanho }}</span>
+                                </td>
 
-                </button>
+                                <td class="px-5 py-5 whitespace-nowrap">
+                                    <span class="text-sm font-semibold text-gray-700">R$ {{ number_format($preco->preco_valor, 2, ',', '.') }}</span>
+                                </td>
 
+                                <td class="px-5 py-5 text-center whitespace-nowrap">
+                                    <x-table-actions
+                                        :edit-route="route('preco_customizacao.edit', $preco->id_preco)"
+                                        :delete-action="route('preco_customizacao.destroy', $preco->id_preco)"
+                                        delete-id="formExcluirPreco{{ $preco->id_preco }}"
+                                        delete-modal="modalExcluirPreco" />
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
+            <div class="mt-5">
+                <x-pagination-compact :paginator="$precosCustomizacao" />
+            </div>
+            @endif
         </div>
-
     </div>
 
-    @if ($precosCustomizacao->isEmpty())
-    <p class="text-gray-600 text-center py-8" id="noPrecosCustomizacaoMessage">Nenhum preço de customização
-        cadastrado ainda.</p>
-    @else
-    {{-- TABELA DE PREÇOS DE CUSTOMIZAÇÃO --}}
-    <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
-        <table class="min-w-full w-full divide-y divide-gray-200">
-            <thead class="bg-table-header-bg">
-                <tr>
-
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Tipo
-                    </th>
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Tamanho
-                    </th>
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Valor
-                    </th>
-                    <th scope="col"
-                        class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Ações
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="precoCustomizacaoTableBody">
-                @foreach ($precosCustomizacao as $preco)
-                <tr
-                    class="hover:bg-gray-50 transition duration-150"
-                    data-preco-tipo="{{ $preco->preco_tipo }}"
-                    data-preco-tamanho="{{ $preco->preco_tamanho }}">
-                    <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
-                        {{ $preco->preco_tipo }}
-                    </td>
-                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        {{ $preco->preco_tamanho }}
-                    </td>
-                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        R$ {{ number_format($preco->preco_valor, 2, ',', '.') }}
-                    </td>
-                    <td class="px-2 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <div class="flex items-center justify-center space-x-1 sm:space-x-2">
-                            {{-- Botão "Editar" --}}
-                            <a href="{{ route('preco_customizacao.edit', $preco->id_preco) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                                Editar
-                            </a>
-                            {{-- Botão "Excluir" --}}
-                            <form action="{{ route('preco_customizacao.destroy', $preco->id_preco) }}"
-                                method="POST" class="inline-block"
-                                onsubmit="return confirm('Tem certeza que deseja excluir este preço de customização?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-cancel-bg hover:bg-button-cancel-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-cancel-bg transition duration-150 ease-in-out">
-                                    Excluir
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-        <p class="text-gray-600 text-center py-8 hidden" id="noResultsPrecoCustomizacaoMessage">Nenhum preço de
-            customização encontrado com esse termo
-            de busca.</p>
-    </div>
-    @endif
 </div>
 
+<x-modal-confirmacao
+    id="modalExcluirPreco"
+    titulo="Excluir preço de customização"
+    mensagem="Deseja realmente apagar este preço de customização?"
+    textoConfirmar="Excluir" />
+
 @push('scripts')
-
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    (function() {
+        const key = 'scroll:' + location.pathname + location.search;
+        const saved = sessionStorage.getItem(key);
 
-        const searchInput = document.getElementById('searchPrecoInput');
-        const clearBtn = document.getElementById('clearFiltersPreco');
-
-        const tableBody = document.getElementById('precoCustomizacaoTableBody');
-        const noResultsMessage = document.getElementById('noResultsPrecoCustomizacaoMessage');
-
-        const allRows = tableBody ? Array.from(tableBody.querySelectorAll('tr')) : [];
-
-        function filterPrecos() {
-
-            const searchTerm = searchInput.value.toLowerCase();
-            let foundResults = false;
-
-            allRows.forEach(row => {
-                const tipo = row.dataset.precoTipo.toLowerCase();
-                const tamanho = row.dataset.precoTamanho.toLowerCase();
-                const matchesSearch =
-                    tipo.includes(searchTerm) ||
-                    tamanho.includes(searchTerm);
-                if (matchesSearch) {
-                    row.style.display = '';
-                    foundResults = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-            noResultsMessage.classList.toggle('hidden', foundResults);
+        if (saved !== null) {
+            window.scrollTo(0, parseInt(saved, 10));
+            sessionStorage.removeItem(key);
         }
 
-        function clearFilters() {
-            searchInput.value = '';
-            filterPrecos();
-        }
-        searchInput.addEventListener('input', filterPrecos);
-        clearBtn.addEventListener('click', clearFilters);
-
-    });
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('tbody a, tbody button, a[href$="/create"]')) {
+                sessionStorage.setItem(key, window.scrollY);
+            }
+        });
+    })();
 </script>
-
 @endpush
 @endsection

@@ -1,102 +1,142 @@
-@extends('layouts.app') {{-- Assumindo que você tem um layout principal chamado 'app' --}}
+@extends('layouts.app')
 
 @section('title', 'Editar Preço de Customização')
 
 @section('content')
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins"> {{-- Contêiner principal para centralizar --}}
-    {{-- Título centralizado --}}
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Editar Preço de Customização</h1>
 
-        <x-alert-flash />
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-    {{-- Formulário para editar preço de customização --}}
-    <div>
-        <form action="{{ route('preco_customizacao.update', $precoCustomizacao) }}" method="POST" class="space-y-6">
+        <x-page-header title="Editar Preço de Customização" :back-url="$urlVoltar" />
+
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
+        </div>
+
+        <form id="precoCustomizacaoForm"
+            action="{{ route('preco_customizacao.update', $precoCustomizacao) }}"
+            method="POST"
+            class="px-6 sm:px-8 pt-6 pb-8">
+
             @csrf
-            @method('PUT') {{-- O método 'PUT' é necessário para a atualização de recursos --}}
+            @method('PUT')
 
-            {{-- Seção de campos do formulário em uma única coluna --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6">
 
-                {{-- PRIMEIRA COLUNA (ESQUERDA) --}}
-                <div class="space-y-6">
-                    <!-- Campo Tipo -->
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
+                    </div>
                     <div>
-                        <label for="preco_tipo" class="block text-sm font-medium text-custom-dark-text mb-1">Tipo</label>
-                        <input type="text" name="preco_tipo" id="preco_tipo"
-                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            value="{{ old('preco_tipo', $precoCustomizacao->preco_tipo) }}" placeholder="Ex: Estampa DTF" maxlength="45" required>
-                        @error('preco_tipo')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <h2 class="text-lg font-bold text-gray-800">Dados do preço</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Atualize as informações do preço de customização.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div>
+                        <label for="preco_tipo" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Tipo
+                        </label>
+
+                        <input type="text"
+                            name="preco_tipo"
+                            id="preco_tipo"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Ex: Estampa DTF"
+                            maxlength="45"
+                            value="{{ old('preco_tipo', $precoCustomizacao->preco_tipo) }}"
+                            required>
+
                     </div>
 
-                    <!-- Campo Tamanho -->
                     <div>
-                        <label for="preco_tamanho" class="block text-sm font-medium text-custom-dark-text mb-1">Tamanho</label>
-                        <input type="text" name="preco_tamanho" id="preco_tamanho"
-                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            value="{{ old('preco_tamanho', $precoCustomizacao->preco_tamanho) }}" placeholder="Ex: Pequeno (até 9cm)" maxlength="30" required>
-                        @error('preco_tamanho')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div> {{-- Fim da PRIMEIRA COLUNA --}}
+                        <label for="preco_tamanho" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Tamanho
+                        </label>
 
-                {{-- SEGUNDA COLUNA (DIREITA) --}}
-                <div class="space-y-6">
-                    <!-- Campo Valor -->
+                        <input type="text"
+                            name="preco_tamanho"
+                            id="preco_tamanho"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Ex: Pequeno (até 9cm)"
+                            maxlength="30"
+                            value="{{ old('preco_tamanho', $precoCustomizacao->preco_tamanho) }}"
+                            required>
+
+                    </div>
+
                     <div>
-                        <label for="preco_valor" class="block text-sm font-medium text-custom-dark-text mb-1">Valor</label>
-                        <input type="text" name="preco_valor" id="preco_valor"
-                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            value="{{ old('preco_valor', 'R$ ' . number_format($precoCustomizacao->preco_valor, 2, ',', '.')) }}" placeholder="Ex: 50.99" required>
-                        @error('preco_valor')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <label for="preco_valor" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Valor
+                        </label>
+
+                        <input type="text"
+                            name="preco_valor"
+                            id="preco_valor"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            value="{{ old('preco_valor', 'R$ ' . number_format($precoCustomizacao->preco_valor, 2, ',', '.')) }}"
+                            placeholder="Ex: R$ 50,00"
+                            required>
+
                     </div>
-                </div> {{-- Fim da SEGUNDA COLUNA --}}
 
-            </div> {{-- Fim do grid principal --}}
-
-            <!-- Botões de Ação -->
-            <div class="flex justify-center mt-8">
-                <button type="submit"
-                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                    ATUALIZAR
-                </button>
+                </div>
             </div>
-            {{-- Botão Voltar unificado e movido para fora do formulário --}}
-            <div class="flex justify-center mb-8">
-                <a href="{{ route('preco_customizacao.index') }}"
-                    class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                    VOLTAR PARA A LISTA
-                </a>
+
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-gray-200">
+
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
+
+                <x-primary-button type="submit" id="btnSalvarPrecoCustomizacao" class="px-6">
+                    <span id="textoSalvar">Atualizar preço</span>
+                </x-primary-button>
+
             </div>
         </form>
     </div>
+
 </div>
+
+@push('scripts')
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('precoCustomizacaoForm');
+    const btnSalvar = document.getElementById('btnSalvarPrecoCustomizacao');
+    const textoSalvar = document.getElementById('textoSalvar');
 
-    const input = document.getElementById('preco_valor');
-
-    input.addEventListener('input', function() {
-
-        let value = this.value.replace(/\D/g, '');
-
-        if (value === '') {
-            this.value = '';
-            return;
+    form.addEventListener('submit', function() {
+        if (btnSalvar.disabled) {
+            return false;
         }
 
-        value = (parseFloat(value) / 100).toFixed(2);
-        value = value.replace('.', ',');
-        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
-        this.value = 'R$ ' + value;
+        btnSalvar.disabled = true;
+        textoSalvar.innerText = 'Atualizando...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
     });
 
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('preco_valor');
+
+        input.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+
+            if (value === '') {
+                this.value = '';
+                return;
+            }
+
+            value = (parseFloat(value) / 100).toFixed(2);
+            value = value.replace('.', ',');
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+            this.value = 'R$ ' + value;
+        });
+    });
 </script>
+
+@endpush
 @endsection

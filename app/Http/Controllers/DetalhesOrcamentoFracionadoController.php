@@ -18,17 +18,13 @@ class DetalhesOrcamentoFracionadoController extends Controller
 {
     public function index(Request $request, $id): View|RedirectResponse
     {
-        // Busca o orçamento fracionado
         $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
 
-        // Busca o orçamento principal
         $orcamento = Orcamento::with('clienteOrcamento')
             ->where('id_orcamento', $orcamentoFracionado->orcamento_id_orcamento)
             ->firstOrFail();
 
-        // Query dos detalhes
         $query = DetalhesOrcamentoFracionado::with([
-            'produto',
             'customizacoes'
         ])->where(
             'orcamento_fracionado_id',
@@ -36,50 +32,34 @@ class DetalhesOrcamentoFracionadoController extends Controller
         );
 
         if ($request->filled('produto')) {
-
-            $query->whereHas('produto', function ($q) use ($request) {
-
-                $q->where(
-                    'prod_nome',
-                    'like',
-                    '%' . trim($request->produto) . '%'
-                );
-            });
+            $query->where(
+                'det_nome',
+                'like',
+                '%' . trim($request->produto) . '%'
+            );
         }
 
         if ($request->filled('categoria')) {
-
-            $query->whereHas('produto', function ($q) use ($request) {
-
-                $q->where(
-                    'prod_categoria',
-                    'like',
-                    '%' . trim($request->categoria) . '%'
-                );
-            });
+            $query->where(
+                'det_categoria',
+                'like',
+                '%' . trim($request->categoria) . '%'
+            );
         }
 
         if ($request->filled('cod_ref')) {
-
-            $query->whereHas('produto', function ($q) use ($request) {
-
-                $q->where(
-                    'prod_cod',
-                    'like',
-                    '%' . trim($request->cod_ref) . '%'
-                );
-            });
+            $query->where(
+                'det_cod',
+                'like',
+                '%' . trim($request->cod_ref) . '%'
+            );
         }
 
         if ($request->filled('familia')) {
-
-            $query->whereHas('produto', function ($q) use ($request) {
-
-                $q->where(
-                    'prod_familia',
-                    $request->familia
-                );
-            });
+            $query->where(
+                'det_familia',
+                $request->familia
+            );
         }
 
         $detalhesOrcamento = $query
@@ -87,12 +67,16 @@ class DetalhesOrcamentoFracionadoController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $familias = Produto::query()
-            ->select('prod_familia')
-            ->whereNotNull('prod_familia')
+        $familias = DetalhesOrcamentoFracionado::query()
+            ->whereNotNull('det_familia')
+            ->where(
+                'orcamento_fracionado_id',
+                $orcamentoFracionado->id_orcamento_fracionado
+            )
+            ->select('det_familia')
             ->distinct()
-            ->orderBy('prod_familia')
-            ->pluck('prod_familia');
+            ->orderBy('det_familia')
+            ->pluck('det_familia');
 
         $todosDetalhes = DetalhesOrcamentoFracionado::with('customizacoes')
             ->where(
@@ -105,23 +89,17 @@ class DetalhesOrcamentoFracionadoController extends Controller
         $totalCustomizacoes = 0;
 
         foreach ($todosDetalhes as $detalhe) {
-
             $quantidade = (int) ($detalhe->det_quantidade ?? 0);
             $valorUnitario = (float) ($detalhe->det_valor_unit ?? 0);
 
             $totalDetalhes += $quantidade * $valorUnitario;
 
             foreach ($detalhe->customizacoes as $customizacao) {
-
                 $valorCustomizacao = (float) ($customizacao->cust_valor ?? 0);
 
-                // Cada customização é aplicada a cada unidade do produto,
-                // igual ao cálculo feito em DetalhesOrcamento
                 $totalCustomizacoes += $quantidade * $valorCustomizacao;
             }
         }
-
-        $totalGeral = $totalDetalhes + $totalCustomizacoes;
 
         $totalGeral = $totalDetalhes + $totalCustomizacoes;
 
@@ -139,9 +117,21 @@ class DetalhesOrcamentoFracionadoController extends Controller
         );
     }
 
-    public function create(Request $request, $id): View
+    public function create(Request $request, $id): View|RedirectResponse
     {
         $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
+
+        if ($orcamentoFracionado->orc_status !== 'pendente') {
+            return redirect()
+                ->route(
+                    'detalhes_orcamento_fracionado.index',
+                    $orcamentoFracionado->id_orcamento_fracionado
+                )
+                ->with(
+                    'error',
+                    'Não é possível adicionar detalhes a um orçamento fracionado que já avançou do status pendente.'
+                );
+        }
 
         $orcamento = Orcamento::with('clienteOrcamento')
             ->where('id_orcamento', $orcamentoFracionado->orcamento_id_orcamento)
@@ -231,6 +221,18 @@ class DetalhesOrcamentoFracionadoController extends Controller
     public function store(Request $request, $id): RedirectResponse
     {
         $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
+
+        if ($orcamentoFracionado->orc_status !== 'pendente') {
+            return redirect()
+                ->route(
+                    'detalhes_orcamento_fracionado.index',
+                    $orcamentoFracionado->id_orcamento_fracionado
+                )
+                ->with(
+                    'error',
+                    'Não é possível adicionar detalhes a um orçamento fracionado que já avançou do status pendente.'
+                );
+        }
 
         $orcamento = Orcamento::where(
             'id_orcamento',
@@ -348,6 +350,9 @@ class DetalhesOrcamentoFracionadoController extends Controller
                 'orcamento_fracionado_id' => $orcamentoFracionado->id_orcamento_fracionado,
                 'orcamento_cliente_orcamento_id_co' => $orcamento->cliente_orcamento_id_co,
                 'produto_id_produto' => $detalheOriginal->produto_id_produto,
+                'det_nome' => $detalheOriginal->det_nome,
+                'det_familia' => $detalheOriginal->det_familia,
+                'det_material' => $detalheOriginal->det_material,
                 'det_cod' => $detalheOriginal->det_cod,
                 'det_categoria' => $detalheOriginal->det_categoria,
                 'det_modelo' => $detalheOriginal->det_modelo,
@@ -418,6 +423,17 @@ class DetalhesOrcamentoFracionadoController extends Controller
     public function destroy($id): RedirectResponse
     {
         $detalhe = DetalhesOrcamentoFracionado::findOrFail($id);
+
+        $orcamentoFracionado = OrcamentoFracionado::findOrFail(
+            $detalhe->orcamento_fracionado_id
+        );
+
+        if ($orcamentoFracionado->orc_status !== 'pendente') {
+            return back()->with(
+                'error',
+                'Não é possível excluir detalhes de um orçamento fracionado que já avançou do status pendente.'
+            );
+        }
 
         $orcamentoFracionadoId = $detalhe->orcamento_fracionado_id;
 

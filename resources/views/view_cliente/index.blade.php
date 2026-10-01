@@ -3,292 +3,187 @@
 @section('title', 'Lista de Prospecções')
 
 @section('content')
+@php
+use App\Helpers\CryptHelper;
+@endphp
 
-<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
-
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-
-        <h1
-            class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
-            Prospecções Cadastrados
-        </h1>
-        <div class="flex items-center gap-3">
-
-            <a href="{{ route('dashboard') }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                HOME
-            </a>
-
-            <a href="{{ route('cliente.create') }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
-                style="background-color: #EA792D;">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <x-page-header title="Prospecções Cadastradas">
+            <x-header-action href="{{ route('cliente.create') }}">
                 Nova Prospecção
-            </a>
+            </x-header-action>
+        </x-page-header>
+
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
 
-    </div>
+        <div class="px-6 sm:px-8 pt-4 pb-6">
+            <form method="GET" action="{{ route('cliente.index') }}">
+                <x-filter-card>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+                        <div>
+                            <label for="nome" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Nome</label>
+                            <input type="text" id="nome" name="nome" value="{{ request('nome') }}" placeholder="Nome da prospecção..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
 
-    <x-alert-flash />
+                        <div>
+                            <label for="documento" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">CPF/CNPJ</label>
+                            <input type="text" id="documento" name="documento" value="{{ request('documento') }}" placeholder="Documento..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
 
-    <form method="GET" action="{{ route('cliente.index') }}" class="mb-6">
+                        <div>
+                            <label for="celular" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Celular</label>
+                            <input type="text" id="celular" name="celular" value="{{ request('celular') }}" placeholder="Celular..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
 
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                        <div>
+                            <label for="email" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">E-mail</label>
+                            <input type="text" id="email" name="email" value="{{ request('email') }}" placeholder="E-mail..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="flex items-end">
+                            <x-primary-button class="w-full h-11">
+                                <x-icons.search />
+                                Buscar
+                            </x-primary-button>
+                        </div>
+                    </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Nome
-                    </label>
+                    <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+                        <a href="{{ route('cliente.index') }}"
+                            class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-200 hover:text-gray-800 transition">
+                            <x-icons.reset />
+                            Limpar filtros
+                        </a>
+                    </div>
+                </x-filter-card>
+            </form>
+        </div>
 
-                    <input
-                        type="text"
-                        name="nome"
-                        value="{{ request('nome') }}"
-                        placeholder="Nome do cliente..."
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
+        <div class="px-6 sm:px-8 pb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 class="text-lg font-bold text-gray-800">Lista de prospecções</h2>
+                <div class="inline-flex items-center gap-2 self-start px-3 py-2 rounded-lg bg-orange-50 border border-orange-100">
+                    <span class="w-2 h-2 rounded-full" style="background-color:#EA792D;"></span>
+                    <span class="text-xs font-semibold text-orange-700">{{ $clientes->total() }} prospecção(ões)</span>
                 </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        E-mail
-                    </label>
-
-                    <input
-                        type="text"
-                        name="email"
-                        value="{{ request('email') }}"
-                        placeholder="E-mail..."
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Celular
-                    </label>
-
-                    <input
-                        type="text"
-                        name="celular"
-                        value="{{ request('celular') }}"
-                        placeholder="Celular..."
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        Tipo Documento
-                    </label>
-
-                    <select
-                        name="tipo_doc"
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-
-                        <option value="">Todos</option>
-
-                        <option value="CPF"
-                            {{ request('tipo_doc') == 'CPF' ? 'selected' : '' }}>
-                            CPF
-                        </option>
-
-                        <option value="CNPJ"
-                            {{ request('tipo_doc') == 'CNPJ' ? 'selected' : '' }}>
-                            CNPJ
-                        </option>
-
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        CPF/CNPJ
-                    </label>
-
-                    <input
-                        type="text"
-                        name="documento"
-                        value="{{ request('documento') }}"
-                        placeholder="Documento..."
-                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-                </div>
-
-                <div class="flex items-end">
-                    <button
-                        type="submit"
-                        class="w-full h-10 text-white rounded-md"
-                        style="background-color:#EA792D;">
-                        Buscar
-                    </button>
-                </div>
-
-                <div class="flex items-end">
-                    <a
-                        href="{{ route('cliente.index') }}"
-                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
-                        Limpar
-                    </a>
-                </div>
-
             </div>
 
+            @if ($clientes->isEmpty())
+            @if (request('nome') || request('documento') || request('celular') || request('email'))
+            <x-empty-state
+                title="Nenhuma prospecção encontrada"
+                message="Não existem prospecções correspondentes aos filtros informados."
+                route="cliente.index"
+                button-text="Limpar filtros" />
+            @else
+            <x-empty-state
+                title="Nenhuma prospecção cadastrada"
+                message="Ainda não existem prospecções cadastradas no sistema."
+                route="cliente.create"
+                button-text="Cadastrar prospecção" />
+            @endif
+            @else
+            <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead style="background-color:#343A40;">
+                            <tr>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Nome</th>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Celular</th>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">E-mail</th>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Documento</th>
+                                <th class="px-5 py-4 text-center text-[11px] font-bold text-white uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @foreach ($clientes as $cliente)
+                            <tr class="group hover:bg-orange-50/40 transition">
+                                <td class="px-5 py-5">
+                                    <span class="text-sm font-bold text-gray-800">{{ $cliente->clie_nome }}</span>
+                                </td>
+
+                                <td class="px-5 py-5">
+                                    <span class="text-sm text-gray-700">
+                                        {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $cliente->clie_celular)) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-5 py-5">
+                                    <span class="text-sm text-gray-700">{{ $cliente->clie_email }}</span>
+                                </td>
+
+                                <td class="px-5 py-5">
+                                    @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
+                                    @php $cpf = preg_replace('/\D/', '', $cliente->clie_cpf); @endphp
+                                    <span class="text-sm text-gray-700">
+                                        {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf) }}
+                                    </span>
+                                    @elseif ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
+                                    @php $cnpj = preg_replace('/\D/', '', $cliente->clie_cnpj); @endphp
+                                    <span class="text-sm text-gray-700">
+                                        {{ preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
+                                    </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-2 py-5 whitespace-nowrap">
+                                    <div class="flex items-center justify-center gap-1 sm:gap-2">
+                                        <x-table-actions
+                                            :budgets-route="route('cliente_orcamento.create', CryptHelper::encrypt($cliente->id_cliente))"
+                                            budgets-text="Orçamentos"
+                                            :show-route="route('cliente.show', CryptHelper::encrypt($cliente->id_cliente))"
+                                            :edit-route="route('cliente.edit', CryptHelper::encrypt($cliente->id_cliente))"
+                                            :delete-action="route('cliente.destroy', CryptHelper::encrypt($cliente->id_cliente))"
+                                            delete-id="formExcluirCliente{{ $cliente->id_cliente }}"
+                                            delete-modal="modalExcluirCliente" />
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <x-pagination-compact :paginator="$clientes" />
+            </div>
+            @endif
         </div>
-
-    </form>
-
-    @if ($clientes->isEmpty())
-
-    @if(
-    request('nome') ||
-    request('email') ||
-    request('celular') ||
-    request('tipo_doc') ||
-    request('documento')
-    )
-
-    <div class="text-center py-8">
-        <p class="text-gray-600">
-            Nenhuma prospecção encontrada para os filtros informados.
-        </p>
-
-        <a href="{{ route('cliente.index') }}"
-            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
-            Limpar filtros
-        </a>
     </div>
-
-    @else
-
-    <p class="text-gray-600 text-center py-8">
-        Nenhuma prospecção cadastrada.
-    </p>
-
-    @endif
-
-    @endif
-
-    @if ($clientes->isEmpty())
-
-    @if(request('search'))
-    <div class="text-center py-8">
-        <p class="text-gray-600 text-lg">
-            Nenhum cliente encontrado para
-            <strong>"{{ request('search') }}"</strong>.
-        </p>
-
-        <a href="{{ route('cliente.index') }}"
-            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
-            Limpar filtro
-        </a>
-    </div>
-    @else
-    <p class="text-gray-600 text-center py-8">
-        Nenhum cliente cadastrado ainda.
-    </p>
-    @endif
-
-    @else
-
-    {{-- TABELA DE CLIENTES --}}
-    <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-table-header-bg">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Nome
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Celular
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        E-mail
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Documento
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Ações
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200" id="clientTableBody">
-                @foreach ($clientes as $cliente)
-                <tr class="hover:bg-gray-50 transition duration-150">
-                    <td class="px-6 py-4 whitespace-normal break-words text-sm font-medium text-gray-900 font-poppins">
-                        {{ $cliente->clie_nome }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $cliente->clie_celular)) }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-                        {{ $cliente->clie_email }}
-                    </td>
-
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-poppins">
-
-                        {{-- CPF --}}
-                        @if ($cliente->clie_tipo_doc === 'CPF' && $cliente->clie_cpf)
-                        @php
-                        $cpf = preg_replace('/\D/', '', $cliente->clie_cpf);
-                        @endphp
-
-                        {{ preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $cpf) }}
-                        @endif
-
-                        {{-- CNPJ --}}
-                        @if ($cliente->clie_tipo_doc === 'CNPJ' && $cliente->clie_cnpj)
-                        @php
-                        $cnpj = $cliente->clie_cnpj;
-                        @endphp
-
-                        {{ preg_replace('/([A-Za-z0-9]{2})([A-Za-z0-9]{3})([A-Za-z0-9]{3})([A-Za-z0-9]{4})([A-Za-z0-9]{2})/', '$1.$2.$3/$4-$5', $cnpj) }}
-                        @endif
-
-                    </td>
-
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <div class="flex items-center justify-center space-x-1 sm:space-x-2">
-                            {{-- Botão "Cliente Orçamento" - Direciona para a tela de clientes de orçamento --}}
-                            <a href="{{ route('cliente_orcamento.create', ['cliente_id' => $cliente->id_cliente]) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-budget-bg hover:bg-button-budget-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-budget-bg transition duration-150 ease-in-out">
-                                Cliente Orçamento
-                            </a>
-
-                            {{-- Botão "Ver" --}}
-                            <a href="{{ route('cliente.show', $cliente->id_cliente) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
-                                Ver
-                            </a>
-
-                            {{-- Botão "Editar" --}}
-                            <a href="{{ route('cliente.edit', $cliente->id_cliente) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                                Editar
-                            </a>
-
-                            {{-- Botão "Excluir" --}}
-                            <form action="{{ route('cliente.destroy', $cliente->id_cliente) }}" method="POST"
-                                class="inline-block"
-                                onsubmit="return confirm('Tem certeza que deseja excluir este cliente?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-cancel-bg hover:bg-button-cancel-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-cancel-bg transition duration-150 ease-in-out">
-                                    Excluir
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    <x-pagination-compact :paginator="$clientes" />
-
-    @endif
-</div>
 </div>
 
+<x-modal-confirmacao
+    id="modalExcluirCliente"
+    titulo="Excluir prospecção"
+    mensagem="Deseja realmente apagar esta prospecção?"
+    textoConfirmar="Excluir" />
 
+@push('scripts')
+<script>
+    (function() {
+        const key = 'scroll:' + location.pathname + location.search;
+        const saved = sessionStorage.getItem(key);
+
+        if (saved !== null) {
+            window.scrollTo(0, parseInt(saved, 10));
+            sessionStorage.removeItem(key);
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('tbody a, tbody button, a[href$="/create"]')) {
+                sessionStorage.setItem(key, window.scrollY);
+            }
+        });
+    })();
+</script>
+@endpush
 @endsection

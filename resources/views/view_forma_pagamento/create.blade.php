@@ -27,17 +27,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
 <div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
     <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Nova Forma de Pagamento</h1>
 
-    @if ($errors->any())
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-        <strong>Erros encontrados:</strong>
-        <ul class="mt-2 list-disc list-inside">
-            @foreach ($errors->all() as $error)
-            <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
-
+    <x-alert-flash />
 
 
     <form id="formaPagamentoForm" action="{{ route('forma_pagamento.store') }}" method="POST" class="space-y-6"
@@ -222,10 +212,11 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
                 <label for="forma_qtd_parcela" class="block text-sm font-medium text-custom-dark-text mb-1">Qtd Parcelas</label>
                 <input type="number" name="forma_qtd_parcela" id="forma_qtd_parcela"
                     value="{{ old('forma_qtd_parcela', 1) }}"
-                    min="1"
+                    min="1" max="50"
                     class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md border border-gray-300 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
                     placeholder="1, 2, 3...">
                 <p id="msg_parcelas" class="text-xs text-gray-500 hidden">Selecione o prazo primeiro</p>
+                <p id="msg_parcelas_erro" class="text-xs text-red-600 hidden mt-1"></p>
 
                 @error('forma_qtd_parcela')
                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
@@ -327,7 +318,7 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
         </div>
 
         <div class="flex justify-center mb-8">
-            <a href="{{ url('/forma_pagamento?' . $financeiroId) }}"
+            <a href="{{ route('forma_pagamento.index', ['id_fin' => $financeiroId]) }}"
                 class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
                 VOLTAR PARA A LISTA
             </a>
@@ -335,13 +326,18 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     </form>
 </div>
 
+<x-modal-confirmacao
+    id="modalSalvarFormaPagamento"
+    titulo="Confirmar cadastro"
+    mensagem="Após salvar, os dados desta forma de pagamento NÃO poderão ser editados. Confira os valores, datas, parcelas e demais informações antes de continuar. Deseja realmente salvar esta forma de pagamento?"
+    textoConfirmar="Salvar" />
 <script>
-    // ===== Referências de elementos =====
     const form = document.getElementById('formaPagamentoForm');
     const btnSalvar = document.getElementById('btnSalvarForma');
     const valorFaltante = parseFloat(form.dataset.valorFaltante || '0');
 
     const msgValorMaximo = document.getElementById('msg_valor_maximo');
+    const msgParcelasErro = document.getElementById('msg_parcelas_erro');
 
     const selectPrazo = document.getElementById('forma_prazo');
     const inputParcelas = document.getElementById('forma_qtd_parcela');
@@ -409,6 +405,36 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
             btnSalvar.classList.remove('opacity-50', 'cursor-not-allowed');
             return true;
         }
+    }
+
+    function validarParcelas() {
+        const valor = inputParcelas.value;
+
+        // vazio
+        if (valor === '') {
+            msgParcelasErro.textContent = 'Informe a quantidade de parcelas.';
+            msgParcelasErro.classList.remove('hidden');
+            inputParcelas.setCustomValidity('Inválido');
+            btnSalvar.disabled = true;
+            return false;
+        }
+
+        const numero = Number(valor);
+
+        // inteiro entre 1 e 50
+        if (!Number.isInteger(numero) || numero < 1 || numero > 50) {
+            msgParcelasErro.textContent =
+                'A quantidade de parcelas deve ser um número inteiro entre 1 e 50.';
+            msgParcelasErro.classList.remove('hidden');
+            inputParcelas.setCustomValidity('Inválido');
+            btnSalvar.disabled = true;
+            return false;
+        }
+
+        msgParcelasErro.classList.add('hidden');
+        inputParcelas.setCustomValidity('');
+        btnSalvar.disabled = false;
+        return true;
     }
 
     function calcularValoresParcelas() {
@@ -564,35 +590,27 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     }
 
     form.addEventListener('submit', function(e) {
-        // Verifica se o valor não ultrapassa o valor faltante
+        e.preventDefault();
+
         if (!validarValorMaximo()) {
-            e.preventDefault();
-            return false;
+            return;
+        }
+
+        if (!validarParcelas()) {
+            return;
         }
 
         if (btnSalvar.disabled) {
-            return false;
+            return;
         }
 
-        // Confirmação antes de salvar
-        const confirmar = confirm(
-            'Atenção!\n\n' +
-            'Após salvar, os dados desta forma de pagamento NÃO poderão ser editados.\n' +
-            'Confira os valores, datas, parcelas e demais informações antes de continuar.\n' +
-            'Deseja realmente salvar esta forma de pagamento?'
-        );
+        abrirModal('modalSalvarFormaPagamento', function() {
+            btnSalvar.disabled = true;
+            btnSalvar.innerText = 'SALVANDO...';
+            btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
 
-        // Se o usuário cancelar, não envia o formulário
-        if (!confirmar) {
-            e.preventDefault();
-            return false;
-        }
-
-        // Se confirmou, evita duplo clique
-        btnSalvar.disabled = true;
-        btnSalvar.innerText = 'SALVANDO...';
-        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
-
+            form.submit();
+        });
     });
 
     tipoPagamento.addEventListener('change', bloquearCampos);
@@ -611,8 +629,10 @@ $valorFaltante = max($valorTotal - $valorPago, 0);
     });
 
     inputParcelas.addEventListener('input', function() {
+        validarParcelas();
         controlarCampos();
         bloquearCampos();
+        gerarParcelas();
     });
 
     inputDataPrimeiraParcela.addEventListener('change', gerarParcelas);

@@ -8,17 +8,23 @@ class Notificacao extends Model
 {
     protected $table = 'notificacao';
     protected $primaryKey = 'id_notificacao';
+    public $timestamps = false;
 
     protected $fillable = [
-        'cobranca_id_cobranca',
+        'id_det_forma',
         'not_tipo',
         'not_descricao'
     ];
 
-    public function cobranca()
+    public function detalheFormaPag()
     {
-        return $this->belongsTo(Cobranca::class, 'cobranca_id_cobranca', 'id_cobranca');
+        return $this->belongsTo(
+            DetalhesFormaPag::class,
+            'id_det_forma',
+            'id_det_forma'
+        );
     }
+
     public function getTipoNomeAttribute()
     {
         return match ($this->not_tipo) {

@@ -12,158 +12,22 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use App\Helpers\CryptHelper;
 
 class OrcamentoController extends Controller
 {
+    private const SESSION_KEY = 'orcamento.index_url';
+    private const SCROLL_KEY = 'orcamento.index_scroll';
+
+    private function urlIndex(): string
+    {
+        return session(self::SESSION_KEY, route('cliente_orcamento.index'));
+    }
 
     public function previewOrcamento($id)
     {
-        $orcamento = Orcamento::with('detalhesOrcamento.customizacoes', 'clienteOrcamento')->findOrFail($id);
-        $clienteOrcamento = $orcamento->clienteOrcamento;
+        $id = CryptHelper::decrypt($id);
 
-        // Retorna a mesma view usada no PDF, mas como HTML normal
-        return view('view_orcamento.orcamento_pdf', compact('orcamento', 'clienteOrcamento'));
-    }
-
-    public function index(Request $request)
-    {
-        if (!$request->cliente_orcamento_id) {
-            return redirect()->route('cliente_orcamento.index')
-                ->with('error', 'Selecione um cliente para visualizar os orçamentos.');
-        }
-
-        $today = Carbon::now()->startOfDay();
-
-        $clienteSelecionado = ClienteOrcamento::where(
-            'id_co',
-            $request->cliente_orcamento_id
-        )->firstOrFail();
-
-        $query = Orcamento::with([
-            'clienteOrcamento',
-            'detalhesOrcamento.customizacoes'
-        ])
-            ->where('cliente_orcamento_id_co', $request->cliente_orcamento_id);
-
-        if ($request->filled('orc_cod_fabrica')) {
-            $query->where(
-                'orc_cod_fabrica',
-                'like',
-                '%' . trim($request->orc_cod_fabrica) . '%'
-            );
-        }
-
-        if ($request->filled('orc_cod_interno')) {
-            $query->where(
-                'orc_cod_interno',
-                'like',
-                '%' . trim($request->orc_cod_interno) . '%'
-            );
-        }
-
-        if ($request->filled('data_inicio')) {
-            $query->whereDate(
-                'orc_data_inicio',
-                $request->data_inicio
-            );
-        }
-
-        if ($request->filled('data_fim')) {
-            $query->whereDate(
-                'orc_data_fim',
-                $request->data_fim
-            );
-        }
-
-        if ($request->filled('status_query')) {
-            $query->where('orc_status', $request->status_query);
-        }
-
-        $filtroVencimento = $request->filtro_vencimento ?? 'todos';
-
-        if ($filtroVencimento === 'ativos') {
-
-            $query->where('orc_status', '!=', 'rejeitado')
-                ->where(function ($q) use ($today) {
-                    $q->whereIn('orc_status', ['aprovado', 'finalizado'])
-                        ->orWhere('orc_data_fim', '>=', $today);
-                });
-        } elseif ($filtroVencimento === 'vencidos') {
-
-            $query->where(function ($q) use ($today) {
-
-                $q->where(function ($sub) use ($today) {
-
-                    $sub->whereIn('orc_status', [
-                        'pendente',
-                        'para aprovacao'
-                    ])
-                        ->where('orc_data_fim', '<', $today);
-                })
-                    ->orWhere('orc_status', 'rejeitado');
-            });
-        }
-
-        $orcamentos = $query
-            ->orderBy('orc_cod_fabrica', 'asc')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('view_orcamento.index', compact('orcamentos', 'clienteSelecionado'));
-    }
-
-    public function aplicarDesconto(Request $request, $id)
-    {
-        try {
-            $orcamento = Orcamento::with('detalhesOrcamento.customizacoes')->findOrFail($id);
-
-            $validated = $request->validate([
-                'orc_desconto_tipo'   => 'nullable|in:valor,percentual',
-                'orc_desconto_valor'  => 'nullable|numeric|min:0',
-                'orc_desconto_motivo' => 'nullable|string|max:255',
-            ]);
-
-            // Se o tipo não veio, entende-se que o usuário quer remover o desconto
-            if (empty($validated['orc_desconto_tipo'])) {
-                $orcamento->update([
-                    'orc_desconto_tipo'   => null,
-                    'orc_desconto_valor'  => 0,
-                    'orc_desconto_motivo' => null,
-                ]);
-
-                return redirect()->back()->with('success', 'Desconto removido com sucesso!');
-            }
-
-            $valor = $validated['orc_desconto_valor'] ?? 0;
-
-            if ($validated['orc_desconto_tipo'] === 'percentual' && $valor > 100) {
-                return redirect()->back()
-                    ->withErrors(['orc_desconto_valor' => 'O percentual não pode ser maior que 100%.'])
-                    ->withInput();
-            }
-
-            if ($validated['orc_desconto_tipo'] === 'valor' && $valor > $orcamento->total_bruto) {
-                return redirect()->back()
-                    ->withErrors(['orc_desconto_valor' => 'O desconto não pode ser maior que o total do orçamento.'])
-                    ->withInput();
-            }
-
-            $orcamento->update([
-                'orc_desconto_tipo'   => $validated['orc_desconto_tipo'],
-                'orc_desconto_valor'  => $valor,
-                'orc_desconto_motivo' => $validated['orc_desconto_motivo'] ?? null,
-            ]);
-
-            return redirect()->back()->with('success', 'Desconto aplicado com sucesso!');
-        } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Não foi possível aplicar o desconto: ' . $e->getMessage());
-        }
-    }
-
-    public function gerarOrcamento(Request $request, $id)
-    {
         $orcamento = Orcamento::with(
             'detalhesOrcamento.customizacoes',
             'clienteOrcamento'
@@ -171,72 +35,206 @@ class OrcamentoController extends Controller
 
         $clienteOrcamento = $orcamento->clienteOrcamento;
 
-        $cliente_orcamento_id = $request->cliente_orcamento_id;
+        return view('view_orcamento.orcamento_pdf', compact('orcamento', 'clienteOrcamento'));
+    }
 
-        return view(
-            'view_orcamento.gerar_orcamento',
-            compact('orcamento', 'clienteOrcamento', 'cliente_orcamento_id')
+    public function index(Request $request, $id)
+    {
+        session([self::SESSION_KEY => $request->fullUrl()]);
+
+        if ($request->has('scroll')) {
+            session([self::SCROLL_KEY => (int) $request->input('scroll')]);
+        }
+
+        $clienteId = CryptHelper::decrypt($id);
+        $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
+
+        $orcamentos = $this->queryOrcamentos($request, $clienteId)
+            ->with([
+                'clienteOrcamento',
+                'detalhesOrcamento.customizacoes'
+            ])
+            ->orderBy('id_orcamento', 'asc')
+            ->paginate(10)
+            ->withQueryString();
+
+        $urlClienteOrcamento = session(
+            'cliente_orcamento.index_url',
+            route('cliente_orcamento.index')
         );
+
+        return view('view_orcamento.index', compact(
+            'orcamentos',
+            'clienteSelecionado',
+            'urlClienteOrcamento'
+        ));
+    }
+
+    private function queryOrcamentos(Request $request, int $clienteId)
+    {
+        $today = Carbon::now()->startOfDay();
+
+        $query = Orcamento::where('cliente_orcamento_id_co', $clienteId);
+
+        if ($request->filled('id_orcamento')) {
+            $query->where('id_orcamento', $request->id_orcamento);
+        }
+
+        if ($request->filled('orc_cod_fabrica')) {
+            $query->where('orc_cod_fabrica', 'like', '%' . trim($request->orc_cod_fabrica) . '%');
+        }
+
+        if ($request->filled('orc_cod_interno')) {
+            $query->where('orc_cod_interno', 'like', '%' . trim($request->orc_cod_interno) . '%');
+        }
+
+        if ($request->filled('data_inicio')) {
+            $query->whereDate('orc_data_inicio', $request->data_inicio);
+        }
+
+        if ($request->filled('data_fim')) {
+            $query->whereDate('orc_data_fim', $request->data_fim);
+        }
+
+        if ($request->filled('status_query')) {
+            $query->where('orc_status', $request->status_query);
+        }
+
+        $filtroVencimento = $request->input('filtro_vencimento', 'todos');
+
+        if ($filtroVencimento === 'ativos') {
+            $query->where('orc_status', '!=', 'rejeitado')
+                ->where(function ($q) use ($today) {
+                    $q->whereIn('orc_status', ['aprovado', 'finalizado'])
+                        ->orWhere('orc_data_fim', '>=', $today);
+                });
+        } elseif ($filtroVencimento === 'vencidos') {
+            $query->where(function ($q) use ($today) {
+                $q->where(function ($sub) use ($today) {
+                    $sub->whereIn('orc_status', ['pendente', 'para aprovacao'])
+                        ->where('orc_data_fim', '<', $today);
+                })->orWhere('orc_status', 'rejeitado');
+            });
+        }
+
+        return $query;
+    }
+
+    public function gerarOrcamento($id)
+    {
+        $id = CryptHelper::decrypt($id);
+
+        $orcamento = Orcamento::with(
+            'detalhesOrcamento.customizacoes',
+            'clienteOrcamento'
+        )->findOrFail($id);
+
+        $clienteOrcamento = $orcamento->clienteOrcamento;
+
+        return view('view_orcamento.gerar_orcamento', [
+            'orcamento' => $orcamento,
+            'clienteOrcamento' => $clienteOrcamento,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
 
     public function gerarOrcamentoPDF($id)
     {
-        // Carrega o orçamento e suas relações
-        $orcamento = Orcamento::with('detalhesOrcamento.customizacoes', 'clienteOrcamento')->findOrFail($id);
+        $id = CryptHelper::decrypt($id);
+
+        $orcamento = Orcamento::with(
+            'detalhesOrcamento.customizacoes',
+            'clienteOrcamento'
+        )->findOrFail($id);
+
         $clienteOrcamento = $orcamento->clienteOrcamento;
 
-        // Gera a view do PDF com os dados
-        $pdf = Pdf::loadView('view_orcamento.orcamento_pdf', compact('orcamento', 'clienteOrcamento'));
+        $pdf = Pdf::loadView(
+            'view_orcamento.orcamento_pdf',
+            compact('orcamento', 'clienteOrcamento')
+        );
 
-        // Define o nome do arquivo para download
         $fileName = 'Orçamento - ' . $clienteOrcamento->clie_orc_nome . '.pdf';
 
-        // Força o download do PDF gerado
         return $pdf->download($fileName);
     }
 
-
-    public function create(Request $request)
+    public function create($id)
     {
+        $clienteId = CryptHelper::decrypt($id);
+        $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
 
-        if (!$request->cliente_orcamento_id) {
-            return view('view_orcamento.create', compact(
-                'clienteSelecionado'
-            ));
-        }
-
-        $today = Carbon::now()->startOfDay();
-
-        $clienteSelecionado = ClienteOrcamento::where(
-            'id_co',
-            $request->cliente_orcamento_id
-        )->firstOrFail();
-
-        return view('view_orcamento.create', compact('clienteSelecionado'));
+        return view('view_orcamento.create', [
+            'clienteSelecionado' => $clienteSelecionado,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
-
 
     public function store(Request $request)
     {
         try {
             $validatedData = $request->validate([
-                'cliente_orcamento_id_co' => ['required', 'integer', 'exists:cliente_orcamento,id_co',],
-                'orc_data_inicio' => ['required', 'date',],
-                'orc_data_fim' => ['required', 'date', 'after:orc_data_inicio',],
-                'orc_status' => ['required', 'string', 'in:pendente,para aprovacao,rejeitado',],
-                'orc_cod_fabrica' => ['nullable', 'string', 'max:60', 'unique:orcamento,orc_cod_fabrica',],
-                'orc_cod_interno' => ['nullable', 'string', 'max:60', 'unique:orcamento,orc_cod_interno',],
-                'anotacoes' => ['nullable', 'array',],
-                'anotacoes.*' => ['nullable', 'string', 'max:1000',],
-                'orc_anotacao_geral' => ['nullable', 'string', 'max:1000',],
-                'orc_motivo_rejeicao' => ['nullable', 'string', 'max:1000', 'required_if:orc_status,rejeitado',],
+                'cliente_orcamento_id_co' => [
+                    'required',
+                    'integer',
+                    'exists:cliente_orcamento,id_co',
+                ],
+                'orc_data_inicio' => [
+                    'required',
+                    'date',
+                ],
+                'orc_data_fim' => [
+                    'required',
+                    'date',
+                    'after:orc_data_inicio',
+                ],
+                'orc_status' => [
+                    'required',
+                    'string',
+                    'in:pendente,para aprovacao,rejeitado',
+                ],
+                'orc_cod_fabrica' => [
+                    'nullable',
+                    'string',
+                    'max:60',
+                    'unique:orcamento,orc_cod_fabrica',
+                    Rule::unique('orcamento_fracionado', 'orc_cod_fabrica'),
+                ],
+                'orc_cod_interno' => [
+                    'nullable',
+                    'string',
+                    'max:60',
+                    'unique:orcamento,orc_cod_interno',
+                    Rule::unique('orcamento_fracionado', 'orc_cod_interno'),
+                ],
+                'anotacoes' => [
+                    'nullable',
+                    'array',
+                ],
+                'anotacoes.*' => [
+                    'nullable',
+                    'string',
+                    'max:1000',
+                ],
+                'orc_anotacao_geral' => [
+                    'nullable',
+                    'string',
+                    'max:1000',
+                ],
+                'orc_motivo_rejeicao' => [
+                    'nullable',
+                    'string',
+                    'max:1000',
+                    'required_if:orc_status,rejeitado',
+                ],
             ], [
                 'orc_data_inicio.required' => 'A data de início é obrigatória.',
                 'orc_data_fim.required' => 'A data de fim é obrigatória.',
                 'orc_data_fim.after' => 'A data final deve ser maior que a data inicial.',
                 'orc_status.required' => 'Selecione um status.',
                 'orc_status.in' => 'O status selecionado é inválido.',
+
                 'orc_cod_fabrica.unique' => 'Este código de fábrica já está cadastrado.',
                 'orc_cod_interno.unique' => 'Este código interno já está cadastrado.',
                 'orc_motivo_rejeicao.required_if' => 'Informe o motivo da rejeição.',
@@ -272,10 +270,7 @@ class OrcamentoController extends Controller
                 'orc_motivo_rejeicao' => $orc_motivo_rejeicao,
             ]);
 
-            return redirect()
-                ->route('orcamento.index', [
-                    'cliente_orcamento_id' => $orcamento->cliente_orcamento_id_co
-                ])
+            return redirect($this->urlIndex())
                 ->with('success', 'Orçamento criado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()
@@ -293,59 +288,184 @@ class OrcamentoController extends Controller
         }
     }
 
-
-    public function show($id)
+    public function aplicarDesconto(Request $request, $id)
     {
-        $orcamento = Orcamento::with('clienteOrcamento')->findOrFail($id);
-        return view('view_orcamento.show', compact('orcamento'));
+        try {
+            $id = CryptHelper::decrypt($id);
+            $orcamento = Orcamento::findOrFail($id);
+            if (in_array($orcamento->orc_status, ['aprovado', 'rejeitado', 'finalizado'])) {
+                return redirect()
+                    ->back()
+                    ->with(
+                        'error',
+                        'Não é permitido alterar o desconto de um orçamento aprovado, rejeitado ou finalizado.'
+                    );
+            }
+
+            $temDesconto = $request->filled('orc_desconto_tipo');
+
+            $validatedData = $request->validate([
+                'orc_desconto_tipo' => [
+                    'nullable',
+                    'string',
+                    'in:valor,percentual',
+                ],
+                'orc_desconto_valor' => [
+                    Rule::requiredIf($temDesconto),
+                    'nullable',
+                    'numeric',
+                    'gt:0',
+                    function ($attribute, $value, $fail) use ($request) {
+                        if ($request->input('orc_desconto_tipo') === 'percentual' && $value !== null && $value > 100) {
+                            $fail('O percentual de desconto não pode ser maior que 100%.');
+                        }
+                    },
+                ],
+                'orc_desconto_motivo' => [
+                    Rule::requiredIf($temDesconto),
+                    'nullable',
+                    'string',
+                    'max:255',
+                ],
+            ], [
+                'orc_desconto_tipo.in' => 'Tipo de desconto inválido.',
+                'orc_desconto_valor.required' => 'Informe o valor do desconto.',
+                'orc_desconto_valor.numeric' => 'O valor do desconto deve ser um número válido.',
+                'orc_desconto_valor.gt' => 'O valor do desconto deve ser maior que zero.',
+                'orc_desconto_motivo.required' => 'Informe o motivo do desconto.',
+            ]);
+
+            if (!$temDesconto) {
+                // "Sem desconto" selecionado -> limpa tudo
+                $orcamento->update([
+                    'orc_desconto_tipo' => null,
+                    'orc_desconto_valor' => null,
+                    'orc_desconto_motivo' => null,
+                ]);
+            } else {
+                $orcamento->update([
+                    'orc_desconto_tipo' => $validatedData['orc_desconto_tipo'],
+                    'orc_desconto_valor' => $validatedData['orc_desconto_valor'],
+                    'orc_desconto_motivo' => $validatedData['orc_desconto_motivo'],
+                ]);
+            }
+
+            return redirect()
+                ->back()
+                ->with('success', 'Desconto atualizado com sucesso!');
+        } catch (ValidationException $e) {
+            return redirect()
+                ->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        } catch (Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Não foi possível aplicar o desconto: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     public function edit($id)
     {
+        $id = CryptHelper::decrypt($id);
         $orcamento = Orcamento::findOrFail($id);
         $clientesOrcamento = ClienteOrcamento::all();
         $clienteSelecionado = $orcamento->clienteOrcamento;
+
         $financeiroPendente = DB::table('financeiro')
             ->where('orcamento_id_orcamento', $orcamento->id_orcamento)
             ->where('fin_status', '!=', 'entregue')
             ->exists();
 
-        return view(
-            'view_orcamento.edit',
-            compact('orcamento', 'clientesOrcamento', 'financeiroPendente', 'clienteSelecionado')
-        );
+        return view('view_orcamento.edit', [
+            'orcamento' => $orcamento,
+            'clientesOrcamento' => $clientesOrcamento,
+            'financeiroPendente' => $financeiroPendente,
+            'clienteSelecionado' => $clienteSelecionado,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
 
     public function update(Request $request, $id)
     {
         try {
+            $id = CryptHelper::decrypt($id);
             $orcamento = Orcamento::findOrFail($id);
             $statusAnterior = $orcamento->orc_status;
 
             $validatedData = $request->validate([
-                'cliente_orcamento_id_co' => ['sometimes', 'required', 'integer', 'exists:cliente_orcamento,id_co',],
-                'orc_data_inicio' => ['sometimes', 'required', 'date',],
-                'orc_data_fim' => ['required', 'date', 'after:orc_data_inicio',],
-                'orc_status' => ['sometimes', 'required', 'string', 'in:pendente,para aprovacao,aprovado,finalizado,rejeitado',],
+                'cliente_orcamento_id_co' => [
+                    'sometimes',
+                    'required',
+                    'integer',
+                    'exists:cliente_orcamento,id_co',
+                ],
+                'orc_data_inicio' => [
+                    'sometimes',
+                    'required',
+                    'date',
+                ],
+                'orc_data_fim' => [
+                    'required',
+                    'date',
+                    'after:orc_data_inicio',
+                ],
+                'orc_status' => [
+                    'sometimes',
+                    'required',
+                    'string',
+                    'in:pendente,para aprovacao,aprovado,finalizado,rejeitado',
+                ],
                 'orc_cod_fabrica' => [
                     'nullable',
                     'string',
                     'max:60',
-                    Rule::unique('orcamento', 'orc_cod_fabrica')->ignore($orcamento->id_orcamento, 'id_orcamento'),
+                    Rule::unique('orcamento', 'orc_cod_fabrica')
+                        ->ignore(
+                            $orcamento->id_orcamento,
+                            'id_orcamento'
+                        ),
+                    Rule::unique(
+                        'orcamento_fracionado',
+                        'orc_cod_fabrica'
+                    ),
                 ],
                 'orc_cod_interno' => [
                     'nullable',
                     'string',
                     'max:60',
                     Rule::unique('orcamento', 'orc_cod_interno')
-                        ->ignore($orcamento->id_orcamento, 'id_orcamento'),
+                        ->ignore(
+                            $orcamento->id_orcamento,
+                            'id_orcamento'
+                        ),
+                    Rule::unique(
+                        'orcamento_fracionado',
+                        'orc_cod_interno'
+                    ),
                 ],
-                'anotacoes' => ['nullable', 'array',],
-                'anotacoes.*' => ['nullable', 'string', 'max:1000',],
-                'orc_anotacao_geral' => ['nullable', 'string', 'max:1000',],
-                'orc_motivo_rejeicao' => ['nullable', 'string', 'max:1000', 'required_if:orc_status,rejeitado',],
-
+                'anotacoes' => [
+                    'nullable',
+                    'array',
+                ],
+                'anotacoes.*' => [
+                    'nullable',
+                    'string',
+                    'max:1000',
+                ],
+                'orc_anotacao_geral' => [
+                    'nullable',
+                    'string',
+                    'max:1000',
+                ],
+                'orc_motivo_rejeicao' => [
+                    'nullable',
+                    'string',
+                    'max:1000',
+                    'required_if:orc_status,rejeitado',
+                ],
             ], [
                 'orc_data_fim.after' => 'A data final deve ser maior que a data inicial.',
                 'orc_cod_fabrica.unique' => 'Este código de fábrica já está cadastrado.',
@@ -372,14 +492,20 @@ class OrcamentoController extends Controller
             if ($statusAnterior === 'finalizado' && $novoStatus !== 'finalizado') {
                 return redirect()
                     ->back()
-                    ->with('error', 'Este orçamento já está finalizado e seu status não pode mais ser alterado.')
+                    ->with(
+                        'error',
+                        'Este orçamento já está finalizado e seu status não pode mais ser alterado.'
+                    )
                     ->withInput();
             }
 
             if ($statusAnterior === 'rejeitado' && $novoStatus !== 'rejeitado') {
                 return redirect()
                     ->back()
-                    ->with('error', 'Este orçamento foi rejeitado e seu status não pode mais ser alterado.')
+                    ->with(
+                        'error',
+                        'Este orçamento foi rejeitado e seu status não pode mais ser alterado.'
+                    )
                     ->withInput();
             }
 
@@ -389,7 +515,10 @@ class OrcamentoController extends Controller
             ) {
                 return redirect()
                     ->back()
-                    ->with('error', 'Um orçamento aprovado só pode ser finalizado ou rejeitado.')
+                    ->with(
+                        'error',
+                        'Um orçamento aprovado só pode ser finalizado ou rejeitado.'
+                    )
                     ->withInput();
             }
 
@@ -405,21 +534,38 @@ class OrcamentoController extends Controller
             $orcamento->update([
                 'cliente_orcamento_id_co' => $validatedData['cliente_orcamento_id_co']
                     ?? $orcamento->cliente_orcamento_id_co,
+
                 'orc_data_inicio' => $validatedData['orc_data_inicio']
                     ?? $orcamento->orc_data_inicio,
+
                 'orc_data_fim' => $validatedData['orc_data_fim']
                     ?? $orcamento->orc_data_fim,
+
                 'orc_status' => $novoStatus,
-                'orc_cod_fabrica' => array_key_exists('orc_cod_fabrica', $validatedData)
+
+                'orc_cod_fabrica' => array_key_exists(
+                    'orc_cod_fabrica',
+                    $validatedData
+                )
                     ? $validatedData['orc_cod_fabrica']
                     : $orcamento->orc_cod_fabrica,
-                'orc_cod_interno' => array_key_exists('orc_cod_interno', $validatedData)
+
+                'orc_cod_interno' => array_key_exists(
+                    'orc_cod_interno',
+                    $validatedData
+                )
                     ? $validatedData['orc_cod_interno']
                     : $orcamento->orc_cod_interno,
+
                 'orc_anotacao_espec' => $orc_anotacao_espec,
-                'orc_anotacao_geral' => array_key_exists('orc_anotacao_geral', $validatedData)
+
+                'orc_anotacao_geral' => array_key_exists(
+                    'orc_anotacao_geral',
+                    $validatedData
+                )
                     ? $validatedData['orc_anotacao_geral']
                     : $orcamento->orc_anotacao_geral,
+
                 'orc_motivo_rejeicao' => $novoStatus === 'rejeitado'
                     ? ($validatedData['orc_motivo_rejeicao'] ?? null)
                     : null,
@@ -433,7 +579,10 @@ class OrcamentoController extends Controller
 
             if ($foiAprovadoAgora) {
                 $existeFinanceiro = DB::table('financeiro')
-                    ->where('orcamento_id_orcamento', $orcamento->id_orcamento)
+                    ->where(
+                        'orcamento_id_orcamento',
+                        $orcamento->id_orcamento
+                    )
                     ->exists();
 
                 if (!$existeFinanceiro) {
@@ -446,13 +595,13 @@ class OrcamentoController extends Controller
 
                     DB::table('financeiro')->insert([
                         'orcamento_id_orcamento' => $orcamento->id_orcamento,
-                        'id_orcamento'           => $orcamento->id_orcamento,
-                        'id_cliente'             => $orcamento->cliente_orcamento_id_co,
-                        'fin_nome_cliente'       => $orcamento->clienteOrcamento->clie_orc_nome,
-                        'fin_valor_total'        => $orcamento->total_com_desconto, // agora correto
-                        'fin_status'             => $status->status_merc_nome,
-                        'created_at'             => now(),
-                        'updated_at'             => now(),
+                        'id_orcamento' => $orcamento->id_orcamento,
+                        'id_cliente' => $orcamento->cliente_orcamento_id_co,
+                        'fin_nome_cliente' => $orcamento->clienteOrcamento->clie_orc_nome,
+                        'fin_valor_total' => $orcamento->total_com_desconto,
+                        'fin_status' => $status->status_merc_nome,
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
 
                     $statusList = DB::table('status_mercadoria')
@@ -475,8 +624,7 @@ class OrcamentoController extends Controller
                         $primeiro = false;
                     }
 
-                    return redirect()
-                        ->route('financeiro.index')
+                    return redirect($this->urlIndex())
                         ->with(
                             'success',
                             'Orçamento aprovado e financeiro criado com sucesso!'
@@ -484,10 +632,7 @@ class OrcamentoController extends Controller
                 }
             }
 
-            return redirect()
-                ->route('orcamento.index', [
-                    'cliente_orcamento_id' => $orcamento->cliente_orcamento_id_co
-                ])
+            return redirect($this->urlIndex())
                 ->with('success', 'Orçamento atualizado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()
@@ -505,15 +650,14 @@ class OrcamentoController extends Controller
         }
     }
 
-
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         try {
+            $id = CryptHelper::decrypt($id);
             $orcamento = Orcamento::findOrFail($id);
 
             if (!in_array($orcamento->orc_status, ['pendente', 'rejeitado'])) {
-                return redirect()
-                    ->back()
+                return redirect()->back()
                     ->with('error', 'Somente orçamentos pendentes ou rejeitados podem ser excluídos.');
             }
 
@@ -522,10 +666,11 @@ class OrcamentoController extends Controller
                 ->exists();
 
             if ($existeFinanceiro) {
-                return redirect()
-                    ->back()
+                return redirect()->back()
                     ->with('error', 'Este orçamento não pode ser excluído porque possui um registro financeiro vinculado.');
             }
+
+            $clienteId = $orcamento->cliente_orcamento_id_co;
 
             $orcamento->load('detalhesOrcamento.customizacoes');
 
@@ -546,30 +691,39 @@ class OrcamentoController extends Controller
             }
 
             $orcamento->detalhesOrcamento()->delete();
-
-            $clienteId = $orcamento->cliente_orcamento_id_co;
-
             $orcamento->delete();
 
-            return redirect()
-                ->route('orcamento.index', [
-                    'cliente_orcamento_id' => $clienteId
-                ])
+            $urlVoltar = url()->previous();
+            $url = parse_url($urlVoltar);
+
+            parse_str($url['query'] ?? '', $query);
+
+            $paginaAtual = max(1, (int) ($query['page'] ?? 1));
+
+            if ($paginaAtual > 1) {
+                $requestFiltros = Request::create($urlVoltar, 'GET');
+
+                $totalRestante = $this->queryOrcamentos(
+                    $requestFiltros,
+                    $clienteId
+                )->count();
+
+                $ultimaPagina = max(1, (int) ceil($totalRestante / 2));
+
+                if ($paginaAtual > $ultimaPagina) {
+                    $query['page'] = $ultimaPagina;
+                    $urlVoltar = ($url['path'] ?? '') . '?' . http_build_query($query);
+                }
+            }
+
+            return redirect($urlVoltar)
                 ->with('success', 'Orçamento excluído com sucesso!');
         } catch (\Illuminate\Database\QueryException $e) {
-            return redirect()
-                ->back()
-                ->with(
-                    'error',
-                    'Não foi possível excluir o orçamento porque existem registros vinculados a ele.'
-                );
+            return redirect()->back()
+                ->with('error', 'Não foi possível excluir o orçamento porque existem registros vinculados a ele.');
         } catch (Exception $e) {
-            return redirect()
-                ->back()
-                ->with(
-                    'error',
-                    'Não foi possível excluir o orçamento: ' . $e->getMessage()
-                );
+            return redirect()->back()
+                ->with('error', 'Não foi possível excluir o orçamento: ' . $e->getMessage());
         }
     }
 }

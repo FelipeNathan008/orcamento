@@ -2,126 +2,244 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cobranca;
+use App\Models\FormaPagamento;
+use App\Models\TipoPagamento;
+use App\Models\DetalhesFormaPag;
+use App\Models\JurosMulta;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
+use App\Services\AtualizarStatusParcelas;
 
 class CobrancaController extends Controller
 {
-
-    public function index()
+    public function index(Request $request, AtualizarStatusParcelas $atualizarStatusParcelas)
     {
-        $cobrancas = Cobranca::with([
+        $atualizarStatusParcelas->executar();
+        $tiposPagamento = TipoPagamento::all();
+        $query = FormaPagamento::with([
+            'financeiro.orcamento',
             'tipoPagamento',
-            'detalhesCobranca' => function ($query) {
-                $query->where(function ($q) {
-                    $q->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today())
-                        ->orWhere('det_cobr_status', 'Acordo');
-                });
+            'detalhes' => function ($query) {
+                $query->whereIn('det_situacao', [
+                    'Atrasado',
+                    'Acordo',
+                    'Inadimplencia'
+                ]);
             }
         ])
-            ->where('cobr_status', '!=', 'Quitado')
-            ->whereHas('detalhesCobranca', function ($query) {
-                $query->where(function ($q) {
-                    $q->whereDate('det_cobr_data_venc', '<=', \Carbon\Carbon::today())
-                        ->orWhere('det_cobr_status', 'Acordo');
-                });
-            })
-            ->get();
+            ->whereHas('detalhes', function ($query) {
+                $query->whereIn('det_situacao', [
+                    'Atrasado',
+                    'Acordo',
+                    'Inadimplencia'
+                ]);
+            });
 
-        return view('view_cobranca.index', compact('cobrancas'));
+        if ($request->filled('id_financeiro')) {
+            $query->where(
+                'financeiro_id_fin',
+                $request->id_financeiro
+            );
+        }
+
+        if ($request->filled('id_orcamento')) {
+            $query->whereHas('financeiro', function ($query) use ($request) {
+                $query->where(
+                    'orcamento_id_orcamento',
+                    $request->id_orcamento
+                );
+            });
+        }
+
+        if ($request->filled('cliente')) {
+            $query->whereHas('financeiro', function ($query) use ($request) {
+                $query->where(
+                    'fin_nome_cliente',
+                    'like',
+                    '%' . trim($request->cliente) . '%'
+                );
+            });
+        }
+
+        if ($request->filled('tipo_pagamento')) {
+            $query->whereHas('tipoPagamento', function ($query) use ($request) {
+                $query->where(
+                    'tipo_plano_fin',
+                    'like',
+                    '%' . trim($request->tipo_pagamento) . '%'
+                );
+            });
+        }
+
+        $formasPagamento = $query
+            ->orderBy('id_forma_pag', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        foreach ($formasPagamento as $forma) {
+
+            foreach ($forma->detalhes as $parcela) {
+
+                $parcela->cor_status = match ($parcela->det_situacao) {
+                    'Pago', 'Quitado' =>
+                    'bg-green-100 text-green-700',
+
+                    'Não Pago' =>
+                    'bg-yellow-100 text-yellow-700',
+
+                    'Acordo' =>
+                    'bg-blue-100 text-blue-700',
+
+                    'Atrasado', 'Inadimplencia' =>
+                    'bg-red-100 text-red-700',
+
+                    default =>
+                    'bg-gray-100 text-gray-700',
+                };
+            }
+        }
+
+        return view('view_cobranca.index', compact('formasPagamento', 'tiposPagamento'));
     }
 
     public function create()
     {
-        return view('view_cobranca.create');
+        abort(404);
     }
-
 
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'cobr_cliente'      => 'required|string|max:90',
-                'cobr_id_fin'       => 'required|integer',
-                'cobr_id_orc'       => 'required|integer',
-                'cobr_id_tipo'      => 'required|integer',
-                'cobr_status'       => 'required|string|max:45',
-            ]);
-
-            Cobranca::create($validated);
-
-            return redirect()->route('cobranca.index')
-                ->with('success', 'Cobrança criada com sucesso!');
-        } catch (ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Erro ao criar cobrança: ' . $e->getMessage())
-                ->withInput();
-        }
+        abort(404);
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show($id)
     {
-        $cobranca = Cobranca::findOrFail($id);
-        return view('view_cobranca.show', compact('cobranca'));
+        $formaPagamento = FormaPagamento::with([
+            'financeiro.orcamento',
+            'tipoPagamento',
+            'detalhes'
+        ])->findOrFail($id);
+
+        return view('view_cobranca.show', compact('formaPagamento'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    public function edit(Request $request, $id)
     {
-        $cobranca = Cobranca::findOrFail($id);
-        return view('view_cobranca.edit', compact('cobranca'));
+        $detalhe = DetalhesFormaPag::findOrFail($id);
+
+        $jurosMulta = JurosMulta::first();
+
+        $filtros = $request->only([
+            'id_financeiro',
+            'id_orcamento',
+            'cliente',
+            'tipo_pagamento',
+            'page',
+        ]);
+
+        return view('view_cobranca.edit', compact(
+            'detalhe',
+            'jurosMulta',
+            'filtros'
+        ));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
         try {
-            $cobranca = Cobranca::findOrFail($id);
+            $detalhe = DetalhesFormaPag::findOrFail($id);
 
             $validated = $request->validate([
-                'cobr_cliente'      => 'required|string|max:90',
-                'cobr_id_fin'       => 'required|integer',
-                'cobr_id_orc'       => 'required|integer',
-                'cobr_id_tipo'      => 'required|integer',
-                'cobr_status'       => 'required|string|max:45',
+                'det_forma_data_venc' => 'required|date',
+                'det_forma_valor_parcela' => 'required|numeric|min:0',
+                'det_situacao' => 'required|string|max:45',
+                'desconto_multa' => 'nullable|numeric|min:0',
+                'desconto_juros' => 'nullable|numeric|min:0',
+                'data_original' => 'required|date',
             ]);
 
-            $cobranca->update($validated);
+            $valorOriginal = (float) $detalhe->det_forma_valor_original;
 
-            return redirect()->route('cobranca.index')
-                ->with('success', 'Cobrança atualizada com sucesso!');
+            $dataOriginal = Carbon::parse(
+                $detalhe->det_forma_data_venc
+            );
+
+            $novaData = Carbon::parse(
+                $validated['det_forma_data_venc']
+            );
+
+            $diasAtraso = max(
+                0,
+                $dataOriginal->diffInDays($novaData, false)
+            );
+
+            $jurosMulta = JurosMulta::first();
+
+            $indiceMulta = (float) ($jurosMulta->indice_multa ?? 2);
+            $indiceJuros = (float) ($jurosMulta->indice_juros ?? 1);
+
+            $multaCalculada =
+                $valorOriginal * ($indiceMulta / 100);
+
+            $jurosCalculado =
+                $valorOriginal *
+                ($indiceJuros / 100 / 30) *
+                $diasAtraso;
+
+            $descontoMulta = min(
+                $multaCalculada,
+                max(0, (float) ($validated['desconto_multa'] ?? 0))
+            );
+
+            $descontoJuros = min(
+                $jurosCalculado,
+                max(0, (float) ($validated['desconto_juros'] ?? 0))
+            );
+
+            $multaFinal =
+                max(0, $multaCalculada - $descontoMulta);
+
+            $jurosFinal =
+                max(0, $jurosCalculado - $descontoJuros);
+
+            $valorFinal =
+                $valorOriginal +
+                $multaFinal +
+                $jurosFinal;
+
+            $detalhe->update([
+                'det_forma_valor_parcela' => $valorFinal,
+                'det_forma_data_venc' => $validated['det_forma_data_venc'],
+                'det_situacao' => 'Acordo',
+            ]);
+
+            return redirect()
+                ->route('cobranca.index', $request->only([
+                    'id_financeiro',
+                    'id_orcamento',
+                    'cliente',
+                    'tipo_pagamento',
+                    'page',
+                ]))
+                ->with('success', 'Acordo realizado com sucesso!');
         } catch (ValidationException $e) {
-            return redirect()->back()
+
+            return redirect()
+                ->back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Erro ao atualizar cobrança: ' . $e->getMessage())
+
+            return redirect()
+                ->back()
+                ->with('error', 'Erro ao realizar acordo: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy($id)
     {
-        $cobranca = Cobranca::findOrFail($id);
-        $cobranca->delete();
-
-        return redirect()->route('cobranca.index')
-            ->with('success', 'Cobrança excluída com sucesso!');
+        abort(404);
     }
 }

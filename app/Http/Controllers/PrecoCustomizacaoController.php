@@ -3,36 +3,42 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\PrecoCustomizacao; // Importe o modelo
+use App\Models\PrecoCustomizacao;
 
 class PrecoCustomizacaoController extends Controller
 {
-    /**
-     * Exibe uma listagem do recurso.
-     */
-    public function index()
-    {
-        // Busca todos os registros do modelo PrecoCustomizacao
-        $precosCustomizacao = PrecoCustomizacao::all();
+    private const SESSION_KEY = 'preco_customizacao.index_url';
 
-        // Passa a variável $precosCustomizacao para a view
+    private function urlIndex(): string
+    {
+        return session(self::SESSION_KEY, route('preco_customizacao.index'));
+    }
+
+    public function index(Request $request)
+    {
+        session([self::SESSION_KEY => $request->fullUrl()]);
+
+        $precosCustomizacao = PrecoCustomizacao::query()
+            ->when($request->tipo, function ($query) use ($request) {
+                $query->where('preco_tipo', 'like', '%' . $request->tipo . '%');
+            })
+            ->when($request->tamanho, function ($query) use ($request) {
+                $query->where('preco_tamanho', 'like', '%' . $request->tamanho . '%');
+            })
+            ->paginate(10)
+            ->withQueryString();
+
         return view('view_preco_customizacao.index', compact('precosCustomizacao'));
     }
 
-    /**
-     * Mostra o formulário para criar um novo recurso.
-     */
     public function create()
     {
-        // Retorna a view para o formulário de criação
-        return view('view_preco_customizacao.create');
+        return view('view_preco_customizacao.create', [
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
-    /**
-     * Armazena um recurso recém-criado no armazenamento.
-     */
     public function store(Request $request)
-
     {
         $valor = str_replace(['R$', '.', ','], ['', '', '.'], $request->preco_valor);
 
@@ -40,46 +46,38 @@ class PrecoCustomizacaoController extends Controller
             'preco_valor' => $valor
         ]);
 
-        // Validação agora funciona
         $validatedData = $request->validate([
             'preco_tipo' => 'required|string|max:45',
             'preco_tamanho' => 'required|string|max:30',
             'preco_valor' => 'required|numeric|max:99999.99',
         ]);
 
-
         PrecoCustomizacao::create($validatedData);
-        return redirect()->route('preco_customizacao.index')
+
+        return redirect($this->urlIndex())
             ->with('success', 'Preço de customização criado com sucesso!');
     }
 
-    /**
-     * Exibe o recurso especificado.
-     */
     public function show(string $id)
     {
-        // Encontra o preço de customização pelo ID ou retorna um erro 404
         $precoCustomizacao = PrecoCustomizacao::findOrFail($id);
 
-        // Retorna a view 'show' com o recurso encontrado
-        return view('preco_customizacao.show', compact('precoCustomizacao'));
+        return view('preco_customizacao.show', [
+            'precoCustomizacao' => $precoCustomizacao,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
-    /**
-     * Mostra o formulário para editar o recurso especificado.
-     */
     public function edit(string $id)
     {
-        // Encontra o preço de customização pelo ID ou retorna um erro 404
         $precoCustomizacao = PrecoCustomizacao::findOrFail($id);
 
-        // Retorna a view 'edit' com o recurso encontrado
-        return view('view_preco_customizacao.edit', compact('precoCustomizacao'));
+        return view('view_preco_customizacao.edit', [
+            'precoCustomizacao' => $precoCustomizacao,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
-    /**
-     * Atualiza o recurso especificado no armazenamento.
-     */
     public function update(Request $request, string $id)
     {
         $valor = str_replace(['R$', '.', ','], ['', '', '.'], $request->preco_valor);
@@ -87,6 +85,7 @@ class PrecoCustomizacaoController extends Controller
         $request->merge([
             'preco_valor' => $valor
         ]);
+
         $validatedData = $request->validate([
             'preco_tipo' => 'required|string|max:45',
             'preco_tamanho' => 'required|string|max:30',
@@ -94,26 +93,18 @@ class PrecoCustomizacaoController extends Controller
         ]);
 
         $precoCustomizacao = PrecoCustomizacao::findOrFail($id);
-
         $precoCustomizacao->update($validatedData);
 
-        return redirect()->route('preco_customizacao.index')
+        return redirect($this->urlIndex())
             ->with('success', 'Preço de customização atualizado com sucesso!');
     }
 
-    /**
-     * Remove o recurso especificado do armazenamento.
-     */
     public function destroy(string $id)
     {
-        // 1. Encontra o preço de customização pelo ID ou retorna um erro 404
         $precoCustomizacao = PrecoCustomizacao::findOrFail($id);
-
-        // 2. Deleta o registro do banco de dados
         $precoCustomizacao->delete();
 
-        // 3. Redireciona o usuário de volta com uma mensagem de sucesso
-        return redirect()->route('preco_customizacao.index')
+        return redirect($this->urlIndex())
             ->with('success', 'Preço de customização excluído com sucesso!');
     }
 }

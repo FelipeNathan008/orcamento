@@ -1,91 +1,171 @@
-@extends('layouts.app') {{-- Assumindo que você tem um layout principal chamado 'app' --}}
+@extends('layouts.app')
+
+@section('title', 'Detalhes do Contato')
+
+@php
+use App\Helpers\CryptHelper;
+@endphp
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Detalhes do Contato do Cliente</h1>
 
-        <x-alert-flash />
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-        <div class="flex space-x-3">
-            <a href="{{ route('contato_cliente.edit', $contatoCliente->id_contato) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
-                Editar Contato
-            </a>
-            <a href="{{ route('contato_cliente.index', ['cliente_orcamento' => $contatoCliente->cliente_orcamento_id_co]) }}"
-                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
-                Voltar para a Lista
-            </a>
-            <div class="flex justify-center mb-8">
+        <x-page-header title="Detalhes do Contato" :back-url="$urlVoltar">
+            <x-header-action href="{{ route('contato_cliente.edit', CryptHelper::encrypt($contatoCliente->id_contato)) }}">
+                Editar contato
+            </x-header-action>
+        </x-page-header>
 
-            </div>
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
-    </div>
 
-    <div class="bg-white shadow-xl rounded-lg p-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Cliente de Orçamento:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    {{ $contatoCliente->clienteOrcamento->clie_orc_nome ?? 'Cliente Não Encontrado' }}
-                </p>
-            </div>
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Nome do Contato:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->cont_nome }}</p>
-            </div>
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Telefone:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    @php
-                    $telefone = preg_replace('/\D/', '', $contatoCliente->cont_telefone);
-                    @endphp
+        @php
+        $celularCliente = preg_replace('/\D/', '', $contatoCliente->clienteOrcamento->clie_orc_celular ?? '');
 
-                    @if($telefone && strlen($telefone) === 10)
-                    {{ preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $telefone) }}
-                    @elseif($telefone && strlen($telefone) === 11)
-                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $telefone) }}
-                    @else
-                    {{ $contatoCliente->cont_telefone ?? 'N/A' }}
+        if (strlen($celularCliente) === 11) {
+        $celularClienteFormatado = preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celularCliente);
+        } elseif (strlen($celularCliente) === 10) {
+        $celularClienteFormatado = preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $celularCliente);
+        } else {
+        $celularClienteFormatado = $contatoCliente->clienteOrcamento->clie_orc_celular ?: 'Não informado';
+        }
+
+        $telefone = preg_replace('/\D/', '', $contatoCliente->cont_telefone ?? '');
+        $celular = preg_replace('/\D/', '', $contatoCliente->cont_celular ?? '');
+
+        if (strlen($telefone) === 10) {
+        $telefoneFormatado = preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $telefone);
+        } elseif (strlen($telefone) === 11) {
+        $telefoneFormatado = preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $telefone);
+        } else {
+        $telefoneFormatado = $contatoCliente->cont_telefone ?: 'Não informado';
+        }
+
+        if (strlen($celular) === 10) {
+        $celularFormatado = preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $celular);
+        } elseif (strlen($celular) === 11) {
+        $celularFormatado = preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celular);
+        } else {
+        $celularFormatado = $contatoCliente->cont_celular ?: 'Não informado';
+        }
+
+        $tipo = [
+        'administrativo' => 'purple',
+        'comercial' => 'yellow',
+        'financeiro' => 'blue',
+        'rh' => 'pink',
+        'compras' => 'green',
+        'socio' => 'red',
+        ][$contatoCliente->cont_tipo] ?? 'gray';
+        @endphp
+
+        <div class="px-6 sm:px-8 pt-6 pb-8">
+
+            <x-info-card
+                title="Cliente selecionado"
+                :name="$contatoCliente->clienteOrcamento->clie_orc_nome"
+                type="Cliente"
+                :fields="[
+                    [
+                        'label' => 'Código interno',
+                        'value' => $contatoCliente->clienteOrcamento->clie_orc_cod_interno ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'E-mail',
+                        'value' => $contatoCliente->clienteOrcamento->clie_orc_email ?: 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Celular',
+                        'value' => $celularClienteFormatado,
+                    ],
+                ]" />
+
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6">
+
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
+                    </div>
+
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Informações do contato</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            Confira os dados cadastrados do contato.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div class="md:col-span-2 bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                            Nome do Contato
+                        </p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $contatoCliente->cont_nome }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                            Celular
+                        </p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $celularFormatado }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                            Telefone
+                        </p>
+                        <p class="text-sm font-semibold text-gray-800">
+                            {{ $telefoneFormatado }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                            E-mail
+                        </p>
+                        <p class="text-sm font-semibold text-gray-800 break-all">
+                            {{ $contatoCliente->cont_email ?: 'Não informado' }}
+                        </p>
+                    </div>
+
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-2">
+                            Tipo de Contato
+                        </p>
+                        <x-badge :type="$tipo" :text="ucfirst($contatoCliente->cont_tipo)" />
+                    </div>
+
+                    @if ($contatoCliente->cont_descricao)
+                    <div class="md:col-span-2 bg-white border border-gray-200 rounded-lg p-4">
+                        <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">
+                            Descrição
+                        </p>
+                        <p class="text-sm font-semibold text-gray-800 whitespace-pre-line">
+                            {{ $contatoCliente->cont_descricao }}
+                        </p>
+                    </div>
                     @endif
-                </p>
-            </div>
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Celular:</p>
-                <p class="text-gray-900 text-lg font-semibold">
-                    @php
-                    $celular = preg_replace('/\D/', '', $contatoCliente->cont_celular);
-                    @endphp
 
-                    @if(strlen($celular) === 11)
-                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celular) }}
-                    @else
-                    {{ $contatoCliente->cont_celular }}
-                    @endif
-                </p>
+                </div>
             </div>
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Email:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->cont_email }}</p>
+
+            <div class="flex justify-end mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
             </div>
-            <div class="mb-4">
-                <p class="text-gray-600 text-sm">Tipo de Contato:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ ucfirst($contatoCliente->cont_tipo) }}</p>
-            </div>
-            @if ($contatoCliente->cont_descricao)
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Descrição:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->cont_descricao }}</p>
-            </div>
-            @endif
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Criado em:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->created_at->format('d/m/Y H:i') }}</p>
-            </div>
-            <div class="md:col-span-2 mb-4">
-                <p class="text-gray-600 text-sm">Última Atualização:</p>
-                <p class="text-gray-900 text-lg font-semibold">{{ $contatoCliente->updated_at->format('d/m/Y H:i') }}</p>
-            </div>
+
         </div>
     </div>
 </div>
+
 @endsection

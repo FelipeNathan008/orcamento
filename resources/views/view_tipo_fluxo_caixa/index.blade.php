@@ -3,216 +3,146 @@
 @section('title', 'Tipos de Fluxo de Caixa')
 
 @section('content')
+@php
+use App\Helpers\CryptHelper;
+@endphp
 
-<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
-
-    {{-- HEADER --}}
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-
-        <h1 class="text-3xl sm:text-[32px] font-bold text-custom-dark-text font-bai-jamjuree mb-4 sm:mb-0">
-            Tipos de Fluxo de Caixa / Nota Fiscal
-        </h1>
-
-        <div class="flex items-center gap-3">
-
-            <a href="{{ route('dashboard') }}"
-                class="px-4 py-2 text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400">
-                HOME
-            </a>
-
-            <a href="{{ route('tipo_fluxo_caixa.create') }}"
-                class="px-4 py-2 text-sm font-medium rounded-md text-white hover:brightness-90"
-                style="background-color: #EA792D;">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <x-page-header title="Tipos de Fluxo de Caixa / Nota Fiscal">
+            <x-header-action href="{{ route('tipo_fluxo_caixa.create') }}">
                 Novo Tipo
-            </a>
+            </x-header-action>
+        </x-page-header>
 
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
 
-    </div>
+        <div class="px-6 sm:px-8 pt-4 pb-6">
+            <form method="GET" action="{{ route('tipo_fluxo_caixa.index') }}">
+                <x-filter-card>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label for="nome" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Nome</label>
+                            <input type="text" id="nome" name="nome" value="{{ request('nome') }}" placeholder="Nome do tipo..."
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                        </div>
+                        <div>
+                            <label for="tipo_despesa" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Despesa</label>
+                            <select id="tipo_despesa" name="tipo_despesa"
+                                class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                                <option value="">Todas</option>
+                                <option value="Fixa" {{ request('tipo_despesa') == 'Fixa' ? 'selected' : '' }}>Fixa</option>
+                                <option value="Variavel" {{ request('tipo_despesa') == 'Variavel' ? 'selected' : '' }}>Variável</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <x-primary-button class="w-full h-11">
+                                <x-icons.search />
+                                Buscar
+                            </x-primary-button>
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+                        <a href="{{ route('tipo_fluxo_caixa.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-200 hover:text-gray-800 transition">
+                            <x-icons.reset />
+                            Limpar filtros
+                        </a>
+                    </div>
+                </x-filter-card>
+            </form>
+        </div>
 
-    {{-- ALERT --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md mb-4">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    {{-- FILTRO --}}
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
-
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Tipo
-                </label>
-
-                <div class="relative">
-
-                    <input
-                        type="text"
-                        id="searchTipoInput"
-                        placeholder="Nome ou descrição..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
-
+        <div class="px-6 sm:px-8 pb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 class="text-lg font-bold text-gray-800">Lista de tipos</h2>
+                <div class="inline-flex items-center gap-2 self-start px-3 py-2 rounded-lg bg-orange-50 border border-orange-100">
+                    <span class="w-2 h-2 rounded-full" style="background-color:#EA792D;"></span>
+                    <span class="text-xs font-semibold text-orange-700">{{ $tiposFluxo->total() }} tipo(s)</span>
                 </div>
             </div>
 
-            <div class="flex md:justify-end">
-                <button id="clearFiltersTipo"
-                    class="px-4 py-2 h-10 text-sm rounded-md bg-gray-200 hover:bg-gray-300">
-                    Limpar Busca
-                </button>
+            @if ($tiposFluxo->isEmpty())
+            @if (request('nome') || request('tipo_despesa'))
+            <x-empty-state
+                title="Nenhum tipo encontrado"
+                message="Não existem tipos correspondentes aos filtros informados."
+                route="tipo_fluxo_caixa.index"
+                button-text="Limpar filtros" />
+            @else
+            <x-empty-state
+                title="Nenhum tipo cadastrado"
+                message="Ainda não existem tipos de fluxo de caixa cadastrados no sistema."
+                route="tipo_fluxo_caixa.create"
+                button-text="Cadastrar tipo" />
+            @endif
+            @else
+            <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead style="background-color:#343A40;">
+                            <tr>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Nome</th>
+                                <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Despesa</th>
+                                <th class="px-5 py-4 text-center text-[11px] font-bold text-white uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @foreach ($tiposFluxo as $tipo)
+                            <tr class="group hover:bg-orange-50/40 transition">
+                                <td class="px-5 py-5">
+                                    <span class="text-sm font-semibold text-gray-800">{{ $tipo->tipo_flu_nome }}</span>
+                                </td>
+                                <td class="px-5 py-5">
+                                    <span class="text-sm text-gray-700">{{ $tipo->tipo_despesa == 'Variavel' ? 'Variável' : $tipo->tipo_despesa }}</span>
+                                </td>
+                                <td class="px-5 py-5 text-center whitespace-nowrap">
+                                    <x-table-actions
+                                        :show-route="route('tipo_fluxo_caixa.show', CryptHelper::encrypt($tipo->id_tipo_fluxo))"
+                                        :edit-route="route('tipo_fluxo_caixa.edit', CryptHelper::encrypt($tipo->id_tipo_fluxo))"
+                                        :delete-action="route('tipo_fluxo_caixa.destroy', CryptHelper::encrypt($tipo->id_tipo_fluxo))"
+                                        delete-id="formExcluirTipo{{ $tipo->id_tipo_fluxo }}"
+                                        delete-modal="modalExcluirTipo" />
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
-
+            <div class="mt-5">
+                <x-pagination-compact :paginator="$tiposFluxo" />
+            </div>
+            @endif
         </div>
-
     </div>
-
-    {{-- TABELA --}}
-    @if ($tiposFluxo->isEmpty())
-    <p class="text-center text-gray-600">Nenhum tipo cadastrado.</p>
-    @else
-
-    <div class="w-full rounded-lg shadow-table-shadow-image mb-3 overflow-x-auto">
-        <table class="min-w-full w-full divide-y divide-gray-200">
-            <thead class="bg-table-header-bg">
-                <tr>
-
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Nome
-                    </th>
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Despesa
-                    </th>
-                    <th scope="col"
-                        class="px-4 py-3 text-left text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Descrição
-                    </th>
-
-                    <th scope="col"
-                        class="px-2 py-3 text-center text-xs font-medium text-white uppercase tracking-wider font-poppins">
-                        Ações
-                    </th>
-                </tr>
-            </thead>
-
-            <tbody id="tipoTableBody" class="bg-white divide-y divide-gray-200">
-
-                @foreach ($tiposFluxo as $tipo)
-                <tr class="hover:bg-gray-50"
-                    data-nome="{{ $tipo->tipo_flu_nome }}"
-                    data-desc="{{ $tipo->tipo_desc }}">
-
-                    <td class="px-4 py-4 text-sm text-gray-700">
-                        {{ $tipo->tipo_flu_nome }}
-                    </td>
-
-                    <td class="px-4 py-4 text-sm text-gray-700">
-                        {{ $tipo->tipo_despesa }}
-                    </td>
-
-                    <td class="px-4 py-4 text-sm text-gray-700">
-                        {{ $tipo->tipo_desc }}
-                    </td>
-
-                    <td class="px-2 py-4 text-center text-sm">
-
-                        <div class="flex justify-center gap-2">
-
-                            <a href="{{ route('tipo_fluxo_caixa.show', $tipo->id_tipo_fluxo) }}"
-                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                                Ver
-                            </a>
-
-
-                            <a href="{{ route('tipo_fluxo_caixa.edit', $tipo->id_tipo_fluxo) }}"
-                                class="px-2 py-1 text-xs text-white rounded-md bg-button-edit-bg hover:bg-button-edit-hover">
-                                Editar
-                            </a>
-
-                            <form action="{{ route('tipo_fluxo_caixa.destroy', $tipo->id_tipo_fluxo) }}"
-                                method="POST"
-                                onsubmit="return confirm('Deseja excluir este tipo?');">
-                                @csrf
-                                @method('DELETE')
-
-                                <button
-                                    class="px-2 py-1 text-xs text-white rounded-md bg-button-cancel-bg hover:bg-button-cancel-hover">
-                                    Excluir
-                                </button>
-                            </form>
-
-                        </div>
-
-                    </td>
-
-                </tr>
-                @endforeach
-
-            </tbody>
-
-        </table>
-
-        <p id="noResultsTipo" class="text-center py-6 text-gray-500 hidden">
-            Nenhum resultado encontrado.
-        </p>
-
-    </div>
-
-    @endif
-
 </div>
 
-{{-- SCRIPT --}}
+<x-modal-confirmacao
+    id="modalExcluirTipo"
+    titulo="Excluir tipo de fluxo de caixa"
+    mensagem="Deseja realmente excluir este tipo de fluxo de caixa?"
+    textoConfirmar="Excluir" />
+@endsection
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    (function () {
+        const key = 'scroll:' + location.pathname + location.search;
 
-        const searchInput = document.getElementById('searchTipoInput');
-        const clearBtn = document.getElementById('clearFiltersTipo');
-
-        const rows = Array.from(document.querySelectorAll('#tipoTableBody tr'));
-        const noResults = document.getElementById('noResultsTipo');
-
-        function filter() {
-            const term = searchInput.value.toLowerCase();
-            let found = false;
-
-            rows.forEach(row => {
-                const nome = row.dataset.nome.toLowerCase();
-                const desc = row.dataset.desc.toLowerCase();
-
-                if (nome.includes(term) || desc.includes(term)) {
-                    row.style.display = '';
-                    found = true;
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-
-            noResults.classList.toggle('hidden', found);
+        // Restaura a posição salva (se existir)
+        const saved = sessionStorage.getItem(key);
+        if (saved !== null) {
+            window.scrollTo(0, parseInt(saved, 10));
+            sessionStorage.removeItem(key);
         }
 
-        searchInput.addEventListener('input', filter);
-
-        clearBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            filter();
+        // Salva a posição ao clicar em ações da tabela ou em "Novo Tipo"
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('tbody a, tbody button, a[href$="/create"]')) {
+                sessionStorage.setItem(key, window.scrollY);
+            }
         });
-
-    });
+    })();
 </script>
 @endpush
-
-@endsection

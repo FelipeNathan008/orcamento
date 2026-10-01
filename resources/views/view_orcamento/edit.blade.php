@@ -1,471 +1,261 @@
-{{-- resources/views/view_orcamento/edit.blade.php --}}
 @extends('layouts.app')
 
-@section('title', 'Editar Orçamento: ' . $orcamento->id_orcamento)
+@section('title', 'Editar Orçamento')
+
+@php
+use App\Helpers\CryptHelper;
+@endphp
 
 @section('content')
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
+        <x-page-header title="Editar Orçamento" :back-url="$urlVoltar" />
 
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Editar Orçamento:
-        #{{ $orcamento->id_orcamento }}</h1>
-
-    @if(isset($clienteSelecionado))
-    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
-
-        <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Cliente
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-
-            <div>
-                <p class="text-gray-600">Nome</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $clienteSelecionado->clie_orc_nome }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">E-mail</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $clienteSelecionado->clie_orc_email }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">Celular</p>
-                <p class="font-semibold text-gray-900">
-                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteSelecionado->clie_orc_celular)) }}
-                </p>
-            </div>
-
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
-    </div>
-    @endif
-    <x-alert-flash />
 
+        @php
+        $celularCliente = preg_replace('/\D/', '', $clienteSelecionado->clie_orc_celular ?? '');
+        if (strlen($celularCliente) === 11) {
+        $celularClienteFormatado = preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celularCliente);
+        } elseif (strlen($celularCliente) === 10) {
+        $celularClienteFormatado = preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $celularCliente);
+        } else {
+        $celularClienteFormatado = $clienteSelecionado->clie_orc_celular ?: 'Não informado';
+        }
 
-    <div>
-        <form
-            action="{{ route('orcamento.update', $orcamento->id_orcamento) }}" method="POST" class="space-y-6"
-            data-status-anterior="{{ $orcamento->orc_status }}"> @csrf
+        $statusAtual = old('orc_status', $orcamento->orc_status);
+        $valorOrcamento = (float) ($orcamento->total_com_desconto ?? 0);
+        $statusBloqueado = in_array($orcamento->orc_status, ['finalizado', 'rejeitado']);
+
+        $anotacoes = old(
+        'anotacoes',
+        $orcamento->orc_anotacao_espec
+        ? explode("\n", $orcamento->orc_anotacao_espec)
+        : ['', '', '']
+        );
+        @endphp
+
+        <form id="orcamentoForm" action="{{ route('orcamento.update', CryptHelper::encrypt($orcamento->id_orcamento)) }}" method="POST" data-status-anterior="{{ $orcamento->orc_status }}" class="px-6 sm:px-8 pt-6 pb-8">
+            @csrf
             @method('PUT')
 
-            <input type="hidden" name="cliente_orcamento_id_co"
-                value="{{ $clienteSelecionado->id_co }}">
+            <x-info-card
+                title="Cliente selecionado"
+                :name="$clienteSelecionado->clie_orc_nome"
+                type="Cliente"
+                :fields="[
+                    [
+                        'label' => 'Código interno',
+                        'value' => $clienteSelecionado->clie_orc_cod_interno ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'E-mail',
+                        'value' => $clienteSelecionado->clie_orc_email ?: 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Celular',
+                        'value' => $celularClienteFormatado,
+                    ],
+                ]" />
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <input type="hidden" name="cliente_orcamento_id_co" value="{{ $clienteSelecionado->id_co }}">
 
-                {{-- COLUNA 1 --}}
-                <div class="space-y-6">
-
-                    {{-- Data Início --}}
-                    <div>
-                        <label for="orc_data_inicio" class="block text-sm font-medium mb-1">
-                            Data Início
-                        </label>
-                        <input type="date" name="orc_data_inicio" id="orc_data_inicio"
-                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                            value="{{ old('orc_data_inicio', $orcamento->orc_data_inicio ? $orcamento->orc_data_inicio->format('Y-m-d') : '') }}"
-                            required>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6 mt-6">
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
                     </div>
-
-                    {{-- Anotações Específicas --}}
                     <div>
-                        <label class="block text-sm font-medium mb-1">
-                            Anotações Específicas
-                        </label>
-
-                        @php
-                        $anotacoes = old('anotacoes',
-                        $orcamento->orc_anotacao_espec
-                        ? explode("\n", $orcamento->orc_anotacao_espec)
-                        : ['', '', '']
-                        );
-                        @endphp
-
-                        <div class="space-y-2">
-                            <textarea name="anotacoes[]" rows="3"
-                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                                placeholder="ANOTAÇÕES">{{ $anotacoes[0] ?? '' }}</textarea>
-
-                            <textarea name="anotacoes[]" rows="3"
-                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                                placeholder="OBSERVAÇÕES">{{ $anotacoes[1] ?? '' }}</textarea>
-
-                            <textarea name="anotacoes[]" rows="3"
-                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                                placeholder="IMPORTANTE">{{ $anotacoes[2] ?? '' }}</textarea>
-                        </div>
+                        <h2 class="text-lg font-bold text-gray-800">Dados do orçamento</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Atualize as informações do orçamento.</p>
                     </div>
-
                 </div>
 
-                {{-- COLUNA 2 --}}
-                <div class="space-y-6">
-
-                    {{-- Data Fim --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label for="orc_data_fim" class="block text-sm font-medium mb-1">
-                            Data Fim
-                        </label>
-                        <input type="date" name="orc_data_fim" id="orc_data_fim"
-                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                            value="{{ old('orc_data_fim', $orcamento->orc_data_fim ? $orcamento->orc_data_fim->format('Y-m-d') : '') }}"
-                            required>
+                        <label for="orc_data_inicio" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Data Início</label>
+                        <input type="date" name="orc_data_inicio" id="orc_data_inicio" value="{{ old('orc_data_inicio', $orcamento->orc_data_inicio ? $orcamento->orc_data_inicio->format('Y-m-d') : '') }}" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100" required>
                     </div>
 
-                    {{-- Status --}}
                     <div>
-                        <label for="orc_status" class="block text-sm font-medium mb-1">
-                            Status
-                        </label>
+                        <label for="orc_data_fim" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Data Fim</label>
+                        <input type="date" name="orc_data_fim" id="orc_data_fim" value="{{ old('orc_data_fim', $orcamento->orc_data_fim ? $orcamento->orc_data_fim->format('Y-m-d') : '') }}" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100" required>
+                    </div>
 
-                        @php
-                        $statusAtual = old('orc_status', $orcamento->orc_status);
-
-                        // Valor final do orçamento já considerando desconto
-                        $valorOrcamento = (float) ($orcamento->total_com_desconto ?? 0);
-
-                        $statusBloqueado = in_array($orcamento->orc_status, [
-                        'finalizado',
-                        'rejeitado'
-                        ]);
-                        @endphp
-
-                        <select
-                            name="orc_status"
-                            id="orc_status"
-                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300
-        {{ $statusBloqueado ? 'bg-gray-100 cursor-not-allowed' : '' }}"
-                            {{ $statusBloqueado ? 'disabled' : '' }}
-                            required>
-
+                    <div>
+                        <label for="orc_status" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Status</label>
+                        <select name="orc_status" id="orc_status" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 {{ $statusBloqueado ? 'bg-gray-100 cursor-not-allowed' : '' }}" {{ $statusBloqueado ? 'disabled' : '' }} required>
                             @if ($orcamento->orc_status === 'finalizado')
-
-                            <option value="finalizado" selected>
-                                Finalizado
-                            </option>
-
+                            <option value="finalizado" selected>Finalizado</option>
                             @elseif ($orcamento->orc_status === 'rejeitado')
-
-                            <option value="rejeitado" selected>
-                                Rejeitado
-                            </option>
-
+                            <option value="rejeitado" selected>Rejeitado</option>
                             @elseif ($orcamento->orc_status === 'aprovado')
-
-                            <option value="aprovado" selected>
-                                Aprovado
-                            </option>
-
-                            <option value="finalizado">
-                                Finalizado
-                            </option>
-
-                            <option value="rejeitado">
-                                Rejeitado
-                            </option>
-
+                            <option value="aprovado" selected>Aprovado</option>
+                            <option value="finalizado">Finalizado</option>
+                            <option value="rejeitado">Rejeitado</option>
                             @else
-
-                            <option value="">
-                                Selecione
-                            </option>
-
-                            <option
-                                value="pendente"
-                                {{ $statusAtual === 'pendente' ? 'selected' : '' }}>
-                                Pendente
-                            </option>
-
-                            <option
-                                value="para aprovacao"
-                                {{ $statusAtual === 'para aprovacao' ? 'selected' : '' }}>
-                                Para Aprovação
-                            </option>
-
-                            {{-- SÓ MOSTRA APROVADO SE O VALOR FOR MAIOR QUE ZERO --}}
+                            <option value="">Selecione</option>
+                            <option value="pendente" {{ $statusAtual === 'pendente' ? 'selected' : '' }}>Pendente</option>
+                            <option value="para aprovacao" {{ $statusAtual === 'para aprovacao' ? 'selected' : '' }}>Para Aprovação</option>
                             @if ($valorOrcamento > 0)
-                            <option
-                                value="aprovado"
-                                {{ $statusAtual === 'aprovado' ? 'selected' : '' }}>
-                                Aprovado
-                            </option>
+                            <option value="aprovado" {{ $statusAtual === 'aprovado' ? 'selected' : '' }}>Aprovado</option>
                             @endif
-
-                            <option
-                                value="rejeitado"
-                                {{ $statusAtual === 'rejeitado' ? 'selected' : '' }}>
-                                Rejeitado
-                            </option>
-
+                            <option value="rejeitado" {{ $statusAtual === 'rejeitado' ? 'selected' : '' }}>Rejeitado</option>
                             @if (!$financeiroPendente)
-                            <option
-                                value="finalizado"
-                                {{ $statusAtual === 'finalizado' ? 'selected' : '' }}>
-                                Finalizado
-                            </option>
+                            <option value="finalizado" {{ $statusAtual === 'finalizado' ? 'selected' : '' }}>Finalizado</option>
                             @endif
-
                             @endif
-
                         </select>
 
-                        {{-- Mantém o status quando o select está disabled --}}
                         @if ($statusBloqueado)
-                        <input
-                            type="hidden"
-                            name="orc_status"
-                            value="{{ $orcamento->orc_status }}">
+                        <input type="hidden" name="orc_status" value="{{ $orcamento->orc_status }}">
                         @endif
 
                         @if ($orcamento->orc_status === 'finalizado')
-
-                        <p class="mt-2 text-sm text-gray-500">
-                            Este orçamento está finalizado e seu status não pode mais ser alterado.
-                        </p>
-
+                        <p class="mt-2 text-xs text-gray-500">Este orçamento está finalizado e seu status não pode mais ser alterado.</p>
                         @elseif ($orcamento->orc_status === 'rejeitado')
-
-                        <p class="mt-2 text-sm text-gray-500">
-                            Este orçamento foi rejeitado e seu status não pode mais ser alterado.
-                        </p>
-
+                        <p class="mt-2 text-xs text-gray-500">Este orçamento foi rejeitado e seu status não pode mais ser alterado.</p>
                         @elseif ($orcamento->orc_status === 'aprovado')
-
-                        <p class="mt-2 text-sm text-orange-600">
-                            Um orçamento aprovado só pode ser finalizado ou rejeitado.
-                        </p>
-
+                        <p class="mt-2 text-xs text-orange-600">Um orçamento aprovado só pode ser finalizado ou rejeitado.</p>
                         @elseif ($valorOrcamento <= 0)
-
-                            <p class="mt-2 text-sm text-orange-600">
-                            Este orçamento possui valor total igual a R$ 0,00 e não pode ser aprovado.
-                            </p>
-
+                            <p class="mt-2 text-xs text-orange-600">Este orçamento possui valor total igual a R$ 0,00 e não pode ser aprovado.</p>
                             @endif
                     </div>
 
-                    {{-- Códigos --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                        {{-- Código Interno --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label for="orc_cod_interno" class="block text-sm font-medium mb-1">
-                                Código Interno
-                            </label>
-
-                            <input type="text"
-                                name="orc_cod_interno"
-                                id="orc_cod_interno"
-                                maxlength="60" placeholder="Código Interno"
-                                value="{{ old('orc_cod_interno', $orcamento->orc_cod_interno) }}"
-                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
-
-                            @error('orc_cod_interno')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+                            <label for="orc_cod_interno" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Código Interno</label>
+                            <input type="text" name="orc_cod_interno" id="orc_cod_interno" maxlength="60" placeholder="Código interno" value="{{ old('orc_cod_interno', $orcamento->orc_cod_interno) }}" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
                         </div>
 
-
-                        {{-- Código da Fábrica --}}
                         <div>
-                            <label for="orc_cod_fabrica" class="block text-sm font-medium mb-1">
-                                Código da Fábrica
-                            </label>
+                            <label for="orc_cod_fabrica" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Código da Fábrica</label>
+                            <input type="text" name="orc_cod_fabrica" id="orc_cod_fabrica" maxlength="60" placeholder="Código da fábrica" value="{{ old('orc_cod_fabrica', $orcamento->orc_cod_fabrica) }}" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
 
-                            <input type="text"
-                                name="orc_cod_fabrica"
-                                id="orc_cod_fabrica"
-                                maxlength="60"
-                                placeholder="Código Fábrica"
-                                value="{{ old('orc_cod_fabrica', $orcamento->orc_cod_fabrica) }}"
-                                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
-
-                            @error('orc_cod_fabrica')
-                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
                         </div>
-
                     </div>
 
-                    {{-- Anotação Geral --}}
-                    <div>
-                        <label for="orc_anotacao_geral" class="block text-sm font-medium mb-1">
-                            Anotação Geral
-                        </label>
-                        <textarea name="orc_anotacao_geral" id="orc_anotacao_geral"
-                            rows="4"
-                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                            placeholder="Digite uma anotação geral">{{ old('orc_anotacao_geral', $orcamento->orc_anotacao_geral) }}</textarea>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Anotações Específicas</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <textarea name="anotacoes[]" rows="3" maxlength="1000" class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none" placeholder="ANOTAÇÕES">{{ $anotacoes[0] ?? '' }}</textarea>
+                            <textarea name="anotacoes[]" rows="3" maxlength="1000" class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none" placeholder="OBSERVAÇÕES">{{ $anotacoes[1] ?? '' }}</textarea>
+                            <textarea name="anotacoes[]" rows="3" maxlength="1000" class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none" placeholder="IMPORTANTE">{{ $anotacoes[2] ?? '' }}</textarea>
+                        </div>
                     </div>
 
-                    {{-- Motivo Rejeição --}}
-                    <div id="motivoRejeicaoContainer" class="hidden">
-                        <label for="orc_motivo_rejeicao" class="block text-sm font-medium mb-1">
-                            Motivo da Rejeição
-                        </label>
-                        <textarea name="orc_motivo_rejeicao" id="orc_motivo_rejeicao"
-                            rows="4"
-                            class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                            placeholder="Descreva o motivo da rejeição...">{{ old('orc_motivo_rejeicao', $orcamento->orc_motivo_rejeicao) }}</textarea>
+                    <div class="md:col-span-2">
+                        <label for="orc_anotacao_geral" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Anotação Geral</label>
+                        <textarea name="orc_anotacao_geral" id="orc_anotacao_geral" rows="4" maxlength="1000" class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none" placeholder="Digite uma anotação geral">{{ old('orc_anotacao_geral', $orcamento->orc_anotacao_geral) }}</textarea>
                     </div>
 
+                    <div id="motivoRejeicaoContainer" class="md:col-span-2 hidden">
+                        <label for="orc_motivo_rejeicao" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Motivo da Rejeição</label>
+                        <textarea name="orc_motivo_rejeicao" id="orc_motivo_rejeicao" rows="4" maxlength="1000" class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none" placeholder="Descreva o motivo da rejeição...">{{ old('orc_motivo_rejeicao', $orcamento->orc_motivo_rejeicao) }}</textarea>
+                    </div>
                 </div>
-
             </div>
 
-            {{-- BOTÕES --}}
-            <div class="flex justify-center mt-8">
-                <button type="submit"
-                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                    ATUALIZAR
-                </button>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
+                <x-primary-button type="submit" id="btnAtualizar" class="px-6">
+                    <span id="textoAtualizar">Atualizar orçamento</span>
+                </x-primary-button>
             </div>
-            <div class="flex justify-center mb-8">
-                <a href="{{ route('orcamento.index', ['cliente_orcamento_id' => $clienteSelecionado->id_co]) }}"
-                    class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                    VOLTAR PARA A LISTA
-                </a>
-            </div>
-
         </form>
     </div>
 </div>
 
+<x-modal-confirmacao
+    id="modalAprovarOrcamento"
+    titulo="Aprovar orçamento"
+    mensagem="Você deseja colocar este orçamento como APROVADO e ir para o módulo Financeiro?"
+    textoConfirmar="Aprovar" />
+
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form[data-status-anterior]');
-        const dataInicioInput = document.getElementById('orc_data_inicio');
-        const dataFimInput = document.getElementById('orc_data_fim');
-        const statusSelect = document.getElementById('orc_status');
+        const form = document.getElementById('orcamentoForm');
+        const btn = document.getElementById('btnAtualizar');
+        const texto = document.getElementById('textoAtualizar');
+        const dataInicio = document.getElementById('orc_data_inicio');
+        const dataFim = document.getElementById('orc_data_fim');
+        const status = document.getElementById('orc_status');
         const motivoContainer = document.getElementById('motivoRejeicaoContainer');
-        const motivoInput = document.getElementById('orc_motivo_rejeicao');
-
-        if (!form) {
-            return;
-        }
+        const motivo = document.getElementById('orc_motivo_rejeicao');
 
         function validarDatas() {
-            if (!dataInicioInput || !dataFimInput) {
+            if (!dataInicio.value) {
+                dataFim.removeAttribute('min');
                 return;
             }
+            const data = new Date(`${dataInicio.value}T00:00:00`);
+            data.setDate(data.getDate() + 1);
+            const minima = data.toISOString().split('T')[0];
+            dataFim.min = minima;
+            if (dataFim.value && dataFim.value < minima) dataFim.value = '';
+        }
 
-            if (!dataInicioInput.value) {
-                dataFimInput.removeAttribute('min');
-                return;
-            }
-
-            const dataInicio = new Date(`${dataInicioInput.value}T00:00:00`);
-
-            dataInicio.setDate(dataInicio.getDate() + 1);
-
-            const dataMinima = [
-                dataInicio.getFullYear(),
-                String(dataInicio.getMonth() + 1).padStart(2, '0'),
-                String(dataInicio.getDate()).padStart(2, '0')
-            ].join('-');
-
-            dataFimInput.min = dataMinima;
-
-            if (dataFimInput.value && dataFimInput.value < dataMinima) {
-                dataFimInput.value = '';
+        function toggleMotivo() {
+            if (!status) return;
+            const rejeitado = status.value === 'rejeitado';
+            motivoContainer.classList.toggle('hidden', !rejeitado);
+            if (rejeitado) {
+                motivo.setAttribute('required', 'required');
+            } else {
+                motivo.removeAttribute('required');
+                motivo.value = '';
             }
         }
 
-        function toggleMotivoRejeicao() {
-            if (!statusSelect || !motivoContainer) {
-                return;
-            }
-
-            const rejeitado = statusSelect.value === 'rejeitado';
-
-            motivoContainer.classList.toggle('hidden', !rejeitado);
-
-            if (motivoInput) {
-                if (rejeitado) {
-                    motivoInput.setAttribute('required', 'required');
-                } else {
-                    motivoInput.removeAttribute('required');
-                    motivoInput.value = '';
-                }
-            }
+        function atualizar() {
+            btn.disabled = true;
+            texto.textContent = 'Atualizando...';
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            form.submit();
         }
 
         validarDatas();
-        toggleMotivoRejeicao();
+        toggleMotivo();
 
-        if (dataInicioInput) {
-            dataInicioInput.addEventListener('change', validarDatas);
-        }
-
-        if (statusSelect) {
-            statusSelect.addEventListener('change', toggleMotivoRejeicao);
-        }
+        dataInicio.addEventListener('change', validarDatas);
+        status?.addEventListener('change', toggleMotivo);
 
         form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
             const statusAnterior = form.dataset.statusAnterior;
-            const novoStatus = statusSelect ?
-                statusSelect.value :
-                statusAnterior;
+            const novoStatus = status?.value || statusAnterior;
 
-            if (
-                dataInicioInput &&
-                dataFimInput &&
-                dataInicioInput.value &&
-                dataFimInput.value
-            ) {
-                const dataInicio = new Date(`${dataInicioInput.value}T00:00:00`);
-                const dataFim = new Date(`${dataFimInput.value}T00:00:00`);
-
-                if (dataFim <= dataInicio) {
-                    alert('A Data Fim deve ser maior que a Data Início.');
-                    e.preventDefault();
-                    dataFimInput.focus();
-                    return;
-                }
-            }
-
-            if (
-                novoStatus === 'rejeitado' &&
-                motivoInput &&
-                !motivoInput.value.trim()
-            ) {
-                alert('Informe o motivo da rejeição.');
-                e.preventDefault();
-                motivoInput.focus();
+            if (dataInicio.value && dataFim.value && dataFim.value <= dataInicio.value) {
+                alert('A Data Fim deve ser maior que a Data Início.');
+                dataFim.focus();
                 return;
             }
 
-            if (
-                novoStatus === 'aprovado' &&
-                statusAnterior !== 'aprovado'
-            ) {
-                const confirmar = confirm(
-                    'Você deseja colocar este orçamento como APROVADO e ir para o módulo Financeiro?'
-                );
-
-                if (!confirmar) {
-                    e.preventDefault();
-                    return;
-                }
+            if (novoStatus === 'rejeitado' && !motivo.value.trim()) {
+                alert('Informe o motivo da rejeição.');
+                motivo.focus();
+                return;
             }
 
-            if (
-                novoStatus === 'finalizado' &&
-                statusAnterior !== 'finalizado'
-            ) {
-                const confirmar = confirm(
-                    'Você deseja colocar este orçamento como FINALIZADO?'
-                );
-
-                if (!confirmar) {
-                    e.preventDefault();
-                }
+            if (novoStatus === 'aprovado' && statusAnterior !== 'aprovado') {
+                abrirModal('modalAprovarOrcamento', atualizar);
+                return;
             }
+
+            if (novoStatus === 'finalizado' && statusAnterior !== 'finalizado' && !confirm('Você deseja colocar este orçamento como FINALIZADO?')) {
+                return;
+            }
+
+            atualizar();
         });
     });
 </script>

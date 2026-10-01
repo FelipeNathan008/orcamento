@@ -9,20 +9,22 @@ use App\Models\DetalhesFormaPag;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
-use App\Models\Cobranca;
 use App\Models\ContaBancaria;
-use App\Models\DetalhesCobranca;
 use Carbon\Carbon;
 use App\Models\FluxoCaixa;
 use App\Models\Movimentacao;
 use App\Models\SaldoConta;
 use App\Models\TipoFluxoCaixa;
+use App\Services\AtualizarStatusParcelas;
 
 class FormaPagamentoController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, AtualizarStatusParcelas $atualizarStatusParcelas)
     {
-        $id = array_key_first($request->query());
+
+        $atualizarStatusParcelas->executar();
+
+        $id = $request->query('id_fin');
 
         if (!$id) {
             return redirect()->route('financeiro.index');
@@ -42,32 +44,10 @@ class FormaPagamentoController extends Controller
             ->get();
 
         foreach ($formasPagamento as $forma) {
-
             foreach ($forma->detalhes as $parcela) {
 
                 $diasAtraso = Carbon::parse($parcela->det_forma_data_venc)
                     ->diffInDays(now(), false);
-
-                if (
-                    $diasAtraso > 3 &&
-                    $parcela->det_situacao === 'Acordo'
-                ) {
-                    DetalhesFormaPag::where(
-                        'id_det_forma',
-                        $parcela->id_det_forma
-                    )->update([
-                        'det_situacao' => 'Inadimplencia'
-                    ]);
-
-                    DetalhesCobranca::where(
-                        'id_det_forma',
-                        $parcela->id_det_forma
-                    )->update([
-                        'det_cobr_status' => 'Inadimplencia'
-                    ]);
-
-                    $parcela->det_situacao = 'Inadimplencia';
-                }
 
                 $parcela->dias_atraso = $diasAtraso;
 
@@ -90,90 +70,18 @@ class FormaPagamentoController extends Controller
                     'Pago', 'Quitado' =>
                     'bg-green-100 text-green-700',
 
-                    'Não pago' =>
+                    'Não Pago' =>
                     'bg-yellow-100 text-yellow-700',
 
                     'Acordo' =>
                     'bg-blue-100 text-blue-700',
 
-                    'Inadimplencia' =>
+                    'Atrasado', 'Inadimplencia' =>
                     'bg-red-100 text-red-700',
 
                     default =>
                     'bg-gray-100 text-gray-700',
                 };
-            }
-
-            $parcelasElegiveis = $forma->detalhes->filter(function ($parcela) {
-
-                return $parcela->dias_atraso > 3
-                    && !in_array(
-                        $parcela->det_situacao,
-                        ['Pago', 'Quitado']
-                    );
-            });
-
-            if ($parcelasElegiveis->isEmpty()) {
-                continue;
-            }
-
-            $tipo = $forma->tipo_pagamento_id_tipo;
-
-            $tipoCobranca = match ($tipo) {
-                1 => 1,
-                2 => 2,
-                3 => 3,
-                4 => 4,
-                default => 1
-            };
-
-            $cobranca = Cobranca::where(
-                'cobr_id_fin',
-                $forma->financeiro_id_fin
-            )
-                ->where('cobr_id_tipo', $tipoCobranca)
-                ->first();
-
-            if (!$cobranca) {
-
-                $cobranca = Cobranca::create([
-                    'cobr_id_fin' => $forma->financeiro_id_fin,
-                    'cobr_id_tipo' => $tipoCobranca,
-                    'cobr_cliente' => $forma->financeiro->fin_nome_cliente,
-                    'cobr_id_orc' => $forma->financeiro->orcamento_id_orcamento,
-                    'cobr_status' => 'Débito',
-                ]);
-            } elseif ($cobranca->cobr_status === 'Quitado') {
-
-                $cobranca->update([
-                    'cobr_status' => 'Débito'
-                ]);
-            }
-
-            foreach ($parcelasElegiveis as $parcela) {
-
-                $existe = DetalhesCobranca::where(
-                    'cobranca_id',
-                    $cobranca->id_cobranca
-                )
-                    ->where(
-                        'id_det_forma',
-                        $parcela->id_det_forma
-                    )
-                    ->exists();
-
-                if (!$existe) {
-
-                    DetalhesCobranca::create([
-                        'cobranca_id' => $cobranca->id_cobranca,
-                        'det_cobr_valor_parcela' =>
-                        $parcela->det_forma_valor_parcela,
-                        'det_cobr_data_venc' =>
-                        $parcela->det_forma_data_venc,
-                        'det_cobr_status' => 'Débito',
-                        'id_det_forma' => $parcela->id_det_forma
-                    ]);
-                }
             }
         }
 
@@ -303,39 +211,6 @@ class FormaPagamentoController extends Controller
             $saldoConta->save();
         }
 
-        $financeiroId = $parcela->formaPagamento->financeiro_id_fin;
-        $tipo = $parcela->formaPagamento->tipo_pagamento_id_tipo;
-
-        $tipoCobranca = match ($tipo) {
-            1 => 1,
-            2 => 2,
-            3 => 3,
-            4 => 4,
-            default => 1
-        };
-
-        $cobranca = Cobranca::where('cobr_id_fin', $financeiroId)
-            ->where('cobr_id_tipo', $tipoCobranca)
-            ->first();
-
-        if ($cobranca) {
-            DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
-                ->where('id_det_forma', $parcela->id_det_forma)
-                ->update([
-                    'det_cobr_status' => 'Quitado'
-                ]);
-
-            $existePendente = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
-                ->whereIn('det_cobr_status', ['Débito', 'Inadimplencia'])
-                ->exists();
-
-            if (!$existePendente) {
-                $cobranca->update([
-                    'cobr_status' => 'Quitado'
-                ]);
-            }
-        }
-
         return back()->with('success', 'Parcela baixada com sucesso!');
     }
 
@@ -344,46 +219,73 @@ class FormaPagamentoController extends Controller
         $parcela = DetalhesFormaPag::findOrFail($id);
 
         if ($parcela->det_situacao === 'Quitado') {
-            $parcela->det_situacao = 'Acordo';
-        } else {
-            $parcela->det_situacao = 'Não pago';
+            return back()->with(
+                'error',
+                'Parcelas com status Quitado não podem voltar para Não Pago.'
+            );
         }
 
-        $parcela->save();
+        if ($parcela->det_situacao !== 'Pago') {
+            return back()->with(
+                'error',
+                'Somente parcelas com status Pago podem voltar para Não Pago.'
+            );
+        }
 
-        $tipo = $parcela->formaPagamento->tipo_pagamento_id_tipo;
+        $forma = $parcela->formaPagamento;
 
-        $tipoCobranca = match ($tipo) {
-            1 => 1,
-            2 => 2,
-            3 => 3,
-            4 => 4,
-            default => 1
-        };
+        if ($forma) {
 
-        $cobranca = Cobranca::where('cobr_id_fin', $parcela->formaPagamento->financeiro_id_fin)
-            ->where('cobr_id_tipo', $tipoCobranca)
-            ->first();
+            $financeiro = $forma->financeiro;
 
-        if ($cobranca) {
-            DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
-                ->where('id_det_forma', $parcela->id_det_forma)
-                ->update([
-                    'det_cobr_status' => 'Débito'
-                ]);
+            $fluxo = FluxoCaixa::where('flu_num_doc', $financeiro->orcamento_id_orcamento)
+                ->where('flu_valor', $parcela->det_forma_valor_parcela)
+                ->where('flu_desc', 'Pagamento de parcela - orçamento ' . $financeiro->orcamento_id_orcamento)
+                ->latest('id_fluxo')
+                ->first();
 
-            $existePendente = DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
-                ->whereIn('det_cobr_status', ['Débito', 'Inadimplencia'])
-                ->exists();
+            if ($fluxo) {
 
-            if ($existePendente) {
-                $cobranca->update([
-                    'cobr_status' => 'Débito'
-                ]);
+                $mov = Movimentacao::find($fluxo->flu_id_movimentacao);
+
+                if ($mov && $forma->conta_bancaria_id) {
+
+                    $nomeMov = strtolower(trim($mov->mov_nome));
+
+                    $saldoConta = SaldoConta::where(
+                        'id_conta_bancaria_id',
+                        $forma->conta_bancaria_id
+                    )->first();
+
+                    if ($saldoConta) {
+
+                        if (str_contains($nomeMov, 'entrada')) {
+                            $saldoConta->saldo_conta_valor -= $fluxo->flu_valor;
+                        }
+
+                        if (
+                            str_contains($nomeMov, 'saída') ||
+                            str_contains($nomeMov, 'saida')
+                        ) {
+                            $saldoConta->saldo_conta_valor += $fluxo->flu_valor;
+                        }
+
+                        $saldoConta->save();
+                    }
+                }
+
+                $fluxo->delete();
             }
         }
 
-        return back()->with('success', 'Parcela atualizada com sucesso!');
+        $parcela->det_situacao = 'Não Pago';
+        $parcela->det_forma_data_pagamento = null;
+        $parcela->save();
+
+        return back()->with(
+            'success',
+            'Parcela voltou para Não Pago e o fluxo de caixa foi removido.'
+        );
     }
 
     public function create(Request $request)
@@ -422,8 +324,8 @@ class FormaPagamentoController extends Controller
                 'forma_valor' => 'required|numeric|min:0',
                 'forma_mes' => 'required|integer|min:1|max:12',
                 'forma_descricao' => 'required|string|max:120',
-                'forma_prazo' => 'required|in:À vista,Parcelado,Entrada', // <-- Entrada adicionado
-                'forma_qtd_parcela' => 'required|integer|min:1',
+                'forma_prazo' => 'required|in:À vista,Parcelado,Entrada',
+                'forma_qtd_parcela' => ['required', 'integer', 'between:1,50',],
                 'forma_data' => $usaDataUnica
                     ? 'required|date|before_or_equal:today'
                     : 'nullable|date',
@@ -435,7 +337,15 @@ class FormaPagamentoController extends Controller
                     ? 'required|array|min:1'
                     : 'nullable|array',
                 'valores_parcelas.*' => 'numeric|min:0',
+            ], [
+                'forma_qtd_parcela.required' => 'Informe a quantidade de parcelas.',
+                'forma_qtd_parcela.integer' => 'A quantidade de parcelas deve ser um número inteiro.',
+                'forma_qtd_parcela.between' => 'A quantidade de parcelas deve estar entre 1 e 50.',
+
+                'forma_qtd_parcela.min' => 'A quantidade mínima de parcelas é 1.',
+                'forma_qtd_parcela.max' => 'A quantidade máxima de parcelas é 50.',
             ]);
+
 
             return DB::transaction(function () use ($request, $validatedData, $usaParcelas, $usaDataUnica) {
                 $dadosForma = [
@@ -551,6 +461,7 @@ class FormaPagamentoController extends Controller
                             'id_forma_pag' => $formapag->id_forma_pag,
                             'det_forma_data_venc' => $dataParcela,
                             'det_forma_valor_parcela' => $validatedData['valores_parcelas'][$i],
+                            'det_forma_valor_original' => $validatedData['valores_parcelas'][$i],
                             'det_situacao' => 'Não Pago',
                         ]);
                     }
@@ -580,32 +491,6 @@ class FormaPagamentoController extends Controller
     {
         $formaPagamento = FormaPagamento::findOrFail($id);
         $financeiroId = $formaPagamento->financeiro_id_fin;
-
-        $tipo = $formaPagamento->tipo_pagamento_id_tipo;
-
-        $tipoCobranca = match ($tipo) {
-            1 => 1,
-            2 => 2,
-            3 => 3,
-            4 => 4,
-            default => 1
-        };
-
-        $cobranca = Cobranca::where('cobr_id_fin', $financeiroId)
-            ->where('cobr_id_tipo', $tipoCobranca)
-            ->first();
-
-        if ($cobranca) {
-            $idsForma = $formaPagamento->detalhes->pluck('id_det_forma');
-
-            DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)
-                ->whereIn('id_det_forma', $idsForma)
-                ->delete();
-
-            if (!DetalhesCobranca::where('cobranca_id', $cobranca->id_cobranca)->exists()) {
-                $cobranca->delete();
-            }
-        }
 
         DetalhesFormaPag::where('id_forma_pag', $formaPagamento->id_forma_pag)->delete();
         $formaPagamento->delete();

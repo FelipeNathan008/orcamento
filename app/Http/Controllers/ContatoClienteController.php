@@ -2,52 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CryptHelper;
+use App\Models\ClienteOrcamento;
 use App\Models\ContatoCliente;
-use App\Models\ClienteOrcamento; // Certifique-se de importar o modelo ClienteOrcamento
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Session;
 
 class ContatoClienteController extends Controller
 {
+    private const SESSION_KEY = 'contato_cliente.index_url';
 
-    public function index(Request $request)
+    private function urlIndex(): string
     {
-        $clienteId = $request->cliente_orcamento;
-        $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
-        $search = $request->search;
-        $contatosCliente = ContatoCliente::where(
-            'cliente_orcamento_id_co',
-            $clienteId
-        )
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-
-                    $q->where('cont_nome', 'like', "%{$search}%")
-                        ->orWhere('cont_email', 'like', "%{$search}%");
-                });
-            })
-            ->with('clienteOrcamento')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('view_contato_cliente.index', [
-            'contatosCliente' => $contatosCliente,
-            'clienteSelecionado' => $clienteSelecionado
-        ]);
+        return session(self::SESSION_KEY, route('cliente_orcamento.index'));
     }
 
-    public function create($cliente_orcamento)
+    public function index(Request $request, $id)
     {
-        $clienteSelecionado = ClienteOrcamento::findOrFail($cliente_orcamento);
+        session([self::SESSION_KEY => $request->fullUrl()]);
 
-        return view('view_contato_cliente.create', compact('clienteSelecionado'));
+        $clienteId = CryptHelper::decrypt($id);
+        $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
+
+        $query = ContatoCliente::where('cliente_orcamento_id_co', $clienteId);
+
+        if ($request->filled('nome')) {
+            $query->where('cont_nome', 'like', '%' . trim($request->nome) . '%');
+        }
+
+        if ($request->filled('email')) {
+            $query->where('cont_email', 'like', '%' . trim($request->email) . '%');
+        }
+
+        if ($request->filled('celular')) {
+            $celular = preg_replace('/\D/', '', $request->celular);
+            $query->where('cont_celular', 'like', '%' . $celular . '%');
+        }
+
+        if ($request->filled('tipo')) {
+            $query->where('cont_tipo', $request->tipo);
+        }
+
+        $contatosCliente = $query
+            ->with('clienteOrcamento')
+            ->orderBy('cont_nome')
+            ->paginate(1)
+            ->withQueryString();
+
+        $urlClienteOrcamento = session(
+            'cliente_orcamento.index_url',
+            route('cliente_orcamento.index')
+        );
+
+        return view('view_contato_cliente.index', compact(
+            'contatosCliente',
+            'clienteSelecionado',
+            'urlClienteOrcamento'
+        ));
+    }
+
+    public function create($id)
+    {
+        $clienteId = CryptHelper::decrypt($id);
+        $clienteSelecionado = ClienteOrcamento::findOrFail($clienteId);
+
+        return view('view_contato_cliente.create', [
+            'clienteSelecionado' => $clienteSelecionado,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
     public function store(Request $request)
     {
         try {
-
             $validatedData = $request->validate([
                 'cliente_orcamento_id_co' => 'required|exists:cliente_orcamento,id_co',
                 'cont_nome' => 'required|string|max:45',
@@ -58,50 +85,66 @@ class ContatoClienteController extends Controller
                 'cont_descricao' => 'nullable|string|max:500',
             ]);
 
-            // Limpar máscaras
-            $validatedData['cont_celular'] = preg_replace('/\D/', '', $validatedData['cont_celular']);
+            $validatedData['cont_celular'] = preg_replace(
+                '/\D/',
+                '',
+                $validatedData['cont_celular']
+            );
 
             if (!empty($validatedData['cont_telefone'])) {
-                $validatedData['cont_telefone'] = preg_replace('/\D/', '', $validatedData['cont_telefone']);
+                $validatedData['cont_telefone'] = preg_replace(
+                    '/\D/',
+                    '',
+                    $validatedData['cont_telefone']
+                );
             }
 
             ContatoCliente::create($validatedData);
 
-            return redirect()->route('contato_cliente.index', [
-                'cliente_orcamento' => $validatedData['cliente_orcamento_id_co']
-            ])->with('success', 'Contato criado com sucesso!');
+            return redirect($this->urlIndex())
+                ->with('success', 'Contato criado com sucesso!');
         } catch (ValidationException $e) {
-
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-
             return redirect()->back()
                 ->with('error', 'Erro ao salvar contato: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
-
     public function show($id)
     {
-        $contatoCliente = ContatoCliente::with('clienteOrcamento')->findOrFail($id);
-        return view('view_contato_cliente.show', compact('contatoCliente'));
-    }
+        $id = CryptHelper::decrypt($id);
 
+        $contatoCliente = ContatoCliente::with('clienteOrcamento')
+            ->findOrFail($id);
+
+        return view('view_contato_cliente.show', [
+            'contatoCliente' => $contatoCliente,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
+    }
 
     public function edit($id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $contatoCliente = ContatoCliente::findOrFail($id);
         $clientesOrcamento = ClienteOrcamento::all();
-        return view('view_contato_cliente.edit', compact('contatoCliente', 'clientesOrcamento'));
-    }
 
+        return view('view_contato_cliente.edit', [
+            'contatoCliente' => $contatoCliente,
+            'clientesOrcamento' => $clientesOrcamento,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
+    }
 
     public function update(Request $request, $id)
     {
         try {
+            $id = CryptHelper::decrypt($id);
             $contatoCliente = ContatoCliente::findOrFail($id);
 
             $validatedData = $request->validate([
@@ -114,20 +157,28 @@ class ContatoClienteController extends Controller
                 'cont_descricao' => 'nullable|string|max:500',
             ]);
 
-            // Limpar máscaras
-            $validatedData['cont_celular'] = preg_replace('/\D/', '', $validatedData['cont_celular']);
+            $validatedData['cont_celular'] = preg_replace(
+                '/\D/',
+                '',
+                $validatedData['cont_celular']
+            );
 
             if (!empty($validatedData['cont_telefone'])) {
-                $validatedData['cont_telefone'] = preg_replace('/\D/', '', $validatedData['cont_telefone']);
+                $validatedData['cont_telefone'] = preg_replace(
+                    '/\D/',
+                    '',
+                    $validatedData['cont_telefone']
+                );
             }
 
             $contatoCliente->update($validatedData);
 
-            return redirect()->route('contato_cliente.index', [
-                'cliente_orcamento' => $contatoCliente->cliente_orcamento_id_co
-            ])->with('success', 'Contato atualizado com sucesso!');
+            return redirect($this->urlIndex())
+                ->with('success', 'Contato atualizado com sucesso!');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Não foi possível atualizar o contato: ' . $e->getMessage())
@@ -135,17 +186,14 @@ class ContatoClienteController extends Controller
         }
     }
 
-
     public function destroy($id)
     {
+        $id = CryptHelper::decrypt($id);
         $contatoCliente = ContatoCliente::findOrFail($id);
-
-        $clienteId = $contatoCliente->cliente_orcamento_id_co;
 
         $contatoCliente->delete();
 
-        return redirect()->route('contato_cliente.index', [
-            'cliente_orcamento' => $clienteId
-        ])->with('success', 'Contato de Cliente excluído com sucesso!');
+        return redirect($this->urlIndex())
+            ->with('success', 'Contato de cliente excluído com sucesso!');
     }
 }

@@ -1,356 +1,371 @@
-@extends('layouts.app') {{-- Assume que você tem um layout principal chamado 'app'. --}}
+@extends('layouts.app')
 
 @section('title', 'Layout da Camisa')
 
-@section('content')
 @php
+use App\Helpers\CryptHelper;
+
+$detalhe = $customizacao->detalhesOrcamento;
+$orcamento = $detalhe->orcamento;
+$cliente = $orcamento->clienteOrcamento;
+
 $orcamentoBloqueado = in_array(
-    strtolower(trim($customizacao->detalhesOrcamento->orcamento->orc_status ?? '')),
-    ['aprovado', 'finalizado', 'rejeitado']
+strtolower(trim($orcamento->orc_status ?? '')),
+['aprovado', 'finalizado', 'rejeitado']
 );
+
+$urlVoltar = $urlVoltar ?? route('customizacao.index', [
+'id' => CryptHelper::encrypt($detalhe->id_det),
+]);
 @endphp
-<div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-xl mt-10 mb-10 font-poppins">
 
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Layout Customizado da Camisa</h1>
+@section('content')
 
-    @if(isset($customizacao))
-    @php
-    $detalhe = $customizacao->detalhesOrcamento;
-    @endphp
-    <div class="flex justify-center mb-6">
-        <a href="{{ route('customizacao.index', ['id_det' => $customizacao->detalhes_orcamento_id_det]) }}"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-            Voltar para Lista de Customizações
-        </a>
-    </div>
-    @if(isset($detalhe))
-    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-        <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Produto
-        </h2>
+        <x-page-header
+            title="Layout da Camisa"
+            :back-url="$urlVoltar" />
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-            <div>
-                <div class="grid grid-cols-3 gap-4">
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
+        </div>
+
+        <div class="px-6 sm:px-8 pt-6 pb-8">
+
+            <x-info-card
+                title="Informações do Produto"
+                :name="'Produto: ' . ($detalhe->det_nome ?: 'Não informado') . ' | Código: ' . ($detalhe->det_cod ?: 'Não informado')"
+                type="Produto"
+                :fields="[
+                    [
+                        'label' => 'Cód. Interno',
+                        'value' => $orcamento->orc_cod_interno ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'Cód. Fábrica',
+                        'value' => $orcamento->orc_cod_fabrica ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'Cliente',
+                        'value' => $cliente->clie_orc_nome ?? 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Categoria',
+                        'value' => $detalhe->det_categoria ?: 'Não informado',
+                    ],
+                    [
+                        'label' => 'Cor / Tamanho',
+                        'value' => trim(($detalhe->det_cor ?: 'N/I') . ' / ' . ($detalhe->det_tamanho ?: 'N/I')),
+                    ],
+                    [
+                        'label' => 'Características',
+                        'value' => $detalhe->det_caract ?: 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Quantidade',
+                        'value' => $detalhe->det_quantidade ?? '0',
+                    ],
+                    [
+                        'label' => 'Status do Orçamento',
+                        'value' => ucfirst($orcamento->orc_status ?? 'Não informado'),
+                    ],
+                ]" />
+
+            <div class="mt-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                     <div>
-                        <p class="text-gray-600">ID</p>
-                        <p class="font-semibold">
-                            {{ $detalhe->orcamento->id_orcamento }}
-                        </p>
+                        <h2 class="text-lg font-bold text-gray-800">Customizações do Produto</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Visualize e gerencie as customizações utilizadas no layout da camisa.</p>
                     </div>
-                    <div>
-                        <p class="text-gray-600">Cód. Fábrica</p>
-                        <p class="font-semibold">
-                            {{ $detalhe->orcamento->orc_cod_fabrica ?: 'N/D' }}
-                        </p>
-                    </div>
 
-                    <div>
-                        <p class="text-gray-600">Cód. Interno</p>
-                        <p class="font-semibold">
-                            {{ $detalhe->orcamento->orc_cod_interno ?: 'N/D'}}
-                        </p>
+                    <div class="inline-flex items-center gap-2 self-start px-3 py-2 rounded-lg bg-orange-50 border border-orange-100">
+                        <span class="w-2 h-2 rounded-full" style="background-color:#EA792D;"></span>
+                        <span class="text-xs font-semibold text-orange-700">
+                            {{ $allCustomizacoesForDetail->count() }} customização(ões)
+                        </span>
                     </div>
                 </div>
-            </div>
-            <div>
-                <p class="text-gray-600">Cliente</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $detalhe->orcamento->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
-                </p>
-            </div>
 
-            <div>
-                <p class="text-gray-600">Produto</p>
-                <p class="font-semibold">
-                    {{ $detalhe->produto->prod_cod ?? 'N/A' }} -
-                    {{ $detalhe->produto->prod_nome ?? 'N/A' }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">Categoria</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $detalhe->produto->prod_categoria ?? 'N/A' }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">Cor / Tamanho</p>
-                <p class="font-semibold">
-                    {{ $detalhe->produto->prod_cor ?? 'N/A' }} -
-                    {{ $detalhe->det_tamanho ?? 'N/A' }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">Características</p>
-                <p class="font-semibold">
-                    {{ $detalhe->det_caract ?? 'N/A' }}
-                </p>
-            </div>
-
-        </div>
-
-    </div>
-    @endif
-
-    <x-alert-flash />
-
-
-    @if($allCustomizacoesForDetail->isNotEmpty())
-
-    <ul class="list-disc list-inside ml-4 text-gray-800">
-        <div>
-            Customizações: <span class="font-semibold">{{$allCustomizacoesForDetail->count() }}</span>
-        </div>
-        @foreach($allCustomizacoesForDetail as $cust)
-        <li class="flex items-center justify-between mb-2"> {{-- Adicionado flexbox para alinhar itens e botões --}}
-            <div>
-                Posição: <span class="font-medium">{{ $cust->cust_posicao }}</span> -
-                Local: <span class="font-medium">{{ $cust->cust_local }}</span>
-            </div>
-            <div class="flex space-x-2"> {{-- Container para os botões --}}
-                <a href="{{ route('customizacao.show', $cust->id_customizacao) }}"
-                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                    Ver
-                </a>
-
-                @if(!$orcamentoBloqueado)
-                <a href="{{ route('customizacao.edit', $cust->id_customizacao) }}"
-                    class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition duration-150 ease-in-out">
-                    Editar
-                </a>
-                <form action="{{ route('customizacao.destroy', $cust->id_customizacao) }}"
-                    method="POST" class="inline-block"
-                    onsubmit="return confirm('Tem certeza que deseja excluir esta customização?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit"
-                        class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out">
-                        Excluir
-                    </button>
-                </form>
+                @if($allCustomizacoesForDetail->isNotEmpty())
+                <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead style="background-color:#343A40;">
+                                <tr>
+                                    <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Local</th>
+                                    <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Posição</th>
+                                    <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Tipo</th>
+                                    <th class="px-5 py-4 text-left text-[11px] font-bold text-white uppercase tracking-wider">Tamanho</th>
+                                    <th class="px-5 py-4 text-center text-[11px] font-bold text-white uppercase tracking-wider">Imagem</th>
+                                    <th class="px-5 py-4 text-center text-[11px] font-bold text-white uppercase tracking-wider">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @foreach($allCustomizacoesForDetail as $cust)
+                                <tr class="group transition hover:bg-orange-50/40">
+                                    <td class="px-5 py-5">
+                                        <span class="text-sm text-gray-700">{{ $cust->cust_local ?: 'Não informado' }}</span>
+                                    </td>
+                                    <td class="px-5 py-5">
+                                        <span class="text-sm font-semibold text-gray-800">{{ $cust->cust_posicao ?: 'Não informado' }}</span>
+                                    </td>
+                                    <td class="px-5 py-5">
+                                        <span class="text-sm text-gray-700">{{ $cust->cust_tipo ?: 'Não informado' }}</span>
+                                    </td>
+                                    <td class="px-5 py-5">
+                                        <span class="text-sm text-gray-700">{{ $cust->cust_tamanho ?: 'Não informado' }}</span>
+                                    </td>
+                                    <td class="px-5 py-5 text-center">
+                                        @if($cust->cust_imagem)
+                                        <img
+                                            src="{{ asset('images_customizacoes/' . $cust->cust_imagem) }}"
+                                            alt="Imagem da customização"
+                                            class="w-14 h-14 object-cover rounded-lg border border-gray-200 shadow-sm mx-auto">
+                                        @else
+                                        <span class="text-xs text-gray-500">Sem imagem</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-5 text-center whitespace-nowrap">
+                                        <x-table-actions
+                                            :show-route="route('customizacao.show', [
+                                                'customizacao' => CryptHelper::encrypt($cust->id_customizacao),
+                                                'return_url' => $urlVoltar,
+                                            ])"
+                                            show-text="Ver"
+                                            :edit-route="!$orcamentoBloqueado ? route('customizacao.edit', [
+                                                'customizacao' => CryptHelper::encrypt($cust->id_customizacao),
+                                                'return_url' => $urlVoltar,
+                                            ]) : null"
+                                            edit-text="Editar"
+                                            :delete-action="!$orcamentoBloqueado ? route('customizacao.destroy', [
+                                                'customizacao' => CryptHelper::encrypt($cust->id_customizacao),
+                                                'return_url' => $urlVoltarLimpo,
+                                            ]) : null"
+                                            delete-id="formExcluirCustomizacao{{ $cust->id_customizacao }}"
+                                            delete-modal="modalExcluirCustomizacao" />
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                @else
+                <x-empty-state
+                    title="Nenhuma customização cadastrada"
+                    message="Ainda não existem customizações cadastradas para este produto."
+                    route="customizacao.index"
+                    :route-params="[
+                        'id' => CryptHelper::encrypt($detalhe->id_det),
+                        'return_url' => $urlVoltar,
+                    ]"
+                    button-text="Voltar" />
                 @endif
             </div>
-        </li>
-        @endforeach
-    </ul>
-    @else
-    <p class="text-gray-600 mt-4">Nenhuma outra customização encontrada para este detalhe.</p>
-    @endif
 
-    {{--- INÍCIO DO CÓDIGO DA CAMISA: SEÇÃO DE VISUALIZAÇÃO ---}}
-    <div class="mt-8 p-4 border rounded-lg flex flex-col items-center">
-        <h2 class="text-xl font-semibold mb-4 text-center">Visualização da Camisa</h2>
-
-        @php
-        // As variáveis abaixo representam as diferentes "áreas" na camisa onde as customizações podem aparecer.
-        // Elas são inicializadas como strings vazias e serão preenchidas com o conteúdo da customização (imagem ou texto)
-        // se houver uma customização mapeada para aquela área.
-        $ombro_dir = '';
-        $ombro_esq = '';
-        $frente_pos1 = '';
-        $frente_pos2 = '';
-        $frente_pos3 = '';
-        $frente_pos4 = '';
-        $frente_pos5 = '';
-        $frente_pos6 = '';
-        $frente_pos7 = '';
-        $frente_pos8 = '';
-        $frente_pos9 = '';
-        $costa_pos1 = '';
-        $costa_pos2 = '';
-        $costa_pos3 = '';
-        $costa_pos4 = '';
-        $costa_pos5 = '';
-        $costa_pos6 = '';
-        $costa_pos7 = '';
-        $costa_pos8 = '';
-        $costa_pos9 = '';
-
-        // Mapeamento que conecta os valores de 'cust_local' e 'cust_posicao'
-        // (como salvos no banco de dados) às variáveis PHP que representam as áreas visuais da camisa.
-        // Isso permite que o sistema saiba onde "desenhar" cada customização.
-        $positionMap = [
-        'Ombro' => [
-        'Direito' => 'ombro_esq',
-        'Esquerdo' => 'ombro_dir',
-        ],
-        'Frente' => [
-        'Esquerdo' => 'frente_pos3',
-        'Posição 2' => 'frente_pos2',
-        'Direito' => 'frente_pos1',
-        'Posição 4' => 'frente_pos4',
-        'Centro' => 'frente_pos5',
-        'Posição 6' => 'frente_pos6',
-        'Posição 7' => 'frente_pos7',
-        'Posição 8' => 'frente_pos8',
-        'Posição 9' => 'frente_pos9',
-        ],
-        'Costa' => [
-        'Posição 1' => 'costa_pos1',
-        'Topo' => 'costa_pos2',
-        'Posição 3' => 'costa_pos3',
-        'Posição 4' => 'costa_pos4',
-        'Centro' => 'costa_pos5',
-        'Posição 6' => 'costa_pos6',
-        'Posição 7' => 'costa_pos7',
-        'Rodapé' => 'costa_pos8',
-        'Posição 9' => 'costa_pos9',
-        ],
-        ];
-        @endphp
-
-        {{-- Itera sobre CADA customização encontrada para o detalhe de orçamento atual. --}}
-        @foreach($allCustomizacoesForDetail as $cust)
-        @php
-        $content = ''; // Variável para armazenar o HTML da imagem ou o texto, inicializada como string vazia.
-        $isRodapePosition = ($cust->cust_local === 'Costa' && $cust->cust_posicao === 'Rodapé');
-
-        // Determina se a customização é para a frente ou para as costas
-        $isFrente = ($cust->cust_local === 'Frente' || $cust->cust_local === 'Ombro');
-        $isCosta = ($cust->cust_local === 'Costa');
-
-        // Prioriza a imagem se ela existir.
-        if (!empty($cust->cust_imagem)) {
-
-        $imagePath = asset('images_customizacoes/' . $cust->cust_imagem);
-
-        if ($isFrente) {
-        $content = '<img src="' . $imagePath . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:230px; height:110px; object-fit:contain;" />';
-        } elseif ($isCosta) {
-        $content = '<img src="' . $imagePath . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:250px; height:100px; object-fit:contain;" />';
-        }
-
-        }
-        else {
-        // Se NÃO há imagem e a posição é o Rodapé, mostra APENAS o ID da customização.
-        if ($isRodapePosition) {
-        $content = '<span class="text-xs text-gray-700">' . $cust->id_customizacao . '</span>';
-        } else {
-        // Para todas as outras posições SEM imagem, mostra o ID, Tipo e Tamanho da customização.
-        $content = '<span class="text-xs text-gray-700">' . $cust->id_customizacao . '</span>';
-        $content .= '<br><span class="text-xs text-gray-700">Tipo: ' . $cust->cust_tipo . '</span>';
-        if (!empty($cust->cust_tamanho)) {
-        $content .= '<br><span class="text-xs text-gray-700">Tamanho: ' . $cust->cust_tamanho . '</span>';
-        }
-        }
-        }
-
-        // Usando o mapeamento, atribui o '$content' gerado à variável PHP correta
-        // que representa a área visual na camisa (ex: $frente_pos1, $ombro_dir).
-        if (isset($positionMap[$cust->cust_local]) && isset($positionMap[$cust->cust_local][$cust->cust_posicao])) {
-        $variableName = $positionMap[$cust->cust_local][$cust->cust_posicao];
-        $$variableName = $content; // Atribuição dinâmica da variável (ex: $frente_pos1 = $content).
-        }
-        @endphp
-        @endforeach
-
-        {{-- --- VISUALIZAÇÃO DA FRENTE DA CAMISA --- --}}
-        <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-4 text-center">FRENTE CAMISA</h3>
-        <div class="camisa-container-frente">
-            <div class="div-pescoco"></div> {{-- Simula o pescoço/gola da camisa. --}}
-
-            <div class="manga-esquerda">
-                @if($ombro_dir) {!! $ombro_dir !!} @endif
-            </div>
-
-            <div class="manga-direita">
-                @if($ombro_esq) {!! $ombro_esq !!} @endif
-            </div>
-
-            <div class="div-frente" style="grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1.3fr;">
-                <div class="frente-area">{!! $frente_pos1 !!}</div> {{-- Área superior esquerda --}}
-
-                <div class="frente-area">{!! $frente_pos3 !!}</div> {{-- Área superior direita --}}
-                <div class="frente-area frente-area-rowspan"
-                    style="grid-column: 1 / span 2; display: flex; justify-content: center; align-items: center; flex-direction: column;">
-                    @if($frente_pos4) {!! $frente_pos4 !!} @endif
-                    @if($frente_pos5) {!! $frente_pos5 !!} @endif
-                    @if($frente_pos6) {!! $frente_pos6 !!} @endif
+            <div class="mt-8">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Visualização da Camisa</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Representação visual das posições e customizações cadastradas.</p>
+                    </div>
                 </div>
-                <div class="frente-area" style="grid-column: 1 / span 3; border-top: 1px dashed #ccc;">
-                    @if($frente_pos7){!! $frente_pos7 !!}@endif
-                    @if($frente_pos8){!! $frente_pos8 !!}@endif
-                    @if($frente_pos9){!! $frente_pos9 !!}@endif
+
+                @php
+                $ombro_dir = '';
+                $ombro_esq = '';
+                $frente_pos1 = '';
+                $frente_pos2 = '';
+                $frente_pos3 = '';
+                $frente_pos4 = '';
+                $frente_pos5 = '';
+                $frente_pos6 = '';
+                $frente_pos7 = '';
+                $frente_pos8 = '';
+                $frente_pos9 = '';
+                $costa_pos1 = '';
+                $costa_pos2 = '';
+                $costa_pos3 = '';
+                $costa_pos4 = '';
+                $costa_pos5 = '';
+                $costa_pos6 = '';
+                $costa_pos7 = '';
+                $costa_pos8 = '';
+                $costa_pos9 = '';
+
+                $positionMap = [
+                'Ombro' => [
+                'Direito' => 'ombro_esq',
+                'Esquerdo' => 'ombro_dir',
+                ],
+                'Frente' => [
+                'Esquerdo' => 'frente_pos3',
+                'Posição 2' => 'frente_pos2',
+                'Direito' => 'frente_pos1',
+                'Posição 4' => 'frente_pos4',
+                'Centro' => 'frente_pos5',
+                'Posição 6' => 'frente_pos6',
+                'Posição 7' => 'frente_pos7',
+                'Posição 8' => 'frente_pos8',
+                'Posição 9' => 'frente_pos9',
+                ],
+                'Costa' => [
+                'Posição 1' => 'costa_pos1',
+                'Topo' => 'costa_pos2',
+                'Posição 3' => 'costa_pos3',
+                'Posição 4' => 'costa_pos4',
+                'Centro' => 'costa_pos5',
+                'Posição 6' => 'costa_pos6',
+                'Posição 7' => 'costa_pos7',
+                'Rodapé' => 'costa_pos8',
+                'Posição 9' => 'costa_pos9',
+                ],
+                ];
+                @endphp
+
+                @foreach($allCustomizacoesForDetail as $cust)
+                @php
+                $content = '';
+                $isRodapePosition = $cust->cust_local === 'Costa' && $cust->cust_posicao === 'Rodapé';
+                $isFrente = $cust->cust_local === 'Frente' || $cust->cust_local === 'Ombro';
+                $isCosta = $cust->cust_local === 'Costa';
+
+                if (!empty($cust->cust_imagem)) {
+                $imagePath = asset('images_customizacoes/' . $cust->cust_imagem);
+
+                if ($isFrente) {
+                $content = '<img src="' . $imagePath . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:230px;height:110px;object-fit:contain;">';
+                } elseif ($isCosta) {
+                $content = '<img src="' . $imagePath . '" alt="' . $cust->cust_local . ' ' . $cust->cust_posicao . '" class="custom-image" style="width:250px;height:100px;object-fit:contain;">';
+                }
+                } else {
+                $content = '<span class="text-xs text-gray-700">' . $cust->id_customizacao . '</span>';
+
+                if (!$isRodapePosition) {
+                $content .= '<br><span class="text-xs text-gray-700">Tipo: ' . $cust->cust_tipo . '</span>';
+
+                if (!empty($cust->cust_tamanho)) {
+                $content .= '<br><span class="text-xs text-gray-700">Tamanho: ' . $cust->cust_tamanho . '</span>';
+                }
+                }
+                }
+
+                if (isset($positionMap[$cust->cust_local][$cust->cust_posicao])) {
+                $variableName = $positionMap[$cust->cust_local][$cust->cust_posicao];
+                $$variableName = $content;
+                }
+                @endphp
+                @endforeach
+
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-8">
+
+                    <div class="flex items-center justify-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Frente da Camisa</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Visualização das customizações na parte frontal.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center overflow-x-auto py-6">
+                        <div class="camisa-container-frente">
+                            <div class="div-pescoco"></div>
+
+                            <div class="manga-esquerda">
+                                @if($ombro_esq){!! $ombro_esq !!}@endif
+                            </div>
+
+                            <div class="manga-direita">
+                                @if($ombro_dir){!! $ombro_dir !!}@endif
+                            </div>
+
+                            <div class="div-frente" style="grid-template-columns:1fr 1fr;grid-template-rows:1fr 1.3fr;">
+                                <div class="frente-area">{!! $frente_pos1 !!}</div>
+                                <div class="frente-area">{!! $frente_pos3 !!}</div>
+                                <div class="frente-area frente-area-rowspan" style="grid-column:1 / span 2;display:flex;justify-content:center;align-items:center;flex-direction:column;">
+                                    @if($frente_pos4){!! $frente_pos4 !!}@endif
+                                    @if($frente_pos5){!! $frente_pos5 !!}@endif
+                                    @if($frente_pos6){!! $frente_pos6 !!}@endif
+                                </div>
+                                <div class="frente-area" style="grid-column:1 / span 3;border-top:1px dashed #ccc;">
+                                    @if($frente_pos7){!! $frente_pos7 !!}@endif
+                                    @if($frente_pos8){!! $frente_pos8 !!}@endif
+                                    @if($frente_pos9){!! $frente_pos9 !!}@endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-3 pb-5 mb-6 mt-6 border-b border-gray-200">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-800">Costa da Camisa</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Visualização das customizações na parte traseira.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center overflow-x-auto py-6">
+                        <div class="camisa-container-costa">
+                            <div class="div-pescoco"></div>
+                            <div class="manga-esquerda"></div>
+                            <div class="manga-direita"></div>
+
+                            <div class="div-costa">
+                                <div class="costa-area costa-area-topo" style="grid-column:1 / span 3;">
+                                    @if($costa_pos1){!! $costa_pos1 !!}@endif
+                                    @if($costa_pos2){!! $costa_pos2 !!}@endif
+                                    @if($costa_pos3){!! $costa_pos3 !!}@endif
+                                </div>
+                                <div class="costa-area costa-area-centro" style="grid-column:1 / span 3;">
+                                    @if($costa_pos4){!! $costa_pos4 !!}@endif
+                                    @if($costa_pos5){!! $costa_pos5 !!}@endif
+                                    @if($costa_pos6){!! $costa_pos6 !!}@endif
+                                </div>
+                                <div class="costa-area costa-area-rodape" style="grid-column:1 / span 3;">
+                                    @if($costa_pos7){!! $costa_pos7 !!}@endif
+                                    @if($costa_pos8){!! $costa_pos8 !!}@endif
+                                    @if($costa_pos9){!! $costa_pos9 !!}@endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
+
+            <div class="flex justify-end mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para customizações
+                </x-secondary-button>
+            </div>
+
         </div>
-
-        {{-- --- VISUALIZAÇÃO DA COSTA DA CAMISA --- --}}
-        <h3 class="text-xl font-semibold text-gray-700 mt-8 mb-4 text-center">COSTA CAMISA</h3>
-        <div class="camisa-container-costa">
-            <div class="div-pescoco"></div> {{-- Simula o pescoço/gola da camisa (para a costa). --}}
-
-            <div class="manga-esquerda"> {{-- Manga Esquerda (visual na costa, geralmente vazia). --}}
-            </div>
-
-            <div class="manga-direita"> {{-- Manga Direita (visual na costa, geralmente vazia). --}}
-            </div>
-
-            <div class="div-costa">
-                <div class="costa-area costa-area-topo" style="grid-column:1 / span3;">
-                    @if($costa_pos1){!! $costa_pos1 !!}@endif
-                    @if($costa_pos2){!! $costa_pos2 !!}@endif
-                    @if($costa_pos3){!! $costa_pos3 !!}@endif
-                </div>
-                <div class="costa-area costa-area-centro" style="grid-column:1 / span3;">
-                    @if($costa_pos4){!! $costa_pos4 !!}@endif
-                    @if($costa_pos5){!! $costa_pos5 !!}@endif
-                    @if($costa_pos6){!! $costa_pos6 !!}@endif
-                </div>
-                <div class="costa-area costa-area-rodape" style="grid-column:1 / span 3;">
-                    @if($costa_pos7){!! $costa_pos7 !!}@endif
-                    @if($costa_pos8){!! $costa_pos8 !!}@endif
-                    @if($costa_pos9){!! $costa_pos9 !!}@endif
-                </div>
-            </div>
-        </div>
-
     </div>
-    {{--- FIM DO CÓDIGO DA CAMISA: SEÇÃO DE VISUALIZAÇÃO ---}}
-
-    @else
-    <p class="text-gray-600">Nenhuma customização selecionada para exibir o layout.</p>
-    @endif
-
 </div>
 
 <style>
-    /* Define a fonte 'Inter' para todo o documento, garantindo consistência visual. */
     body {
-        font-family: 'Inter', sans-serif;
+        font-family: 'Inter', sans-serif
     }
 
-    /* Estilos gerais para os contêineres que representam a frente e a costa da camisa. */
     .camisa-container-frente,
     .camisa-container-costa {
         position: relative;
-        /* Permite posicionar elementos filhos de forma absoluta dentro dele. */
         width: 300px;
-        /* Largura fixa para a visualização da camisa. */
         height: 400px;
-        /* Altura fixa para a visualização da camisa. */
         background-color: #fff;
-        /* Fundo branco para a camisa. */
         border: 2px solid #333;
-        /* Borda escura para definir o contorno da camisa. */
         border-radius: 5px;
-        /* Cantos levemente arredondados para a camisa. */
         display: flex;
-        /* Usa Flexbox para organizar o pescoço e o corpo da camisa verticalmente. */
         flex-direction: column;
-        /* Coloca os itens internos (pescoço, div-frente/costa) em uma coluna. */
         margin: 20px auto;
-        /* Centraliza a camisa horizontalmente e adiciona margem vertical. */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        /* Adiciona uma sombra suave para profundidade. */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, .1);
         overflow: visible;
-        /* Essencial para que as mangas possam se estender para fora do contêiner principal. */
-        z-index: 0;
-        /* Define a ordem de empilhamento (fundo). */
+        z-index: 0
     }
 
     .manga-esquerda,
@@ -358,157 +373,103 @@ $orcamentoBloqueado = in_array(
         position: absolute;
         width: 150px;
         height: 100px;
-        background-color: #ffffffff;
+        background-color: #fff;
         border: 2px solid #333;
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: 2em;
         font-weight: bold;
-        overflow: hidden;
+        overflow: hidden
     }
 
-    /* Manga esquerda: cantos arredondados só na esquerda */
     .manga-esquerda {
         top: -5px;
         left: -130px;
         transform: rotate(-20deg);
         transform-origin: 100% 50%;
-
         border-top-left-radius: 10px;
         border-bottom-left-radius: 10px;
-
-        /* Zera os cantos da direita */
         border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
+        border-bottom-right-radius: 0
     }
 
-    /* Manga direita: cantos arredondados só na direita */
     .manga-direita {
         top: -5px;
         right: -130px;
         transform: rotate(20deg);
-        transform-origin: 0% 50%;
-
+        transform-origin: 0 50%;
         border-top-right-radius: 10px;
         border-bottom-right-radius: 10px;
-
-        /* Zera os cantos da esquerda */
         border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+        border-bottom-left-radius: 0
     }
 
-
-    /* Estilos para as divs que contêm a grade de áreas da frente e da costa da camisa. */
     .div-frente,
     .div-costa {
         background-color: #fff;
         flex-grow: 1;
-        /* Permite que a grade ocupe o espaço vertical restante dentro do contêiner da camisa. */
         display: grid;
-        /* Define um layout de grade. */
         grid-template-columns: repeat(3, 1fr);
-        /* Cria 3 colunas com larguras iguais. */
         grid-template-rows: repeat(3, 1fr);
-        /* Cria 3 linhas com alturas iguais. */
         gap: 5px;
         border-radius: 5px;
-
-        /* Espaçamento de 5px entre as células da grade. */
         padding: 10px;
-        /* Espaçamento interno dentro da área da grade. */
         box-sizing: border-box;
-        /* Garante que o padding seja incluído na largura/altura total dos elementos. */
         position: relative;
-        /* Permite que esta div seja um contexto de empilhamento para seu z-index. */
-        z-index: 1;
-        /* Coloca esta área (corpo da camisa) acima das mangas. */
+        z-index: 1
     }
 
-    /* Estilos para cada célula individual dentro das áreas da frente e da costa (os "quadrados" da grade). */
     .frente-area,
     .costa-area {
         border: 1px dashed #ccc;
-        background-color: #ffffffff;
-        /* Cor de fundo cinza clara para as áreas, indicando que são espaços preenchíveis. */
+        background-color: #fff;
         display: flex;
-        /* Usa Flexbox para centralizar o conteúdo dentro de cada área. */
         flex-direction: column;
-        /* Empilha o texto e a imagem verticalmente, se ambos estiverem presentes. */
         justify-content: center;
-        /* Centraliza o conteúdo horizontalmente. */
         align-items: center;
-        /* Centraliza o conteúdo verticalmente. */
         font-size: 1.2em;
-        /* Tamanho de fonte padrão para o conteúdo de fallback. */
         font-weight: bold;
-        /* Texto em negrito. */
         border-radius: 4px;
-        /* Cantos levemente arredondados para as áreas. */
         min-height: 50px;
-        /* Garante uma altura mínima para cada área, mesmo que vazia. */
         overflow: hidden;
-        /* Esconde qualquer conteúdo que transborde das bordas da área. */
         padding: 5px;
-        /* Adiciona um pequeno espaçamento interno para o conteúdo. */
-        text-align: center;
-        /* Centraliza o texto dentro da área. */
+        text-align: center
     }
 
-
-    /* Estilos para a área específica que queremos ocultar (frente_pos2). */
     .frente-pos2-hidden {
         visibility: hidden;
-        /* Torna o elemento invisível, mas ele ainda ocupa seu espaço na grade. */
         background-color: transparent;
-        /* Remove a cor de fundo. */
         border: none;
-        /* Remove a borda tracejada. */
         padding: 0;
-        /* Remove o preenchimento. */
-        min-height: 0;
-        /* Garante que não tenha altura mínima forçada. */
+        min-height: 0
     }
 
-
-
-
-    /* Estilos para as imagens de customização que são inseridas nas áreas. */
     .custom-image {
         max-width: 100%;
-        /* Garante que a imagem não seja maior que a largura da sua área pai. */
         max-height: 100%;
-        /* Garante que a imagem não seja maior que a altura da sua área pai. */
-        object-fit: contain;
-        /* Reduz (ou amplia) a imagem para caber dentro da área, mantendo a proporção. */
+        object-fit: contain
     }
 
-    /* Estilos para a div que simula o Pescoço/Gola da camisa. */
     .div-pescoco {
         position: absolute;
-        /* Posiciona a gola de forma absoluta em relação ao 'camisa-container'. */
         top: -20px;
-        /* Move a gola para cima, para fora do contorno principal da camisa. */
         left: 50%;
-        /* Começa a gola no centro horizontal. */
         transform: translateX(-50%);
-        /* Ajusta para centralizar a gola perfeitamente. */
         width: 100px;
-        /* Largura da gola. */
         height: 40px;
-        /* Altura da gola. */
         background-color: #fff;
-        /* Fundo branco para a gola. */
         border: 2px solid #333;
-        /* Borda escura para a gola. */
         border-top-left-radius: 50%;
-        /* Arredonda o canto superior esquerdo para formar a curva da gola. */
         border-top-right-radius: 50%;
-        /* Arredonda o canto superior direito para formar a curva da gola. */
         border-bottom: none;
-        /* Remove a borda inferior para que ela se conecte visualmente ao corpo. */
-        z-index: 1;
-        /* Garante que a gola fique acima do corpo da camisa, mas abaixo das mangas. */
+        z-index: 1
     }
 </style>
+
+<x-modal-confirmacao
+    id="modalExcluirCustomizacao"
+    titulo="Excluir customização"
+    mensagem="Deseja realmente apagar esta customização?"
+    textoConfirmar="Excluir" />
 @endsection

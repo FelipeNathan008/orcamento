@@ -10,22 +10,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class DetalhesOrcamentoFracionado extends Model
 {
     use HasFactory;
+
     protected $table = 'detalhes_orcamento_fracionado';
+
     protected $primaryKey = 'id_det_fracionado';
+
     public $incrementing = true;
+
     protected $keyType = 'integer';
+
     protected $fillable = [
-
         'orcamento_fracionado_id',
-
         'detalhes_orcamento_id_det',
-
         'orcamento_cliente_orcamento_id_co',
         'orcamento_cliente_id_cliente',
-
         'produto_id_produto',
-
         'det_cod',
+        'det_nome',
+        'det_familia',
+        'det_material',
         'det_categoria',
         'det_modelo',
         'det_cor',
@@ -37,7 +40,6 @@ class DetalhesOrcamentoFracionado extends Model
         'det_observacao',
         'det_anotacao',
     ];
-
 
     protected $casts = [
         'det_valor_unit' => 'decimal:2',

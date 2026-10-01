@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.app_financeiro')
 
 @section('title', 'Detalhes do Item do Orçamento Fracionado')
 
@@ -27,9 +27,7 @@
                 $orcamentoFracionado->id_orcamento_fracionado
             ) }}"
                 class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-md transition duration-300">
-
                 Voltar para a Lista
-
             </a>
 
         </div>
@@ -113,17 +111,33 @@
 
             {{-- Produto --}}
             <div class="md:col-span-2">
-
                 <p class="text-gray-600 text-sm">
                     Produto
                 </p>
-
                 <p class="text-gray-900 text-lg font-semibold">
-                    {{ $detalheOrcamento->produto->prod_nome ?? 'N/A' }}
+                    {{ $detalheOrcamento->det_nome ?? 'N/A' }}
                 </p>
-
             </div>
 
+            {{-- Familia --}}
+            <div>
+                <p class="text-gray-600 text-sm">
+                    Família
+                </p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ $detalheOrcamento->det_familia ?? 'N/A' }}
+                </p>
+            </div>
+
+            {{-- Material --}}
+            <div>
+                <p class="text-gray-600 text-sm">
+                    Material
+                </p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ $detalheOrcamento->det_material ?? 'N/A' }}
+                </p>
+            </div>
 
             {{-- Código --}}
             <div>
@@ -131,25 +145,20 @@
                 <p class="text-gray-600 text-sm">
                     Código
                 </p>
-
                 <p class="text-gray-900 text-lg font-semibold">
                     {{ $detalheOrcamento->det_cod ?? 'N/A' }}
                 </p>
-
             </div>
 
 
             {{-- Categoria --}}
             <div>
-
                 <p class="text-gray-600 text-sm">
                     Categoria
                 </p>
-
                 <p class="text-gray-900 text-lg font-semibold">
                     {{ $detalheOrcamento->det_categoria ?? 'N/A' }}
                 </p>
-
             </div>
 
 
@@ -283,17 +292,17 @@
             {{-- Observação --}}
             @if($detalheOrcamento->det_observacao)
 
-                <div class="md:col-span-2">
+            <div class="md:col-span-2">
 
-                    <p class="text-gray-600 text-sm">
-                        Observação
-                    </p>
+                <p class="text-gray-600 text-sm">
+                    Observação
+                </p>
 
-                    <p class="text-gray-900 text-lg font-semibold">
-                        {{ $detalheOrcamento->det_observacao }}
-                    </p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ $detalheOrcamento->det_observacao }}
+                </p>
 
-                </div>
+            </div>
 
             @endif
 
@@ -301,17 +310,17 @@
             {{-- Anotação --}}
             @if($detalheOrcamento->det_anotacao)
 
-                <div class="md:col-span-2">
+            <div class="md:col-span-2">
 
-                    <p class="text-gray-600 text-sm">
-                        Anotação
-                    </p>
+                <p class="text-gray-600 text-sm">
+                    Anotação
+                </p>
 
-                    <p class="text-gray-900 text-lg font-semibold">
-                        {{ $detalheOrcamento->det_anotacao }}
-                    </p>
+                <p class="text-gray-900 text-lg font-semibold">
+                    {{ $detalheOrcamento->det_anotacao }}
+                </p>
 
-                </div>
+            </div>
 
             @endif
 
@@ -339,126 +348,126 @@
 
         @if($detalheOrcamento->customizacoes->count() > 0)
 
-            <div class="overflow-x-auto">
+        <div class="overflow-x-auto">
 
-                <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
 
-                    <thead class="bg-gray-50">
+                <thead class="bg-gray-50">
 
-                        <tr>
+                    <tr>
 
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Tipo
-                            </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Tipo
+                        </th>
 
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Local
-                            </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Local
+                        </th>
 
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Posição
-                            </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Posição
+                        </th>
 
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Tamanho
-                            </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Tamanho
+                        </th>
 
-                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                                Descrição
-                            </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Descrição
+                        </th>
 
-                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-                                Valor
-                            </th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
+                            Valor
+                        </th>
 
-                        </tr>
+                    </tr>
 
-                    </thead>
+                </thead>
 
 
-                    <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white divide-y divide-gray-200">
 
-                        @foreach($detalheOrcamento->customizacoes as $customizacao)
+                    @foreach($detalheOrcamento->customizacoes as $customizacao)
 
-                            <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50">
 
-                                <td class="px-4 py-4 text-sm text-gray-900">
-                                    {{ $customizacao->cust_tipo ?? 'N/A' }}
-                                </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            {{ $customizacao->cust_tipo ?? 'N/A' }}
+                        </td>
 
-                                <td class="px-4 py-4 text-sm text-gray-900">
-                                    {{ $customizacao->cust_local ?? 'N/A' }}
-                                </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            {{ $customizacao->cust_local ?? 'N/A' }}
+                        </td>
 
-                                <td class="px-4 py-4 text-sm text-gray-900">
-                                    {{ $customizacao->cust_posicao ?? 'N/A' }}
-                                </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            {{ $customizacao->cust_posicao ?? 'N/A' }}
+                        </td>
 
-                                <td class="px-4 py-4 text-sm text-gray-900">
-                                    {{ $customizacao->cust_tamanho ?? 'N/A' }}
-                                </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            {{ $customizacao->cust_tamanho ?? 'N/A' }}
+                        </td>
 
-                                <td class="px-4 py-4 text-sm text-gray-900">
-                                    {{ $customizacao->cust_descricao ?? 'N/A' }}
-                                </td>
+                        <td class="px-4 py-4 text-sm text-gray-900">
+                            {{ $customizacao->cust_descricao ?? 'N/A' }}
+                        </td>
 
-                                <td class="px-4 py-4 text-sm text-gray-900 text-right font-semibold">
+                        <td class="px-4 py-4 text-sm text-gray-900 text-right font-semibold">
 
-                                    R$
-                                    {{ number_format(
+                            R$
+                            {{ number_format(
                                         $customizacao->cust_valor ?? 0,
                                         2,
                                         ',',
                                         '.'
                                     ) }}
 
-                                </td>
+                        </td>
 
-                            </tr>
+                    </tr>
 
-                        @endforeach
+                    @endforeach
 
-                    </tbody>
+                </tbody>
 
-                </table>
+            </table>
 
-            </div>
+        </div>
 
 
-            {{-- Total das customizações --}}
-            <div class="mt-6 flex justify-end">
+        {{-- Total das customizações --}}
+        <div class="mt-6 flex justify-end">
 
-                <div class="bg-gray-50 rounded-lg px-6 py-4">
+            <div class="bg-gray-50 rounded-lg px-6 py-4">
 
-                    <p class="text-gray-600 text-sm">
-                        Total das Customizações
-                    </p>
+                <p class="text-gray-600 text-sm">
+                    Total das Customizações
+                </p>
 
-                    <p class="text-gray-900 text-xl font-bold">
+                <p class="text-gray-900 text-xl font-bold">
 
-                        R$
-                        {{ number_format(
+                    R$
+                    {{ number_format(
                             $detalheOrcamento->customizacoes->sum('cust_valor'),
                             2,
                             ',',
                             '.'
                         ) }}
 
-                    </p>
-
-                </div>
-
-            </div>
-
-        @else
-
-            <div class="text-center py-8">
-
-                <p class="text-gray-500">
-                    Este item não possui customizações cadastradas.
                 </p>
 
             </div>
+
+        </div>
+
+        @else
+
+        <div class="text-center py-8">
+
+            <p class="text-gray-500">
+                Este item não possui customizações cadastradas.
+            </p>
+
+        </div>
 
         @endif
 

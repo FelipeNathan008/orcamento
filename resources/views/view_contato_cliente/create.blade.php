@@ -2,195 +2,193 @@
 
 @section('title', 'Cadastrar Novo Contato de Cliente')
 
+@php
+use App\Helpers\CryptHelper;
+@endphp
+
 @section('content')
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-2 text-center">
-        Novo Contato
-    </h1>
-    <x-alert-flash />
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
+        <x-page-header title="Cadastrar Novo Contato" :back-url="$urlVoltar" />
 
-    @if(isset($clienteSelecionado))
-    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
-
-        <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Cliente
-        </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-
-            <div>
-                <p class="text-gray-600">Nome</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $clienteSelecionado->clie_orc_nome }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">E-mail</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $clienteSelecionado->clie_orc_email }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">Celular</p>
-                <p class="font-semibold text-gray-900">
-                    {{ preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', preg_replace('/\D/', '', $clienteSelecionado->clie_orc_celular)) }}
-                </p>
-            </div>
-
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
 
+        @php
+        $celularCliente = preg_replace('/\D/', '', $clienteSelecionado->clie_orc_celular ?? '');
+
+        if (strlen($celularCliente) === 11) {
+        $celularClienteFormatado = preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $celularCliente);
+        } elseif (strlen($celularCliente) === 10) {
+        $celularClienteFormatado = preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $celularCliente);
+        } else {
+        $celularClienteFormatado = $clienteSelecionado->clie_orc_celular ?: 'Não informado';
+        }
+        @endphp
+
+        <form id="contatoForm" action="{{ route('contato_cliente.store') }}" method="POST" class="px-6 sm:px-8 pt-6 pb-8">
+            @csrf
+
+            <x-info-card
+                title="Cliente selecionado"
+                :name="$clienteSelecionado->clie_orc_nome"
+                type="Cliente"
+                :fields="[
+                    [
+                        'label' => 'Código interno',
+                        'value' => $clienteSelecionado->clie_orc_cod_interno ?: 'Não informado',
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'E-mail',
+                        'value' => $clienteSelecionado->clie_orc_email ?: 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Celular',
+                        'value' => $celularClienteFormatado,
+                    ],
+                ]" />
+
+            <input type="hidden" name="cliente_orcamento_id_co" value="{{ $clienteSelecionado->id_co }}">
+
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6">
+
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Dados do contato</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Preencha as informações do contato do cliente.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <div class="md:col-span-2">
+                        <label for="cont_nome" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Nome do Contato
+                        </label>
+                        <input type="text"
+                            name="cont_nome"
+                            id="cont_nome"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Nome completo do contato"
+                            maxlength="45"
+                            value="{{ old('cont_nome') }}"
+                            required>
+                    </div>
+
+                    <div>
+                        <label for="cont_celular" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Celular
+                        </label>
+                        <input type="text"
+                            name="cont_celular"
+                            id="cont_celular"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="(XX) XXXXX-XXXX"
+                            maxlength="15"
+                            value="{{ old('cont_celular') }}"
+                            required>
+                    </div>
+
+                    <div>
+                        <label for="cont_telefone" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Telefone
+                        </label>
+                        <input type="text"
+                            name="cont_telefone"
+                            id="cont_telefone"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="(XX) XXXX-XXXX"
+                            maxlength="14"
+                            value="{{ old('cont_telefone') }}">
+                    </div>
+
+                    <div>
+                        <label for="cont_email" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            E-mail
+                        </label>
+                        <input type="email"
+                            name="cont_email"
+                            id="cont_email"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="contato@exemplo.com"
+                            maxlength="45"
+                            value="{{ old('cont_email') }}"
+                            required>
+                    </div>
+
+                    <div>
+                        <label for="cont_tipo" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Tipo de Contato
+                        </label>
+                        <select name="cont_tipo"
+                            id="cont_tipo"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            required>
+                            <option value="">Selecione</option>
+                            <option value="administrativo" {{ old('cont_tipo') === 'administrativo' ? 'selected' : '' }}>Administrativo</option>
+                            <option value="comercial" {{ old('cont_tipo') === 'comercial' ? 'selected' : '' }}>Comercial</option>
+                            <option value="financeiro" {{ old('cont_tipo') === 'financeiro' ? 'selected' : '' }}>Financeiro</option>
+                            <option value="rh" {{ old('cont_tipo') === 'rh' ? 'selected' : '' }}>RH</option>
+                            <option value="compras" {{ old('cont_tipo') === 'compras' ? 'selected' : '' }}>Compras</option>
+                            <option value="socio" {{ old('cont_tipo') === 'socio' ? 'selected' : '' }}>Sócio</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="cont_descricao" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Descrição
+                        </label>
+                        <textarea name="cont_descricao"
+                            id="cont_descricao"
+                            rows="4"
+                            maxlength="500"
+                            class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none"
+                            placeholder="Informações adicionais sobre o contato, como cargo ou setor">{{ old('cont_descricao') }}</textarea>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
+
+                <x-primary-button type="submit" id="btnSalvarContato" class="px-6">
+                    <span id="textoSalvar">Salvar contato</span>
+                </x-primary-button>
+            </div>
+        </form>
     </div>
-    @endif
-    <form id="contatoForm" action="{{ route('contato_cliente.store') }}" method="POST" class="space-y-6">
-        @csrf
-
-        {{-- ID DO CLIENTE FIXO --}}
-        <input type="hidden" name="cliente_orcamento_id_co"
-            value="{{ $clienteSelecionado->id_co }}">
-
-        @if ($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4">
-            <ul class="list-disc list-inside">
-                @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
-            {{-- COLUNA ESQUERDA --}}
-            <div class="space-y-6">
-
-
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Nome do Contato
-                    </label>
-                    <input type="text" name="cont_nome"
-                        placeholder="Nome completo do contato"
-                        class="w-full px-4 py-2 border rounded-md"
-                        value="{{ old('cont_nome') }}" required>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Telefone (Opcional)
-                    </label>
-                    <input type="text" name="cont_telefone"
-                        class="w-full px-4 py-2 border rounded-md"
-                        placeholder="(XX) XXXX-XXXX"
-                        value="{{ old('cont_telefone') }}">
-                </div>
-
-            </div>
-
-            {{-- COLUNA DIREITA --}}
-            <div class="space-y-6">
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">Celular</label>
-                    <input type="text" name="cont_celular"
-                        class="w-full px-4 py-2 border rounded-md"
-                        placeholder="(XX) XXXXX-XXXX"
-                        value="{{ old('cont_celular') }}" required>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Tipo de Contato
-                    </label>
-                    <select name="cont_tipo"
-                        class="w-full px-4 py-2 border rounded-md"
-                        required>
-                        <option value="">Selecione</option>
-                        <option value="administrativo" {{ old('cont_tipo') == 'administrativo' ? 'selected' : '' }}>
-                            Administrativo
-                        </option>
-                        <option value="comercial" {{ old('cont_tipo') == 'comercial' ? 'selected' : '' }}>
-                            Comercial
-                        </option>
-                        <option value="financeiro" {{ old('cont_tipo') == 'financeiro' ? 'selected' : '' }}>
-                            Financeiro
-                        </option>
-                        <option value="rh" {{ old('cont_tipo') == 'rh' ? 'selected' : '' }}>
-                            RH
-                        </option>
-                        <option value="compras" {{ old('cont_tipo') == 'compras' ? 'selected' : '' }}>
-                            Compras
-                        </option>
-                        <option value="socio" {{ old('cont_tipo') == 'socio' ? 'selected' : '' }}>
-                            Sócio
-                        </option>
-                    </select>
-                </div>
-
-            </div>
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium mb-1">Email</label>
-            <input type="email" name="cont_email"
-                class="w-full px-4 py-2 border rounded-md"
-                placeholder="contato@exemplo.com"
-                value="{{ old('cont_email') }}" required>
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium mb-1">
-                Descrição (Opcional)
-            </label>
-            <textarea name="cont_descricao"
-                placeholder="Informações adicionais sobre o contato, como cargo ou setor"
-                rows="4"
-                class="w-full px-4 py-2 border rounded-md">{{ old('cont_descricao') }}</textarea>
-        </div>
-
-        <div class="flex justify-center mt-8">
-            <button type="submit" id="btnSalvarContato"
-                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
-                SALVAR
-            </button>
-        </div>
-        {{-- Botão Voltar unificado e movido para fora do formulário --}}
-        <div class="flex justify-center mb-8">
-            <a href="{{ route('contato_cliente.index', ['cliente_orcamento' => $clienteSelecionado->id_co]) }}"
-                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                VOLTAR PARA A LISTA
-            </a>
-        </div>
-
-</div>
-</form>
 </div>
 
-{{-- Apenas máscaras agora --}}
 @push('scripts')
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
 <script>
-    $('#contatoForm').on('submit', function() {
+    const form = document.getElementById('contatoForm');
+    const btnSalvar = document.getElementById('btnSalvarContato');
+    const textoSalvar = document.getElementById('textoSalvar');
 
-        const btn = $('#btnSalvarContato');
-
-        btn.prop('disabled', true);
-
-        btn
-            .text('SALVANDO...')
-            .removeClass('hover:bg-button-save-hover')
-            .addClass('opacity-70 cursor-not-allowed');
+    form.addEventListener('submit', function() {
+        if (btnSalvar.disabled) return false;
+        btnSalvar.disabled = true;
+        textoSalvar.innerText = 'Salvando...';
+        btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
     });
-    $(function() {
-        $('input[name="cont_telefone"]').mask('(00) 0000-0000');
-        $('input[name="cont_celular"]').mask('(00) 00000-0000');
+
+    $(document).ready(function() {
+        $('#contatoForm input[name="cont_telefone"]').mask('(00) 0000-0000');
+        $('#contatoForm input[name="cont_celular"]').mask('(00) 00000-0000');
     });
 </script>
 @endpush
-
 @endsection

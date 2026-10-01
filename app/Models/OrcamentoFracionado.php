@@ -31,15 +31,11 @@ class OrcamentoFracionado extends Model
         'orc_motivo_rejeicao',
         'orc_cod_fabrica',
         'orc_cod_interno',
-        'orc_desconto_tipo',
-        'orc_desconto_valor',
-        'orc_desconto_motivo',
     ];
 
     protected $casts = [
         'orc_data_inicio' => 'date',
         'orc_data_fim' => 'date',
-        'orc_desconto_valor' => 'decimal:2',
         'orc_fracao' => 'integer',
     ];
 
@@ -78,12 +74,10 @@ class OrcamentoFracionado extends Model
 
             $quantidade = (int) ($detalhe->det_quantidade ?? 0);
 
-            // Valor dos produtos
             $total +=
                 $quantidade *
                 (float) ($detalhe->det_valor_unit ?? 0);
 
-            // Valor das customizações
             foreach ($detalhe->customizacoes as $customizacao) {
 
                 $total +=
@@ -92,35 +86,6 @@ class OrcamentoFracionado extends Model
             }
         }
 
-        return $total;
-    }
-
-    public function getValorDescontoAttribute()
-    {
-        $totalBruto = $this->total_bruto;
-
-        if ($this->orc_desconto_tipo === 'percentual') {
-
-            return round(
-                $totalBruto *
-                ((float) $this->orc_desconto_valor / 100),
-                2
-            );
-        }
-
-        if ($this->orc_desconto_tipo === 'valor') {
-
-            return min(
-                (float) $this->orc_desconto_valor,
-                $totalBruto
-            );
-        }
-
-        return 0;
-    }
-
-    public function getTotalComDescontoAttribute()
-    {
-        return $this->total_bruto - $this->valor_desconto;
+        return round($total, 2);
     }
 }

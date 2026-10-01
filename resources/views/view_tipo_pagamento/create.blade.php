@@ -1,66 +1,79 @@
-<!-- resources/views/tipo_pagamento/create.blade.php -->
-@extends('layouts.app_financeiro')
+@extends('layouts.app')
 
-@section('title', 'Cadastrar Novo Tipo de Pagamento')
+@section('title', 'Cadastrar Tipo de Pagamento')
 
 @section('content')
-{{-- Contêiner principal centralizado --}}
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    {{-- Título centralizado --}}
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Cadastro de Novo Tipo de Pagamento</h1>
 
-    {{-- Formulário --}}
-    <form id="TipoPagamentoForm" action="{{ route('tipo_pagamento.store') }}" method="POST" class="space-y-6">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <x-page-header title="Cadastrar Tipo de Pagamento" :back-url="$urlVoltar" />
+
+    <div class="px-6 sm:px-8 pt-6">
+        <x-alert-flash />
+    </div>
+
+    <form id="tipoPagamentoForm" action="{{ route('tipo_pagamento.store') }}" method="POST" class="px-6 sm:px-8 pt-6 pb-8">
         @csrf
 
-        {{-- Grid principal (usado apenas para manter o padrão visual) --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {{-- Campo Tipo de Plano Financeiro - ocupa duas colunas --}}
-            <div class="md:col-span-2">
-                <label for="tipo_plano_fin" class="block text-sm font-medium text-custom-dark-text mb-1">Tipo de Plano Financeiro</label>
-                <input type="text"
-                    name="tipo_plano_fin"
-                    id="tipo_plano_fin"
-                    class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                    placeholder="Ex: Boleto, Pix..."
-                    maxlength="60"
-                    value="{{ old('tipo_plano_fin') }}"
-                    required>
-                @error('tipo_plano_fin')
-                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                @enderror
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6">
+            <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                    <x-icons.document class="w-5 h-5" />
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">Dados do tipo de pagamento</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Preencha as informações cadastrais do tipo de pagamento.</p>
+                </div>
             </div>
 
-        </div> {{-- Fim do grid --}}
-
-        <div class="flex justify-center mt-8">
-            <button type="submit" id="btnSalvarTipoPagamento"
-                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-button-save-bg hover:bg-button-save-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition duration-150 ease-in-out">
-                SALVAR
-            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="md:col-span-2">
+                    <label for="tipo_plano_fin" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                        Tipo de Pagamento
+                    </label>
+                    <input
+                        type="text"
+                        name="tipo_plano_fin"
+                        id="tipo_plano_fin"
+                        class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                        placeholder="Ex: Boleto, Pix..."
+                        maxlength="45"
+                        value="{{ old('tipo_plano_fin') }}"
+                        required>
+                </div>
+            </div>
         </div>
-        {{-- Botão Voltar unificado e movido para fora do formulário --}}
-        <div class="flex justify-center mb-8">
-            <a href="{{ route('tipo_pagamento.index') }}"
-                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                VOLTAR PARA A LISTA
-            </a>
+
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-gray-200">
+            <x-secondary-button :href="$urlVoltar">
+                Voltar para a lista
+            </x-secondary-button>
+            <x-primary-button type="submit" id="btnSalvarTipoPagamento" class="px-6">
+                <span id="textoSalvar">Salvar tipo</span>
+            </x-primary-button>
         </div>
     </form>
 </div>
+
+</div>
+
+@push('scripts')
+
 <script>
-    const form = document.getElementById('TipoPagamentoForm');
+    const form = document.getElementById('tipoPagamentoForm');
     const btnSalvar = document.getElementById('btnSalvarTipoPagamento');
+    const textoSalvar = document.getElementById('textoSalvar');
 
-    form.addEventListener('submit', function() {
-
+    form.addEventListener('submit', function(event) {
         if (btnSalvar.disabled) {
-            return false;
+            event.preventDefault();
+            return;
         }
         btnSalvar.disabled = true;
-        btnSalvar.innerText = 'SALVANDO...';
+        textoSalvar.innerText = 'Salvando...';
         btnSalvar.classList.add('opacity-70', 'cursor-not-allowed');
     });
 </script>
+
+@endpush
 @endsection

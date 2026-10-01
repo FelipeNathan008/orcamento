@@ -15,38 +15,66 @@
     </a>
 </div>
 
-{{-- INFORMAÇÕES DO ORÇAMENTO --}}
+@if(isset($orcamentoFracionado))
 <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+
     <h2 class="text-lg font-bold text-orange-700 mb-4">
-        Informações do Orçamento Principal
+        Informações do Orçamento Fracionado
     </h2>
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+
+        <div>
+            <div class="grid grid-cols-3 gap-4">
+
+                <div>
+                    <p class="text-gray-600">ID</p>
+                    <p class="font-semibold">
+                        {{ $orcamentoFracionado->id_orcamento_fracionado }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-gray-600">Cód. Fábrica</p>
+                    <p class="font-semibold">
+                        {{ $orcamentoFracionado->orc_cod_fabrica ?: 'N/D' }}
+                    </p>
+                </div>
+
+                <div>
+                    <p class="text-gray-600">Cód. Interno</p>
+                    <p class="font-semibold">
+                        {{ $orcamentoFracionado->orc_cod_interno ?: 'N/D' }}
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
         <div>
             <p class="text-gray-600">Cliente</p>
             <p class="font-semibold text-gray-900">
-                {{ $orcamento->clienteOrcamento->clie_orc_nome ?? 'N/D' }}
+                {{ $orcamentoFracionado->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
             </p>
         </div>
-        <div>
-            <p class="text-gray-600">Código Fábrica</p>
-            <p class="font-semibold text-gray-900">
-                {{ $orcamento->orc_cod_fabrica }}
-            </p>
-        </div>
-        <div>
-            <p class="text-gray-600">Código Interno</p>
-            <p class="font-semibold text-gray-900">
-                {{ $orcamento->orc_cod_interno }}
-            </p>
-        </div>
+
         <div>
             <p class="text-gray-600">Fração</p>
             <p class="font-semibold text-gray-900">
                 #{{ $orcamentoFracionado->orc_fracao }}
             </p>
         </div>
+
+        <div>
+            <p class="text-gray-600">Status</p>
+            <p class="font-semibold text-gray-900">
+                {{ ucfirst($orcamentoFracionado->orc_status) }}
+            </p>
+        </div>
+
     </div>
 </div>
+@endif
 
 <x-alert-flash />
 
@@ -219,7 +247,7 @@
                             {{ $checkedOld ? 'checked' : '' }}>
                     </td>
                     <td class="px-4 py-4 text-sm">
-                        {{ $detalhe->produto->prod_nome ?? 'N/A' }}
+                        {{ $detalhe->det_nome ?? 'N/A' }}
                         @if($qtdAlocada > 0)
                         <span class="ml-1 inline-block px-2 py-0.5 text-xs rounded-full bg-yellow-200 text-yellow-800">
                             parcialmente alocado
@@ -257,7 +285,7 @@
                         @if($detalhe->customizacoes->count() > 0)
                         <button type="button"
                             class="btn-ver-customizacoes inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                            data-produto="{{ $detalhe->produto->prod_nome ?? 'Item' }}"
+                            data-produto="{{ $detalhe->det_nome ?? 'Item' }}"
                             data-customizacoes="{{ $customizacoesJson->toJson() }}">
                             {{ $detalhe->customizacoes->count() }} customização(ões)
                         </button>

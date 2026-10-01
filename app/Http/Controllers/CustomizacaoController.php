@@ -2,83 +2,102 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CryptHelper;
 use App\Models\Customizacao;
 use App\Models\DetalhesOrcamento;
 use App\Models\PrecoCustomizacao;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\File;
 
 class CustomizacaoController extends Controller
 {
+    private const SESSION_KEY = 'customizacao.index_url';
 
-    public function index(Request $request): View|RedirectResponse
+    private function urlIndex($detalhe): string
     {
-        if (!$request->id_det) {
-            return redirect()->route('cliente_orcamento.index')
-                ->with('error', 'Selecione um produto para visualizar as customizações.');
+        return session(
+            self::SESSION_KEY,
+            route('customizacao.index', CryptHelper::encrypt($detalhe->id_det))
+        );
+    }
+
+    private function queryCustomizacoes(Request $request, int $detalheId)
+    {
+        $query = Customizacao::where(
+            'detalhes_orcamento_id_det',
+            $detalheId
+        );
+
+        if ($request->filled('tipo')) {
+            $query->where('cust_tipo', $request->tipo);
         }
+
+        if ($request->filled('local')) {
+            $query->where('cust_local', $request->local);
+        }
+
+        if ($request->filled('posicao')) {
+            $query->where('cust_posicao', $request->posicao);
+        }
+
+        if ($request->filled('formatacao')) {
+            $query->where('cust_formatacao', $request->formatacao);
+        }
+
+        return $query;
+    }
+
+    public function index(Request $request, $id): View|RedirectResponse
+    {
+        session([self::SESSION_KEY => $request->fullUrl()]);
+
+        $detalheId = CryptHelper::decrypt($id);
 
         $detalhe = DetalhesOrcamento::with([
             'produto',
             'orcamento.clienteOrcamento',
             'customizacoes'
-        ])->findOrFail($request->id_det);
+        ])->findOrFail($detalheId);
 
-        $query = Customizacao::with([
-            'detalhesOrcamento.produto',
-            'detalhesOrcamento.orcamento.clienteOrcamento'
-        ])
-            ->where('detalhes_orcamento_id_det', $request->id_det);
+        $urlDetalhesOrcamento = session(
+            'detalhes_orcamento.index_url',
+            route(
+                'detalhes_orcamento.index',
+                CryptHelper::encrypt($detalhe->orcamento->id_orcamento)
+            )
+        );
 
-        // Tipo
-        if ($request->filled('tipo')) {
-            $query->where('cust_tipo', $request->tipo);
-        }
-
-        // Local
-        if ($request->filled('local')) {
-            $query->where('cust_local', $request->local);
-        }
-
-        // Posição
-        if ($request->filled('posicao')) {
-            $query->where('cust_posicao', $request->posicao);
-        }
-
-        // Formatação
-        if ($request->filled('formatacao')) {
-            $query->where('cust_formatacao', $request->formatacao);
-        }
-
-        $customizacoes = $query
+        $customizacoes = $this->queryCustomizacoes($request, $detalheId)
+            ->with([
+                'detalhesOrcamento.produto',
+                'detalhesOrcamento.orcamento.clienteOrcamento'
+            ])
             ->orderBy('id_customizacao')
-            ->paginate(10)
-            ->withQueryString();
+            ->get();
 
-        $tipos = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+        $tipos = Customizacao::where('detalhes_orcamento_id_det', $detalheId)
             ->select('cust_tipo')
             ->distinct()
             ->orderBy('cust_tipo')
             ->pluck('cust_tipo');
 
-        $locais = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+        $locais = Customizacao::where('detalhes_orcamento_id_det', $detalheId)
             ->select('cust_local')
             ->distinct()
             ->orderBy('cust_local')
             ->pluck('cust_local');
 
-        $posicoes = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+        $posicoes = Customizacao::where('detalhes_orcamento_id_det', $detalheId)
             ->select('cust_posicao')
             ->distinct()
             ->orderBy('cust_posicao')
             ->pluck('cust_posicao');
 
-        $formatacoes = Customizacao::where('detalhes_orcamento_id_det', $request->id_det)
+        $formatacoes = Customizacao::where('detalhes_orcamento_id_det', $detalheId)
             ->select('cust_formatacao')
             ->distinct()
             ->orderBy('cust_formatacao')
@@ -93,20 +112,31 @@ class CustomizacaoController extends Controller
             'locais' => $locais,
             'posicoes' => $posicoes,
             'formatacoes' => $formatacoes,
+            'urlDetalhesOrcamento' => $urlDetalhesOrcamento,
         ]);
     }
 
-    public function camisa($id)
+    public function camisa(Request $request, $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $customizacao = Customizacao::with([
             'detalhesOrcamento.produto',
             'detalhesOrcamento.orcamento.clienteOrcamento'
         ])->findOrFail($id);
 
-        // ID do detalhe do orçamento
         $detalheId = $customizacao->detalhes_orcamento_id_det;
 
-        // Todas as customizações desse detalhe
+        $urlVoltar = $request->filled('return_url')
+            ? $request->input('return_url')
+            : $this->urlIndex($customizacao->detalhesOrcamento);
+
+        $urlVoltarLimpo = route('customizacao.index', [
+            'id' => CryptHelper::encrypt($detalheId),
+        ]);
+
+        session([self::SESSION_KEY => $urlVoltar]);
+
         $allCustomizacoesForDetail = Customizacao::where(
             'detalhes_orcamento_id_det',
             $detalheId
@@ -114,37 +144,40 @@ class CustomizacaoController extends Controller
 
         return view(
             'view_customizacao.camisa',
-            compact('customizacao', 'allCustomizacoesForDetail')
+            compact(
+                'customizacao',
+                'allCustomizacoesForDetail',
+                'urlVoltar',
+                'urlVoltarLimpo'
+            )
         );
     }
 
-    public function create(Request $request): View
+    public function create(Request $request, $id): View
     {
-        $detalheId = $request->query('detalhe_id');
+        $detalheId = CryptHelper::decrypt($id);
 
-        // Impede acessar sem detalhe
-        if (!$detalheId) {
-            abort(404);
-        }
-
-        // Busca somente o detalhe específico
         $detalhe = DetalhesOrcamento::with([
             'produto',
             'orcamento.clienteOrcamento',
             'customizacoes'
         ])->findOrFail($detalheId);
 
+        $urlVoltar = $request->filled('return_url')
+            ? $request->input('return_url')
+            : $this->urlIndex($detalhe);
+
+        session([self::SESSION_KEY => $urlVoltar]);
+
         $precos = PrecoCustomizacao::all();
         $customizacoes = Customizacao::all();
 
-        return view('view_customizacao.create', compact('detalhe', 'precos', 'customizacoes'));
+        return view('view_customizacao.create', compact('detalhe', 'precos', 'customizacoes', 'urlVoltar'));
     }
-
 
     public function store(Request $request)
     {
         try {
-            // Adiciona a validação para o novo campo `cust_valor`
             $validatedData = $request->validate([
                 'detalhes_orcamento_id_det' => 'required|exists:detalhes_orcamento,id_det',
                 'cust_tipo' => 'required|string|max:45',
@@ -152,71 +185,116 @@ class CustomizacaoController extends Controller
                 'cust_posicao' => 'required|string|max:45',
                 'cust_tamanho' => 'required|string|max:45',
                 'cust_formatacao' => 'required|string|max:45',
-                'cust_valor' => 'required|string', // A validação de 'string' é temporária para o tratamento
+                'cust_valor' => 'required|string',
                 'cust_descricao' => 'nullable|string|max:90',
-                'cust_imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+                'cust_imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            ], [
+                'cust_imagem.image' => 'O arquivo enviado deve ser uma imagem.',
+                'cust_imagem.mimes' => 'A imagem deve estar no formato JPEG, PNG, JPG ou GIF.',
+                'cust_imagem.max' => 'A imagem não pode ser maior que 5 MB.',
             ]);
 
             $customizacaoData = $validatedData;
 
-            // Tratamento do valor da moeda para remover máscara e converter para decimal
             if (isset($customizacaoData['cust_valor'])) {
-                $valorLimpo = str_replace(['.', ','], ['', '.'], $customizacaoData['cust_valor']);
+                $valorLimpo = str_replace(
+                    ['.', ','],
+                    ['', '.'],
+                    $customizacaoData['cust_valor']
+                );
+
                 $customizacaoData['cust_valor'] = (float) $valorLimpo;
             }
 
             if ($request->hasFile('cust_imagem')) {
-
                 $image = $request->file('cust_imagem');
-
                 $nomeImagem = time() . '_' . $image->getClientOriginalName();
 
-                $image->move(public_path('images_customizacoes'), $nomeImagem);
+                $image->move(
+                    public_path('images_customizacoes'),
+                    $nomeImagem
+                );
 
                 $customizacaoData['cust_imagem'] = $nomeImagem;
             }
 
-            Customizacao::create($customizacaoData);
+            $customizacao = Customizacao::create($customizacaoData);
 
-            return redirect()
-                ->route('customizacao.index', [
-                    'id_det' => $customizacaoData['detalhes_orcamento_id_det']
-                ])
+            $detalhe = DetalhesOrcamento::findOrFail(
+                $customizacao->detalhes_orcamento_id_det
+            );
+
+            $urlVoltar = $request->filled('return_url')
+                ? $request->input('return_url')
+                : $this->urlIndex($detalhe);
+
+            session([self::SESSION_KEY => $urlVoltar]);
+
+            return redirect($urlVoltar)
                 ->with('success', 'Customização criada com sucesso!');
         } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            return redirect()
+                ->back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
-            Log::error('Erro ao criar customização: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->back()->with('error', 'Não foi possível criar a Customização: ' . $e->getMessage())->withInput();
+            Log::error(
+                'Erro ao criar customização: ' . $e->getMessage(),
+                ['exception' => $e]
+            );
+
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'Não foi possível criar a Customização: ' . $e->getMessage()
+                )
+                ->withInput();
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Customizacao $customizacao)
+    public function show(Request $request, $id)
     {
-        $customizacao->load('detalhesOrcamento.orcamento.clienteOrcamento', 'detalhesOrcamento.produto');
-        return view('view_customizacao.show', compact('customizacao'));
+        $id = CryptHelper::decrypt($id);
+
+        $customizacao = Customizacao::with([
+            'detalhesOrcamento.orcamento.clienteOrcamento',
+            'detalhesOrcamento.produto'
+        ])->findOrFail($id);
+
+        $detalhe = $customizacao->detalhesOrcamento;
+
+        $urlVoltar = $request->filled('return_url')
+            ? $request->input('return_url')
+            : $this->urlIndex($detalhe);
+
+        session([self::SESSION_KEY => $urlVoltar]);
+
+        return view(
+            'view_customizacao.show',
+            compact('customizacao', 'urlVoltar')
+        );
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id): View
+    public function edit(Request $request, $id): View
     {
+        $id = CryptHelper::decrypt($id);
+
         $customizacao = Customizacao::with([
             'detalhesOrcamento.produto',
             'detalhesOrcamento.orcamento.clienteOrcamento'
         ])->findOrFail($id);
 
-        // pega o detalhe a partir da customização
         $detalhe = $customizacao->detalhesOrcamento;
 
-        // preços de customização
+        $urlVoltar = $request->filled('return_url')
+            ? $request->input('return_url')
+            : $this->urlIndex($detalhe);
+
+        session([self::SESSION_KEY => $urlVoltar]);
+
         $precos = PrecoCustomizacao::all();
 
-        // customizações desse mesmo detalhe (igual create)
         $customizacoes = Customizacao::where(
             'detalhes_orcamento_id_det',
             $detalhe->id_det
@@ -224,19 +302,23 @@ class CustomizacaoController extends Controller
 
         return view(
             'view_customizacao.edit',
-            compact('customizacao', 'detalhe', 'precos', 'customizacoes')
+            compact(
+                'customizacao',
+                'detalhe',
+                'precos',
+                'customizacoes',
+                'urlVoltar'
+            )
         );
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         try {
             $customizacao = Customizacao::findOrFail($id);
 
-            // Validação dos dados, agora incluindo o novo campo `cust_valor`
             $validatedData = $request->validate([
                 'detalhes_orcamento_id_det' => 'sometimes|required|exists:detalhes_orcamento,id_det',
                 'cust_tipo' => 'sometimes|required|string|max:45',
@@ -244,75 +326,105 @@ class CustomizacaoController extends Controller
                 'cust_posicao' => 'sometimes|required|string|max:45',
                 'cust_tamanho' => 'sometimes|required|string|max:45',
                 'cust_formatacao' => 'sometimes|required|string|max:45',
-                'cust_valor' => 'sometimes|required|string', // A validação de 'string' é temporária para o tratamento
+                'cust_valor' => 'sometimes|required|string',
                 'cust_descricao' => 'nullable|string|max:90',
-                'cust_imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Max 2MB
+
+                'cust_imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+            ], [
+                'cust_imagem.image' => 'O arquivo enviado deve ser uma imagem.',
+                'cust_imagem.mimes' => 'A imagem deve estar no formato JPEG, PNG, JPG ou GIF.',
+                'cust_imagem.max' => 'A imagem não pode ser maior que 5 MB.',
             ]);
 
             $customizacaoData = $validatedData;
 
-            // Tratamento do valor da moeda para remover máscara e converter para decimal
             if (isset($customizacaoData['cust_valor'])) {
-                $valorLimpo = str_replace(['.', ','], ['', '.'], $customizacaoData['cust_valor']);
+                $valorLimpo = str_replace(
+                    ['.', ','],
+                    ['', '.'],
+                    $customizacaoData['cust_valor']
+                );
+
                 $customizacaoData['cust_valor'] = (float) $valorLimpo;
             }
 
             if ($request->hasFile('cust_imagem')) {
-
                 $image = $request->file('cust_imagem');
 
-                // apagar imagem antiga
                 if ($customizacao->cust_imagem) {
-
-                    $caminhoAntigo = public_path('images_customizacoes/' . $customizacao->cust_imagem);
+                    $caminhoAntigo = public_path(
+                        'images_customizacoes/' . $customizacao->cust_imagem
+                    );
 
                     if (File::exists($caminhoAntigo)) {
                         File::delete($caminhoAntigo);
                     }
                 }
 
-                // salvar nova imagem
                 $nomeImagem = time() . '_' . $image->getClientOriginalName();
 
-                $image->move(public_path('images_customizacoes'), $nomeImagem);
+                $image->move(
+                    public_path('images_customizacoes'),
+                    $nomeImagem
+                );
 
                 $customizacaoData['cust_imagem'] = $nomeImagem;
             } else {
-
                 unset($customizacaoData['cust_imagem']);
             }
 
             $customizacao->update($customizacaoData);
 
-            return redirect()
-                ->route('customizacao.index', [
-                    'id_det' => $customizacao->detalhes_orcamento_id_det
-                ])
+            $detalhe = DetalhesOrcamento::findOrFail(
+                $customizacao->detalhes_orcamento_id_det
+            );
+
+            $urlVoltar = $request->filled('return_url')
+                ? $request->input('return_url')
+                : $this->urlIndex($detalhe);
+
+            session([self::SESSION_KEY => $urlVoltar]);
+
+            return redirect($urlVoltar)
                 ->with('success', 'Customização atualizada com sucesso!');
         } catch (ValidationException $e) {
-            Log::error('Erro de validação ao atualizar customização: ' . $e->getMessage(), ['errors' => $e->errors()]);
-            return redirect()->back()->withErrors($e->errors())->withInput();
+            Log::error(
+                'Erro de validação ao atualizar customização: ' . $e->getMessage(),
+                ['errors' => $e->errors()]
+            );
+
+            return redirect()
+                ->back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
-            Log::error('Erro inesperado ao atualizar customização: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->back()->with('error', 'Não foi possível atualizar a Customização: ' . $e->getMessage())->withInput();
+            Log::error(
+                'Erro inesperado ao atualizar customização: ' . $e->getMessage(),
+                ['exception' => $e]
+            );
+
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'Não foi possível atualizar a Customização: ' . $e->getMessage()
+                )
+                ->withInput();
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         try {
-
             $customizacao = Customizacao::findOrFail($id);
-
             $idDet = $customizacao->detalhes_orcamento_id_det;
 
-            // apagar imagem
             if ($customizacao->cust_imagem) {
-
-                $caminhoImagem = public_path('images_customizacoes/' . $customizacao->cust_imagem);
+                $caminhoImagem = public_path(
+                    'images_customizacoes/' . $customizacao->cust_imagem
+                );
 
                 if (File::exists($caminhoImagem)) {
                     File::delete($caminhoImagem);
@@ -321,16 +433,26 @@ class CustomizacaoController extends Controller
 
             $customizacao->delete();
 
-            return redirect()
-                ->route('customizacao.index', [
-                    'id_det' => $idDet
-                ])
+            $urlVoltar = $this->urlIndex(
+                DetalhesOrcamento::findOrFail($idDet)
+            );
+
+            session([self::SESSION_KEY => $urlVoltar]);
+
+            return redirect($urlVoltar)
                 ->with('success', 'Customização excluída com sucesso!');
         } catch (\Exception $e) {
+            Log::error(
+                'Erro ao excluir customização: ' . $e->getMessage(),
+                ['exception' => $e]
+            );
 
-            Log::error('Erro ao excluir customização: ' . $e->getMessage(), ['exception' => $e]);
-
-            return redirect()->back()->with('error', 'Não foi possível excluir a Customização: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with(
+                    'error',
+                    'Não foi possível excluir a Customização: ' . $e->getMessage()
+                );
         }
     }
 }

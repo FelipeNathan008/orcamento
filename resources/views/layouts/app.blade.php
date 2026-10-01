@@ -1,313 +1,321 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full"> {{-- ESSENCIAL: Garante que o HTML ocupe 100% da altura da viewport --}}
+<html lang="pt-BR" class="h-full">
 
 <head>
-    {{-- Meta Tags Essenciais --}}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Aplicação Laravel')</title>
-
-    {{-- Estilos e Frameworks --}}
     @stack('styles')
-    {{-- CDN do Tailwind CSS --}}
     <script src="https://cdn.tailwindcss.com"></script>
-
-    {{-- Configuração Customizada do Tailwind CSS (JIT para CDN) --}}
-    {{-- ATENÇÃO: Isso é para desenvolvimento com CDN. Em produção, use a build tooling do Tailwind (npm run dev/prod).
-    --}}
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@700&family=Poppins:wght@400&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        'inter': ['Inter', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
                         'bai-jamjuree': ['Bai Jamjuree', 'sans-serif'],
-                        'poppins': ['Poppins', 'sans-serif'],
-                    },
-                    colors: {
-                        // Cores customizadas gerais
-                        'custom-dark-text': '#171A1FFF',
-                        'custom-border-light': '#BCC1CAFF',
-                        'custom-border-hover': '#A7ADB7FF',
-                        'custom-border-focus': '#9095A0FF',
-                        'custom-bg-general': '#E2E2CCFF',
-
-                        // Cores para tabelas e botões de ação (Editar, Orçamento, Contato, Cancelar)
-                        'table-header-bg': '#2D3748',
-                        'button-edit-bg': '#34D399',
-                        'button-edit-hover': '#10B981',
-                        'button-budget-bg': '#F59E0B',
-                        'button-budget-hover': '#D97706',
-                        'button-contact-bg': '#3B82F6',
-                        'button-contact-hover': '#2563EB',
-                        'button-cancel-bg': '#EF4444',
-                        'button-cancel-hover': '#DC2626',
-
-                        // Cores para o Formulário de Cadastro (create.blade.php)
-                        'form-bg': '#1E293B',
-                        'form-text': '#F8FAFC',
-                        'form-placeholder': '#94A3B8',
-                        'button-save-bg': '#F97316',
-                        'button-save-hover': '#EA580C',
-                    },
-                    boxShadow: {
-                        // Sombras customizadas para elementos gerais e tabelas
-                        'custom-table': '0px 4px 9px rgba(23, 26, 31, 0.11), 0px 0px 2px rgba(23, 26, 31, 0.12)',
-                        'table-shadow-image': '0px 0px 10px rgba(0, 0, 0, 0.1), 0px 0px 20px rgba(0, 0, 0, 0.05)',
-
-                        // Sombra customizada para o contêiner do Formulário de Cadastro
-                        'form-shadow': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        poppins: ['Poppins', 'sans-serif']
                     }
                 }
             }
-        }
+        };
     </script>
-
-    {{-- Importação das fontes Google Fonts --}}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@700&family=Poppins:wght@400&display=swap"
-        rel="stylesheet">
-
-    {{-- Estilos CSS Globais e de Utilitários (Não Tailwind) --}}
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            /* Define a fonte padrão do corpo */
-            background-color: #E2E2CC;
-            /* Cor de fundo geral do corpo, correspondendo a custom-bg-general */
-        }
-
-        /* Estilo para a barra de rolagem personalizada em navegadores WebKit (Chrome, Safari) */
-        ::-webkit-scrollbar {
-            width: 8px;
-            /* Largura da barra de rolagem vertical */
-            height: 8px;
-            /* Altura da barra de rolagem horizontal */
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            /* Cor do trilho da barra de rolagem (Tailwind bg-gray-200) */
-            border-radius: 10px;
-            /* Bordas arredondadas para o trilho */
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            /* Cor do "polegar" da barra de rolagem (Tailwind bg-slate-400) */
-            border-radius: 10px;
-            /* Bordas arredondadas para o "polegar" */
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-            /* Cor do "polegar" ao passar o mouse (Tailwind bg-slate-600) */
-        }
-    </style>
 </head>
 
-<body class="min-h-screen flex flex-col overflow-y-scroll overflow-x-hidden"> {{-- CORREÇÃO: Adicionado
-    overflow-y-scroll e overflow-x-hidden --}}
+<body class="min-h-screen flex flex-col bg-[#E2E2CC] font-inter overflow-x-hidden">
+    @php
+    $dashboardAtivo = request()->is('dashboard*') || request()->is('dashboard_orcamentos*');
 
-    {{-- Barra de Navegação Superior --}}
-    <nav class="bg-gray-800 p-4 shadow-xl sticky top-0 z-50 overflow-x-auto">
-        <div class="max-w-7xl mx-auto flex justify-between items-center gap-2">
+    $empresaProspeccaoAtivo =
+    request()->is('empresa*') ||
+    request()->is('cliente*') && !request()->is('cliente_orcamento*');
 
-            {{-- Links de Navegação Principal (lado esquerdo) --}}
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('dashboard') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Dashboard</a>
+    $clienteOrcamentoAtivo =
+    request()->is('cliente_orcamento*') ||
+    request()->is('cliente-orcamento*') ||
+    request()->is('orcamento*') ||
+    request()->is('detalhes_orcamento*') ||
+    request()->is('customizacao*') ||
+    request()->is('contato*');
 
-                <a href="{{ route('empresa.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Empresas</a>
+    $fluxoAtivo =
+    request()->is('fluxo_caixa*') ||
+    request()->is('nota_fiscal*') ||
+    request()->is('conta_bancaria*') ||
+    request()->is('fluxo_nota_conta*');
 
-                <a href="{{ route('cliente.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Prospecções</a>
+    $administracaoAtivo =
+    request()->is('administracao*') ||
+    request()->is('produto*') ||
+    request()->is('preco_customizacao*') ||
+    request()->is('tipo_fluxo_caixa*') ||
+    request()->is('tipo_pagamento*') ||
+    request()->is('users*');
+    @endphp
 
-                <a href="{{ route('cliente_orcamento.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Clientes/Orçamentos</a>
+    <nav class="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-white/10 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="min-h-[72px] flex items-center justify-between gap-4">
+                <div class="relative flex-1 min-w-0">
+                    <div class="flex items-center gap-2 py-3 overflow-x-auto pr-2">
 
-                <a href="{{ route('fluxo_nota_conta.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Fluxos / Notas / Saldos</a>
-                </a>
+                        {{-- DASHBOARD --}}
+                        <a href="{{ route('dashboard') }}"
+                            class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+                           {{ $dashboardAtivo ? 'bg-[#0f766e] text-white font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)]' : 'text-gray-300 hover:bg-white/10' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13h8V3H3v10zm10 8h8V11h-8v10zM3 21h8v-6H3v6zm10-10h8V3h-8v8z" />
+                            </svg>
+                            Dashboard
+                        </a>
 
-                <a href="{{ route('administracao.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Administração</a>
-                </a>
+                        {{-- EMPRESAS / PROSPECÇÕES --}}
+                        <div class="relative" id="empresa-prospeccao-menu">
+                            <button type="button"
+                                id="empresa-prospeccao-button"
+                                class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+                                    {{ $empresaProspeccaoAtivo ? 'bg-[#0f766e] text-white font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)]' : 'text-gray-300 hover:bg-white/10' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2m-2 4h2m-2 4h2m4-8h2m-2 4h2m-2 4h2" />
+                                </svg>
+                                Empresas / Prospecções
+                                <svg id="empresa-prospeccao-arrow" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
 
-                 <a href="{{ route('financeiro.index') }}"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Financeiro</a>
-                </a>
+                            <div id="empresa-prospeccao-dropdown" class="fixed w-56 bg-white rounded-xl shadow-xl border border-gray-200 p-2 hidden z-[100]">
+                                <a href="{{ route('empresa.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16M9 7h2m-2 4h2m-2 4h2m4-8h2m-2 4h2m-2 4h2" />
+                                    </svg>
+                                    Empresas
+                                </a>
 
+                                <a href="{{ route('cliente.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm13 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                                    </svg>
+                                    Prospecções
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- CLIENTES / ORÇAMENTOS --}}
+                        <a href="{{ route('cliente_orcamento.index') }}"
+                            class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+                           {{ $clienteOrcamentoAtivo ? 'bg-[#0f766e] text-white font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)]' : 'text-gray-300 hover:bg-white/10' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm13 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                            </svg>
+                            Clientes / Orçamentos
+                        </a>
+
+                        {{-- FLUXOS / NOTAS / SALDOS --}}
+                        <div class="relative" id="fluxos-notas-menu">
+                            <button type="button"
+                                id="fluxos-notas-button"
+                                class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+        {{ $fluxoAtivo ? 'bg-[#0f766e] text-white font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)]' : 'text-gray-300 hover:bg-white/10' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16l3-3 3 2 5-6" />
+                                </svg>
+                                Fluxos / Notas
+                                <svg id="fluxos-notas-arrow" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
+
+                            <div id="fluxos-notas-dropdown" class="fixed w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2 hidden z-[100]">
+                                <a href="{{ route('fluxo_caixa.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16l3-3 3 2 5-6" />
+                                    </svg>
+                                    Fluxos de Caixa
+                                </a>
+
+                                <a href="{{ route('nota_fiscal.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 2h9l5 5v15H6a2 2 0 01-2-2V4a2 2 0 012-2z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6M9 17h6M14 2v6h6" />
+                                    </svg>
+                                    Notas Fiscais
+                                </a>
+
+                                <a href="{{ route('conta_bancaria.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h3" />
+                                    </svg>
+                                    Contas Bancárias
+                                </a>
+                            </div>
+                        </div>
+
+                        {{-- ADMINISTRAÇÃO --}}
+                        <div class="relative" id="administracao-menu">
+                            <button type="button"
+                                id="administracao-button"
+                                class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+        {{ $administracaoAtivo ? 'bg-[#0f766e] text-white font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)]' : 'text-gray-300 hover:bg-white/10' }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 00.34 1.88l.06.06-1.9 1.9-.06-.06a1.7 1.7 0 00-1.88-.34 1.7 1.7 0 00-1.03 1.56V20h-2.68v-.09a1.7 1.7 0 00-1.03-1.56 1.7 1.7 0 00-1.88.34l-.06.06-1.9-1.9.06-.06A1.7 1.7 0 007.78 15a1.7 1.7 0 00-1.56-1.03H6V11.3h.22A1.7 1.7 0 007.78 10a1.7 1.7 0 00-.34-1.88l-.06-.06 1.9-1.9.06.06A1.7 1.7 0 0011.22 6.6 1.7 1.7 0 0012.25 5h-.25V3h2.68v.09a1.7 1.7 0 001.03 1.56 1.7 1.7 0 001.88-.34l.06-.06 1.9 1.9-.06.06A1.7 1.7 0 0019.4 8a1.7 1.7 0 001.56 1.03H21v2.68h-.04A1.7 1.7 0 0019.4 13a1.7 1.7 0 000 2z" />
+                                </svg>
+                                Administração
+                                <svg id="administracao-arrow" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+                                </svg>
+                            </button>
+
+                            <div id="administracao-dropdown" class="fixed w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-2 hidden z-[100]">
+                                <a href="{{ route('produto.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                    </svg>
+                                    Produtos
+                                </a>
+
+                                <a href="{{ route('preco_customizacao.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M3 12h18" />
+                                    </svg>
+                                    Preço Customização
+                                </a>
+
+                                <a href="{{ route('tipo_fluxo_caixa.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16l3-3 3 2 5-6" />
+                                    </svg>
+                                    Tipo Fluxo Caixa / Nota Fiscal
+                                </a>
+
+                                <a href="{{ route('tipo_pagamento.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <rect x="3" y="5" width="18" height="14" rx="2" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h3" />
+                                    </svg>
+                                    Tipo Pagamento
+                                </a>
+
+                                <a href="{{ route('users.index') }}"
+                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm13 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                                    </svg>
+                                    Usuários
+                                </a>
+                            </div>
+                        </div>
+
+
+                        {{-- FINANCEIRO --}}
+                        <a href="{{ route('financeiro.index') }}"
+                            class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200
+                           {{ request()->is('financeiro*') ? 'bg-[#0f766e] text-white font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)]' : 'text-gray-300 hover:bg-white/10' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <rect x="3" y="5" width="18" height="14" rx="2" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h3" />
+                            </svg>
+                            Financeiro
+                        </a>
+
+                        {{-- LAYOUT CAMISETA --}}
+                        @if(request()->is('camisa/show_layout*'))
+                        <a href="{{ url()->current() }}"
+                            class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-medium text-white bg-[#0f766e] font-semibold shadow-[0_4px_10px_rgba(15,118,110,0.25)] whitespace-nowrap">
+                            Layout Camiseta
+                        </a>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- SAIR --}}
+                <div class="shrink-0 pl-2 border-l border-white/10">
+                    <a href="{{ route('logout') }}"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                        class="flex items-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-red-300 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:text-red-200 transition-all duration-200 whitespace-nowrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 17l5-5-5-5M15 12H3m12-7h4a2 2 0 012 2v10a2 2 0 01-2 2h-4" />
+                        </svg>
+                        Sair
+                    </a>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
+                </div>
             </div>
-
-            {{-- Bloco da direita (Logout + Layout Camiseta) --}}
-            <div class="flex items-center gap-2">
-                <a href="{{ route('logout') }}"
-                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                    class="nav-link text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md">
-                    Logout
-                </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
-                    @csrf
-                </form>
-
-
-                <a id="layout-camiseta-nav-link" href="#"
-                    class="nav-link text-gray-300 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ease-in-out whitespace-nowrap hover:shadow-md hidden">
-                    Layout Camiseta
-                </a>
-            </div>
-
         </div>
     </nav>
 
-
-
-    {{-- Outros elementos do seu layout, como o link 'Layout Camiseta' --}}
-
-
-    {{-- Conteúdo Principal da Página --}}
-    <main class="flex-grow p-4 max-w-7xl mx-auto w-full"> {{-- ESSENCIAL: Permite que o conteúdo ocupe o espaço restante
-        --}}
+    <main class="flex-grow p-4 max-w-7xl mx-auto w-full">
         @yield('content')
     </main>
 
-    {{-- Rodapé da Página --}}
-    <footer class="bg-gray-800 text-white text-center p-4 shadow-inner mt-auto"> {{-- ESSENCIAL: mt-auto empurra para o
-        final --}}
-        &copy; {{ date('Y') }} Alphamega. Todos os direitos reservados.
+    <footer class="bg-slate-900 text-gray-400 text-center py-4 mt-auto border-t border-white/5">
+        <span class="text-xs">&copy; {{ date('Y') }} Alphamega. Todos os direitos reservados.</span>
     </footer>
 
-    {{-- Scripts JavaScript --}}
-    @stack('scripts') {{-- MOVIDO: Apenas um @stack('scripts') no final do body --}}
+    @stack('scripts')
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const navLinks = document.querySelectorAll('.nav-link');
-            const layoutCamisetaNavLink = document.getElementById('layout-camiseta-nav-link');
-
-            function highlightCurrentNavLink() {
-
-                let currentPathname = window.location.pathname;
-
-                if (!currentPathname.endsWith('/')) {
-                    currentPathname += '/';
-                }
-
-                navLinks.forEach(link => {
-
-                    let linkPathname = new URL(link.href).pathname;
-
-                    if (!linkPathname.endsWith('/')) {
-                        linkPathname += '/';
-                    }
-
-                    let isActive = false;
-
-                    if (
-                        (
-                            currentPathname.startsWith('/cliente_orcamento/') ||
-                            currentPathname.startsWith('/orcamento/') ||
-                            currentPathname.startsWith('/detalhes_orcamento/') ||
-                            currentPathname.startsWith('/customizacao/') ||
-                            currentPathname.startsWith('/contato')
-                        ) &&
-                        linkPathname === '/cliente_orcamento/'
-                    ) {
-                        isActive = true;
-                    }
-                    /* ADMINISTRAÇÃO */
-                    if (
-                        (
-                            currentPathname.startsWith('/administracao/') ||
-                            currentPathname.startsWith('/produto/') ||
-                            currentPathname.startsWith('/preco_customizacao/') ||
-                            currentPathname.startsWith('/tipo_pagamento/') ||
-                            currentPathname.startsWith('/users/') 
-                        ) &&
-                        linkPathname === '/administracao/'
-                    ) {
-                        isActive = true;
-                    }
-
-                    /* FLUXOS / NOTAS / CONTAS */
-                    if (
-                        (
-                            currentPathname.startsWith('/fluxo_caixa/') ||
-                            currentPathname.startsWith('/tipo_fluxo_caixa/') ||
-                            currentPathname.startsWith('/conta_bancaria/') ||
-                            currentPathname.startsWith('/nota_fiscal/')
-                        ) &&
-                        linkPathname === '/fluxo_nota_conta/'
-                    ) {
-                        isActive = true;
-                    }
-
-                    if (link.id === 'layout-camiseta-nav-link') {
-                        if (currentPathname.startsWith('/camisa/show_layout/')) {
-                            link.classList.remove('hidden');
-                            isActive = true;
-                            link.href = window.location.href;
-                        } else {
-                            link.classList.add('hidden');
-                        }
-                    }
-
-                    // RESET VISUAL PADRÃO
-                    link.classList.remove('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
-                    link.classList.add('text-gray-300');
-
-                    // USERS (azul fixo)
-                    if (linkPathname === '/users/') {
-                        if (currentPathname.startsWith('/users/')) {
-                            link.classList.remove('text-gray-300');
-                            link.classList.add('text-white', 'bg-blue-700', 'font-semibold', 'shadow-md');
-                        } else {
-                            link.classList.remove('bg-teal-700', 'font-semibold', 'shadow-md');
-                            link.classList.add('text-white', 'bg-blue-700', 'hover:bg-blue-800');
-                        }
-                        return;
-                    }
-
-                    // 🔹 REGRA NORMAL (outros links)
-                    if (!isActive) {
-                        if (linkPathname === '/') {
-                            isActive = (currentPathname === '/');
-                        } else {
-                            isActive = currentPathname.startsWith(linkPathname);
-
-                            // evita conflito cliente vs cliente_orcamento
-                            if (linkPathname === '/cliente/' && currentPathname.startsWith('/cliente_orcamento/')) {
-                                isActive = false;
-                            }
-                        }
-                    }
-
-                    if (isActive) {
-                        link.classList.remove('text-gray-300');
-                        link.classList.add('bg-teal-700', 'text-white', 'font-semibold', 'shadow-md');
-                    }
-                });
+        const menus = [{
+                button: document.getElementById('empresa-prospeccao-button'),
+                dropdown: document.getElementById('empresa-prospeccao-dropdown'),
+                arrow: document.getElementById('empresa-prospeccao-arrow')
+            },
+            {
+                button: document.getElementById('fluxos-notas-button'),
+                dropdown: document.getElementById('fluxos-notas-dropdown'),
+                arrow: document.getElementById('fluxos-notas-arrow')
+            },
+            {
+                button: document.getElementById('administracao-button'),
+                dropdown: document.getElementById('administracao-dropdown'),
+                arrow: document.getElementById('administracao-arrow')
             }
+        ];
 
-            highlightCurrentNavLink();
+        menus.forEach(menu => {
+            if (!menu.button || !menu.dropdown) return;
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    setTimeout(highlightCurrentNavLink, 50);
+            menu.button.addEventListener('click', function(event) {
+                event.stopPropagation();
+
+                menus.forEach(outro => {
+                    if (outro !== menu && outro.dropdown) {
+                        outro.dropdown.classList.add('hidden');
+                        outro.arrow?.classList.remove('rotate-180');
+                    }
                 });
+
+                menu.dropdown.classList.toggle('hidden');
+                menu.arrow?.classList.toggle('rotate-180');
             });
 
+            menu.dropdown.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
+        });
+
+        document.addEventListener('click', function() {
+            menus.forEach(menu => {
+                menu.dropdown?.classList.add('hidden');
+                menu.arrow?.classList.remove('rotate-180');
+            });
         });
     </script>
+
 </body>
 
 </html>

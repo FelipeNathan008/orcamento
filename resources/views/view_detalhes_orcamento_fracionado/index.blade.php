@@ -18,11 +18,13 @@
                     VOLTAR
                 </a>
             </div>
+            @if($orcamentoFracionado->orc_status === 'pendente')
             <a href="{{ route('detalhes_orcamento_fracionado.create', $orcamentoFracionado->id_orcamento_fracionado) }}"
                 class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white hover:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition duration-150 ease-in-out"
                 style="background-color: #EA792D;">
                 Novo Detalhe
             </a>
+            @endif
         </div>
     </div>
 
@@ -249,7 +251,7 @@
                 @foreach ($detalhesOrcamento as $detalhe)
                 <tr class="hover:bg-gray-50 transition duration-150">
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
-                        {{ $detalhe->produto->prod_nome ?? 'N/A' }}
+                        {{ $detalhe->det_nome ?? 'N/A' }}
                     </td>
                     <td class="px-4 py-4 text-sm text-gray-700 font-poppins">
                         {{ $detalhe->det_cod }}
@@ -269,10 +271,11 @@
 
                     <td class="px-2 py-4 whitespace-nowrap text-center text-sm font-medium">
                         <div class="flex items-center justify-center space-x-1 sm:space-x-2">
-                            {{-- Botão "Customizações" com badge --}}
+
                             <a href="{{ route('customizacao_fracionado.index', ['id_det_fracionado' => $detalhe->id_det_fracionado]) }}"
                                 class="relative inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
                                 Customizações
+
                                 @if($detalhe->customizacoes->count() > 0)
                                 <span class="absolute -top-2 -right-2 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-orange-500 rounded-full">
                                     {{ $detalhe->customizacoes->count() }}
@@ -280,30 +283,29 @@
                                 @endif
                             </a>
 
-                            {{-- Botão "Ver" --}}
-                            <a href="{{ route('detalhes_orcamento_fracionado.show',$detalhe->id_det_fracionado) }}"
+                            <a href="{{ route('detalhes_orcamento_fracionado.show', $detalhe->id_det_fracionado) }}"
                                 class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
                                 Ver
                             </a>
 
-                            {{-- Botão "Editar" 
-                            <a href="{{ route('detalhes_orcamento_fracionado.edit', $detalhe->id_det_fracionado) }}"
-                            class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                            Editar
-                            </a> --}}
+                            @if($orcamentoFracionado->orc_status === 'pendente')
 
-                            {{-- Botão "Excluir" --}}
-                            <form action="{{ route('detalhes_orcamento_fracionado.destroy', $detalhe->id_det_fracionado) }}"
+                            <form id="formExcluirDetalhe{{ $detalhe->id_det_fracionado }}"
+                                action="{{ route('detalhes_orcamento_fracionado.destroy', $detalhe->id_det_fracionado) }}"
                                 method="POST"
-                                class="inline-block"
-                                onsubmit="return confirm('Tem certeza que deseja excluir este detalhe de orçamento fracionado?');">
+                                class="inline-block">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit"
+
+                                <button type="button"
+                                    onclick="abrirModal('modalExcluirDetalhe', () => document.getElementById('formExcluirDetalhe{{ $detalhe->id_det_fracionado }}').submit())"
                                     class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-cancel-bg hover:bg-button-cancel-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-cancel-bg transition duration-150 ease-in-out">
                                     Excluir
                                 </button>
                             </form>
+
+                            @endif
+
                         </div>
                     </td>
                 </tr>
@@ -316,4 +318,10 @@
     </div>
     @endif
 </div>
+
+<x-modal-confirmacao
+    id="modalExcluirDetalhe"
+    titulo="Excluir detalhe"
+    mensagem="Deseja realmente apagar este detalhe de orçamento fracionado?"
+    textoConfirmar="Excluir" />
 @endsection

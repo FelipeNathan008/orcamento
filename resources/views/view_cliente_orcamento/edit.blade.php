@@ -4,367 +4,319 @@
 
 @section('content')
 
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">Edição de Cliente</h1>
+@php
+use App\Helpers\CryptHelper;
+@endphp
 
-    <x-alert-flash />
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
 
-    <form id="editForm" action="{{ route('cliente_orcamento.update', $clienteOrcamento->id_co) }}" method="POST"
-        class="space-y-6">
-        @csrf
-        @method('PUT')
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <x-page-header title="Editar Cliente de Orçamento" :back-url="$urlVoltar" />
 
-            <div>
-                <!-- Campo Nome -->
-                <div>
-                    <label for="clie_orc_nome" class="block text-sm font-medium text-custom-dark-text mb-1">Nome
-                        Completo</label>
-                    <input type="text" name="clie_orc_nome" id="clie_orc_nome"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="Nome completo do cliente" maxlength="80"
-                        value="{{ old('clie_orc_nome', $clienteOrcamento->clie_orc_nome) }}" required
-                        oninput="this.value = this.value.replace(/[0-9]/g, '');">
-                    @error('clie_orc_nome')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
+        </div>
 
-                <!-- Campo E-mail -->
-                <div class="mt-6">
-                    <label for="clie_orc_email"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">E-mail</label>
-                    <input type="email" name="clie_orc_email" id="clie_orc_email"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="nome@exemplo.com" maxlength="85"
-                        value="{{ old('clie_orc_email', $clienteOrcamento->clie_orc_email) }}" required>
-                    @error('clie_orc_email')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+        <form id="clienteOrcamentoForm"
+            action="{{ route('cliente_orcamento.update', CryptHelper::encrypt($clienteOrcamento->id_co)) }}"
+            method="POST"
+            class="px-6 sm:px-8 pt-6 pb-8">
 
-                <!-- Campo Logradouro -->
-                <div class="mt-6">
-                    <label for="clie_orc_logradouro"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">Logradouro</label>
-                    <input type="text" name="clie_orc_logradouro" id="clie_orc_logradouro"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="Rua, Avenida, etc." maxlength="100"
-                        value="{{ old('clie_orc_logradouro', $clienteOrcamento->clie_orc_logradouro) }}" required>
-                    @error('clie_orc_logradouro')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+            @csrf
+            @method('PUT')
 
-                <!-- Campo Bairro -->
-                <div class="mt-6">
-                    <label for="clie_orc_bairro"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">Bairro</label>
-                    <input type="text" name="clie_orc_bairro" id="clie_orc_bairro"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="Nome do bairro" maxlength="80"
-                        value="{{ old('clie_orc_bairro', $clienteOrcamento->clie_orc_bairro) }}" required>
-                    @error('clie_orc_bairro')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6">
 
-                <!-- Campo Cidade -->
-                <div class="mt-6">
-                    <label for="clie_orc_cidade"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">Cidade</label>
-                    <input type="text" name="clie_orc_cidade" id="clie_orc_cidade"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="Nome da cidade" maxlength="60"
-                        value="{{ old('clie_orc_cidade', $clienteOrcamento->clie_orc_cidade) }}" required>
-                    @error('clie_orc_cidade')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="mt-6">
-                    <label for="clie_orc_cod_interno"
-                        class="block text-sm font-medium text-custom-dark-text mb-1">
-                        Código Interno
-                    </label>
-
-                    <input type="text"
-                        name="clie_orc_cod_interno"
-                        id="clie_orc_cod_interno"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="Informe o código interno"
-                        maxlength="60"
-                        value="{{ old('clie_orc_cod_interno', $clienteOrcamento->clie_orc_cod_interno) }}">
-
-                    @error('clie_orc_cod_interno')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div> {{-- Fim da primeira coluna --}}
-
-            {{-- SEGUNDA COLUNA (DIREITA) - Campos Tipo Doc, Número Doc, Celular, Telefone, CEP, UF --}}
-            <div>
-                <!-- Campo Tipo de Documento (Select) -->
-                <div>
-                    <label for="clie_orc_tipo_doc" class="block text-sm font-medium text-custom-dark-text mb-1">Tipo de
-                        Documento</label>
-                    <select name="clie_orc_tipo_doc" id="clie_orc_tipo_doc"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        required>
-                        <option value="" class="text-gray-400">Selecione</option>
-                        <option value="CPF" {{ old('clie_orc_tipo_doc', $clienteOrcamento->clie_orc_tipo_doc) == 'CPF' ? 'selected' : '' }}>CPF</option>
-                        <option value="CNPJ" {{ old('clie_orc_tipo_doc', $clienteOrcamento->clie_orc_tipo_doc) == 'CNPJ' ? 'selected' : '' }}>CNPJ</option>
-                    </select>
-                    @error('clie_orc_tipo_doc')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Campo CNPJ ou CPF ou RG (Input para o número do documento) -->
-                <div class="mt-6">
-                    <label for="clie_orc_doc_numero" class="block text-sm font-medium text-custom-dark-text mb-1">Número
-                        do Documento</label>
-                    <input type="text" name="clie_orc_doc_numero" id="clie_orc_doc_numero"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="Informe o número do documento"
-                        value="{{ old('clie_orc_doc_numero', 
-                        $clienteOrcamento->clie_orc_tipo_doc === 'CPF' ? $clienteOrcamento->clie_orc_cpf : ($clienteOrcamento->clie_orc_tipo_doc === 'CNPJ'
-                         ? $clienteOrcamento->clie_orc_cnpj : ($clienteOrcamento->clie_orc_tipo_doc === 'RG' ? $clienteOrcamento->clie_orc_rg : null))) }}"
-                        required>
-                    @error('clie_orc_doc_numero')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                {{-- CAMPOS CELULAR E TELEFONE LADO A LADO --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                    {{-- Campo Celular --}}
-                    <div>
-                        <label for="clie_orc_celular"
-                            class="block text-sm font-medium text-custom-dark-text mb-1">Número
-                            Celular</label>
-                        <input type="text" name="clie_orc_celular" id="clie_orc_celular"
-                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            placeholder="(XX) XXXXX-XXXX" required
-                            value="{{ old('clie_orc_celular', $clienteOrcamento->clie_orc_celular) }}">
-                        @error('clie_orc_celular')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
                     </div>
 
-                    {{-- Campo Telefone --}}
                     <div>
-                        <label for="clie_orc_telefone"
-                            class="block text-sm font-medium text-custom-dark-text mb-1">Número
-                            Telefone</label>
-                        <input type="text" name="clie_orc_telefone" id="clie_orc_telefone"
-                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            placeholder="(XX) XXXX-XXXX"
-                            value="{{ old('clie_orc_telefone', $clienteOrcamento->clie_orc_telefone) }}">
-                        @error('clie_orc_telefone')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <h2 class="text-lg font-bold text-gray-800">Dados do cliente</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Atualize as informações cadastrais do cliente de orçamento.</p>
                     </div>
                 </div>
 
-                {{-- Mensagem de erro para Celular/Telefone --}}
-                <p id="mensagemErroContato" class="mt-2 text-sm text-red-600 hidden">Por favor, preencha o celular ou o
-                    telefone.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-
-                <!-- Campo CEP -->
-                <div class="mt-6">
-                    <label for="clie_orc_cep" class="block text-sm font-medium text-custom-dark-text mb-1">CEP</label>
-                    <input type="text" name="clie_orc_cep" id="clie_orc_cep"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        placeholder="XXXXX-XXX" maxlength="9" pattern="[0-9]{5}\-?[0-9]{3}"
-                        value="{{ old('clie_orc_cep', $clienteOrcamento->clie_orc_cep) }}" required>
-                    @error('clie_orc_cep')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Campo UF AGORA É UM SELECT -->
-                <div class="mt-6">
-                    <label for="clie_orc_uf" class="block text-sm font-medium text-custom-dark-text mb-1">UF
-                        (Estado)</label>
-                    <select name="clie_orc_uf" id="clie_orc_uf"
-                        class="block w-full px-4 py-2 bg-white text-gray-900 rounded-md shadow-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                        required>
-                        <option value="" class="text-gray-400">Selecione o Estado</option>
-                        @php
-                        $estados = [
-                        'AC' => 'Acre',
-                        'AL' => 'Alagoas',
-                        'AP' => 'Amapá',
-                        'AM' => 'Amazonas',
-                        'BA' => 'Bahia',
-                        'CE' => 'Ceará',
-                        'DF' => 'Distrito Federal',
-                        'ES' => 'Espírito Santo',
-                        'GO' => 'Goiás',
-                        'MA' => 'Maranhão',
-                        'MT' => 'Mato Grosso',
-                        'MS' => 'Mato Grosso do Sul',
-                        'MG' => 'Minas Gerais',
-                        'PA' => 'Pará',
-                        'PB' => 'Paraíba',
-                        'PR' => 'Paraná',
-                        'PE' => 'Pernambuco',
-                        'PI' => 'Piauí',
-                        'RJ' => 'Rio de Janeiro',
-                        'RN' => 'Rio Grande do Norte',
-                        'RS' => 'Rio Grande do Sul',
-                        'RO' => 'Rondônia',
-                        'RR' => 'Roraima',
-                        'SC' => 'Santa Catarina',
-                        'SP' => 'São Paulo',
-                        'SE' => 'Sergipe',
-                        'TO' => 'Tocantins',
-                        ];
-                        $selectedUf = old('clie_orc_uf', $clienteOrcamento->clie_orc_uf ?? '');
-                        @endphp
-                        @foreach ($estados as $ufAbbr => $ufNome)
-                        <option value="{{ $ufAbbr }}" {{ $selectedUf == $ufAbbr ? 'selected' : '' }}>
-                            {{ $ufNome }}
-                        </option>
-                        @endforeach
-                    </select>
-                    @error('clie_orc_uf')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                    <div class="mt-6">
-                        <label for="clie_orc_ie"
-                            class="block text-sm font-medium text-custom-dark-text mb-1">
-                            Inscrição Estadual
+                    <div class="md:col-span-2">
+                        <label for="clie_orc_nome" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Nome
                         </label>
 
-                        <input type="text"
-                            name="clie_orc_ie"
-                            id="clie_orc_ie"
-                            class="block w-full px-4 py-2 bg-white text-gray-900 placeholder-gray-400 rounded-md outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out border border-gray-300"
-                            placeholder="Informe a inscrição estadual"
-                            maxlength="90"
-                            value="{{ old('clie_orc_ie', $clienteOrcamento->clie_orc_ie) }}"
+                        <input type="text" name="clie_orc_nome" id="clie_orc_nome"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Nome completo do cliente" maxlength="45"
+                            value="{{ old('clie_orc_nome', $clienteOrcamento->clie_orc_nome) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_email" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            E-mail
+                        </label>
+
+                        <input type="email" name="clie_orc_email" id="clie_orc_email"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="nome@exemplo.com" maxlength="45"
+                            value="{{ old('clie_orc_email', $clienteOrcamento->clie_orc_email) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_ie" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Inscrição Estadual (Coloque "-" se for nulo)
+                        </label>
+
+                        <input type="text" name="clie_orc_ie" id="clie_orc_ie"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Informe a inscrição estadual" maxlength="90"
+                            value="{{ old('clie_orc_ie', $clienteOrcamento->clie_orc_ie) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_tipo_doc" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Tipo de documento
+                        </label>
+
+                        <select name="clie_orc_tipo_doc" id="clie_orc_tipo_doc"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            required>
+                            <option value="">Selecione</option>
+                            <option value="CPF" {{ old('clie_orc_tipo_doc', $clienteOrcamento->clie_orc_tipo_doc) === 'CPF' ? 'selected' : '' }}>CPF</option>
+                            <option value="CNPJ" {{ old('clie_orc_tipo_doc', $clienteOrcamento->clie_orc_tipo_doc) === 'CNPJ' ? 'selected' : '' }}>CNPJ</option>
+                            <option value="RG" {{ old('clie_orc_tipo_doc', $clienteOrcamento->clie_orc_tipo_doc) === 'RG' ? 'selected' : '' }}>RG</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_doc_numero" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Número do documento
+                        </label>
+
+                        <input type="text" name="clie_orc_doc_numero" id="clie_orc_doc_numero"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Informe o número do documento" maxlength="18"
+                            value="{{ old('clie_orc_doc_numero',
+                                $clienteOrcamento->clie_orc_tipo_doc === 'CPF'
+                                    ? $clienteOrcamento->clie_orc_cpf
+                                    : ($clienteOrcamento->clie_orc_tipo_doc === 'CNPJ'
+                                        ? $clienteOrcamento->clie_orc_cnpj
+                                        : $clienteOrcamento->clie_orc_rg)
+                            ) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_celular" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Celular
+                        </label>
+
+                        <input type="text" name="clie_orc_celular" id="clie_orc_celular"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="(00) 00000-0000" maxlength="15"
+                            value="{{ old('clie_orc_celular', $clienteOrcamento->clie_orc_celular) }}">
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_telefone" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Telefone
+                        </label>
+
+                        <input type="text" name="clie_orc_telefone" id="clie_orc_telefone"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="(00) 0000-0000" maxlength="14"
+                            value="{{ old('clie_orc_telefone', $clienteOrcamento->clie_orc_telefone) }}">
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_cep" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            CEP
+                        </label>
+
+                        <input type="text" name="clie_orc_cep" id="clie_orc_cep"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="00000-000" maxlength="9"
+                            value="{{ old('clie_orc_cep', $clienteOrcamento->clie_orc_cep) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_logradouro" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Logradouro
+                        </label>
+
+                        <input type="text" name="clie_orc_logradouro" id="clie_orc_logradouro"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Rua, Avenida, etc." maxlength="45"
+                            value="{{ old('clie_orc_logradouro', $clienteOrcamento->clie_orc_logradouro) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_bairro" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Bairro
+                        </label>
+
+                        <input type="text" name="clie_orc_bairro" id="clie_orc_bairro"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Nome do bairro" maxlength="45"
+                            value="{{ old('clie_orc_bairro', $clienteOrcamento->clie_orc_bairro) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_cidade" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Cidade
+                        </label>
+
+                        <input type="text" name="clie_orc_cidade" id="clie_orc_cidade"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Nome da cidade" maxlength="45"
+                            value="{{ old('clie_orc_cidade', $clienteOrcamento->clie_orc_cidade) }}" required>
+                    </div>
+
+                    <div>
+                        <label for="clie_orc_uf" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            UF (Estado)
+                        </label>
+
+                        <select name="clie_orc_uf" id="clie_orc_uf"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                             required>
 
-                        @error('clie_orc_ie')
-                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                            <option value="">Selecione o Estado</option>
+
+                            @php
+                            $estados = [
+                            'AC'=>'Acre','AL'=>'Alagoas','AP'=>'Amapá','AM'=>'Amazonas',
+                            'BA'=>'Bahia','CE'=>'Ceará','DF'=>'Distrito Federal','ES'=>'Espírito Santo',
+                            'GO'=>'Goiás','MA'=>'Maranhão','MT'=>'Mato Grosso','MS'=>'Mato Grosso do Sul',
+                            'MG'=>'Minas Gerais','PA'=>'Pará','PB'=>'Paraíba','PR'=>'Paraná',
+                            'PE'=>'Pernambuco','PI'=>'Piauí','RJ'=>'Rio de Janeiro','RN'=>'Rio Grande do Norte',
+                            'RS'=>'Rio Grande do Sul','RO'=>'Rondônia','RR'=>'Roraima','SC'=>'Santa Catarina',
+                            'SP'=>'São Paulo','SE'=>'Sergipe','TO'=>'Tocantins'
+                            ];
+                            @endphp
+
+                            @foreach ($estados as $ufAbbr => $ufNome)
+                            <option value="{{ $ufAbbr }}" {{ old('clie_orc_uf', $clienteOrcamento->clie_orc_uf) == $ufAbbr ? 'selected' : '' }}>
+                                {{ $ufNome }}
+                            </option>
+                            @endforeach
+                        </select>
                     </div>
+
+                    <div>
+                        <label for="clie_orc_cod_interno" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Código Interno
+                        </label>
+
+                        <input type="text" name="clie_orc_cod_interno" id="clie_orc_cod_interno"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            placeholder="Informe o código interno" maxlength="60"
+                            value="{{ old('clie_orc_cod_interno', $clienteOrcamento->clie_orc_cod_interno) }}" required>
+                    </div>
+
                 </div>
+            </div>
 
-            </div> {{-- Fim da segunda coluna --}}
-
-        </div>
-
-        <!-- Botão de Envio -->
-        <div class="flex justify-center mt-8">
-            <button type="submit"
-                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-button-edit-bg hover:bg-button-edit-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-edit-bg transition duration-150 ease-in-out">
-                ATUALIZAR
-            </button>
-        </div>
-        {{-- Botão Voltar unificado e movido para fora do formulário --}}
-        <div class="flex justify-center mb-8">
-            <a href="{{ route('cliente_orcamento.index') }}"
-                class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition duration-150 ease-in-out">
-                VOLTAR PARA A LISTA
-            </a>
-        </div>
-
-    </form>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
+                
+                <x-primary-button type="submit" id="btnSalvarClienteOrcamento" class="px-6">
+                    <span id="textoSalvar">Atualizar cliente</span>
+                </x-primary-button>
+            </div>
+        </form>
+    </div>
 </div>
 
 @push('scripts')
-{{-- Inclua o jQuery e o jQuery Mask Plugin --}}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
 <script>
     $(document).ready(function() {
-        var docNumero = $('#clie_orc_doc_numero');
-        var tipoDoc = $('#clie_orc_tipo_doc');
-        var celularInput = $('#clie_orc_celular');
-        var telefoneInput = $('#clie_orc_telefone');
-        var form = $('#editForm');
-        var mensagemErroContato = $('#mensagemErroContato');
+        $('#clie_orc_cep').mask('00000-000');
+        $('#clie_orc_celular').mask('(00) 00000-0000');
+        $('#clie_orc_telefone').mask('(00) 0000-0000');
 
-        function applyDocMask(type) {
-            docNumero.unmask();
-            if (type === 'CPF') {
-                docNumero.mask('000.000.000-00');
-                docNumero.attr('placeholder', '000.000.000-00');
-                docNumero.attr('maxlength', '14');
-            } else if (type === 'CNPJ') {
-                docNumero.mask('AA.AAA.AAA/AAAA-AA', {
-                    translation: {
-                        'A': {
-                            pattern: /[A-Za-z0-9]/
-                        }
-                    }
-                });
-                docNumero.attr('placeholder', '00.000.000/0000-00');
-                docNumero.attr('maxlength', '18');
-            } else if (type === 'RG') {
-                docNumero.mask('00.000.000-0');
-                docNumero.attr('placeholder', '00.000.000-0');
-                docNumero.attr('maxlength', '12');
+        function aplicarMascaraDocumento() {
+            const tipo = $('#clie_orc_tipo_doc').val();
+            const campo = $('#clie_orc_doc_numero');
+
+            campo.unmask();
+
+            if (tipo === 'CPF') {
+                campo.mask('000.000.000-00');
+                campo.attr('placeholder', '000.000.000-00');
+                campo.attr('maxlength', '14');
+            } else if (tipo === 'CNPJ') {
+                campo.mask('00.000.000/0000-00');
+                campo.attr('placeholder', '00.000.000/0000-00');
+                campo.attr('maxlength', '18');
+            } else if (tipo === 'RG') {
+                campo.mask('00.000.000-0');
+                campo.attr('placeholder', '00.000.000-0');
+                campo.attr('maxlength', '12');
             } else {
-                docNumero.attr('placeholder', 'Informe o número do documento');
-                docNumero.attr('maxlength', '45');
+                campo.attr('placeholder', 'Informe o número do documento');
+                campo.attr('maxlength', '18');
             }
         }
 
-        // Impede números no campo Nome
-        $('#clie_orc_nome').on('input', function() {
-            this.value = this.value.replace(/[0-9]/g, '');
+        $('#clie_orc_tipo_doc').on('change', function() {
+            $('#clie_orc_doc_numero').val('');
+            aplicarMascaraDocumento();
         });
 
-        // Lógica de preenchimento inicial e aplicação da máscara
-        applyDocMask(tipoDoc.val());
+        aplicarMascaraDocumento();
 
-        // Altera a máscara quando o tipo de documento muda
-        tipoDoc.on('change', function() {
-            docNumero.val('');
-            applyDocMask($(this).val());
-        });
+        $('#clie_orc_cep').on('blur', function() {
+            const cep = $(this).val().replace(/\D/g, '');
 
-        // Aplica máscaras nos campos de contato
-        telefoneInput.mask('(00) 0000-0000');
-        celularInput.mask('(00) 00000-0000');
-        $('#clie_orc_cep').mask('00000-000');
-
-        // Validação para impedir o envio se Celular e Telefone estiverem vazios
-        form.on('submit', function(event) {
-            var celularValue = celularInput.val().replace(/\D/g, '');
-            var telefoneValue = telefoneInput.val().replace(/\D/g, '');
-
-            if (celularValue === '' && telefoneValue === '') {
-                event.preventDefault();
-                mensagemErroContato.removeClass('hidden');
-            } else {
-                mensagemErroContato.addClass('hidden');
+            if (cep.length !== 8) {
+                return;
             }
+
+            $('#clie_orc_logradouro').val('Consultando...');
+            $('#clie_orc_bairro').val('Consultando...');
+            $('#clie_orc_cidade').val('Consultando...');
+            $('#clie_orc_uf').val('');
+
+            $.getJSON('https://viacep.com.br/ws/' + cep + '/json/', function(dados) {
+                if (dados.erro) {
+                    alert('CEP não encontrado.');
+
+                    $('#clie_orc_logradouro').val('');
+                    $('#clie_orc_bairro').val('');
+                    $('#clie_orc_cidade').val('');
+                    $('#clie_orc_uf').val('');
+
+                    return;
+                }
+
+                $('#clie_orc_logradouro').val(dados.logradouro);
+                $('#clie_orc_bairro').val(dados.bairro);
+                $('#clie_orc_cidade').val(dados.localidade);
+                $('#clie_orc_uf').val(dados.uf);
+            }).fail(function() {
+                alert('Não foi possível consultar o CEP. Tente novamente.');
+
+                $('#clie_orc_logradouro').val('');
+                $('#clie_orc_bairro').val('');
+                $('#clie_orc_cidade').val('');
+                $('#clie_orc_uf').val('');
+            });
         });
 
-        // Lógica para esconder a mensagem de erro quando o usuário preencher um dos campos
-        celularInput.on('input', function() {
-            var celularValue = $(this).val().replace(/\D/g, '');
-            var telefoneValue = telefoneInput.val().replace(/\D/g, '');
-            if (celularValue !== '' || telefoneValue !== '') {
-                mensagemErroContato.addClass('hidden');
-            }
-        });
-        telefoneInput.on('input', function() {
-            var celularValue = celularInput.val().replace(/\D/g, '');
-            var telefoneValue = $(this).val().replace(/\D/g, '');
-            if (celularValue !== '' || telefoneValue !== '') {
-                mensagemErroContato.addClass('hidden');
-            }
+        $('#clienteOrcamentoForm').on('submit', function() {
+            const btn = $('#btnSalvarClienteOrcamento');
+
+            btn.prop('disabled', true);
+            $('#textoSalvar').text('Atualizando...');
+            btn.addClass('opacity-70 cursor-not-allowed');
         });
     });
 </script>
-
 @endpush
 
 @endsection

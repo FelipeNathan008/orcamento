@@ -18,25 +18,66 @@ use Illuminate\Support\Facades\DB;
 
 class FinanceiroController extends Controller
 {
-    public function index()
+
+    public function index(Request $request)
     {
-        $financeiro = Financeiro::with(['logs.status'])->get();
+        $query = Financeiro::with(['logs.status']);
+
+        if ($request->filled('id_financeiro')) {
+            $query->where('id_fin', $request->id_financeiro);
+        }
+
+        if ($request->filled('id_orcamento')) {
+            $query->where('orcamento_id_orcamento', $request->id_orcamento);
+        }
+
+        if ($request->filled('cliente')) {
+            $query->where(
+                'fin_nome_cliente',
+                'like',
+                '%' . trim($request->cliente) . '%'
+            );
+        }
+
+        if ($request->filled('status')) {
+            $query->where('fin_status', $request->status);
+        }
+
+        $financeiro = $query
+            ->orderBy('id_fin', 'desc')
+            ->paginate(10)
+            ->withQueryString();
 
         foreach ($financeiro as $fin) {
             $fin->temStatusPendente = $fin->logs->contains('log_situacao', 0);
         }
-        $contas = ContaBancaria::all();
 
+        $contas = ContaBancaria::all();
         $tipos = TipoFluxoCaixa::all();
         $movimentacoes = Movimentacao::all();
 
-        $tipoDespesaUP = TipoFluxoCaixa::where('tipo_flu_nome', 'Despesa UP')->first();
+        $tipoDespesaUP = TipoFluxoCaixa::where(
+            'tipo_flu_nome',
+            'Despesa UP'
+        )->first();
 
-        $movSaida = Movimentacao::where('mov_nome', 'Saída')->first();
+        $movSaida = Movimentacao::where(
+            'mov_nome',
+            'Saída'
+        )->first();
 
-        return view('view_financeiro.index', compact('tipoDespesaUP', 'movSaida', 'financeiro', 'tipos', 'movimentacoes', 'contas'));
+        return view(
+            'view_financeiro.index',
+            compact(
+                'tipoDespesaUP',
+                'movSaida',
+                'financeiro',
+                'tipos',
+                'movimentacoes',
+                'contas'
+            )
+        );
     }
-
 
     public function create(Request $request)
     {
@@ -50,39 +91,35 @@ class FinanceiroController extends Controller
 
     private function validarFracionamento(Orcamento $orcamento): ?string
     {
-        // Se não existem fracionados, não há nada para validar
+        $orcamento->loadMissing('fracionados');
+
         if ($orcamento->fracionados->isEmpty()) {
-            return null;
+            return null; // sem fracionamento, prossegue normalmente
         }
 
-        // Valor original do orçamento
-        $valorOriginal = (float) $orcamento->total_com_desconto;
+        $valorBrutoOriginal = (float) ($orcamento->total_bruto ?? 0);
 
-        // Soma dos valores dos fracionados
-        $valorFracionado = $orcamento->fracionados->sum(function ($fracionado) {
-            return (float) $fracionado->total_com_desconto;
-        });
+        $valorFracionado = $orcamento->fracionados->sum(
+            fn($f) => (float) ($f->total_bruto ?? 0)
+        );
 
-        $diferenca = $valorOriginal - $valorFracionado;
+        $diferenca = $valorBrutoOriginal - $valorFracionado;
 
-        // Aceita somente diferença inferior a 1 centavo
         if (abs($diferenca) < 0.01) {
-            return null;
+            return null; // valores conferem, pode prosseguir
         }
 
         if ($diferenca > 0) {
-            return 'Não é possível prosseguir com o status. '
-                . 'Ainda falta R$ '
-                . number_format(abs($diferenca), 2, ',', '.')
-                . ' para que o total dos orçamentos fracionados '
-                . 'corresponda ao valor original do orçamento.';
+            return sprintf(
+                'Não é possível prosseguir com o status. Ainda falta R$ %s para que os valores dos orçamentos fracionados correspondam ao orçamento original.',
+                number_format($diferenca, 2, ',', '.')
+            );
         }
 
-        return 'Não é possível prosseguir com o status. '
-            . 'Os orçamentos fracionados ultrapassaram o valor original '
-            . 'em R$ '
-            . number_format(abs($diferenca), 2, ',', '.')
-            . '.';
+        return sprintf(
+            'Não é possível prosseguir com o status. Os orçamentos fracionados ultrapassaram o valor original em R$ %s.',
+            number_format(abs($diferenca), 2, ',', '.')
+        );
     }
 
     public function prosseguir(Request $request, string $id)

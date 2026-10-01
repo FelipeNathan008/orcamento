@@ -2,71 +2,100 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Movimentacao;
-use Illuminate\Http\Request;
+use App\Helpers\CryptHelper;
 use App\Models\TipoFluxoCaixa;
-use PhpParser\Node\Expr\AssignOp\Mod;
+use Illuminate\Http\Request;
 
 class TipoFluxoCaixaController extends Controller
 {
-    public function index()
+    private const SESSION_KEY = 'tipo_fluxo_caixa.index_url';
+
+    private function urlIndex(): string
     {
-        $tiposFluxo = TipoFluxoCaixa::all();
+        return session(self::SESSION_KEY, route('tipo_fluxo_caixa.index'));
+    }
+
+    public function index(Request $request)
+    {
+        session([self::SESSION_KEY => $request->fullUrl()]);
+
+        $tiposFluxo = TipoFluxoCaixa::query()
+            ->when($request->nome, function ($query) use ($request) {
+                $query->where('tipo_flu_nome', 'like', '%' . $request->nome . '%');
+            })
+            ->when($request->tipo_despesa, function ($query) use ($request) {
+                $query->where('tipo_despesa', $request->tipo_despesa);
+            })
+            ->orderBy('id_tipo_fluxo')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('view_tipo_fluxo_caixa.index', compact('tiposFluxo'));
     }
 
     public function create()
     {
-        $movimentacoes = Movimentacao::all();
-        return view('view_tipo_fluxo_caixa.create', compact('movimentacoes'));
+        return view('view_tipo_fluxo_caixa.create', ['urlVoltar' => $this->urlIndex()]);
     }
 
     public function store(Request $request)
     {
         $validatedData = $request->validate([
             'tipo_flu_nome' => 'required|string|max:120',
-            'tipo_despesa' => 'required|string|max:90',
+            'tipo_despesa' => 'required|in:Fixa,Variavel',
             'tipo_desc' => 'required|string|max:180',
         ]);
 
         TipoFluxoCaixa::create($validatedData);
 
-        return redirect()->route('tipo_fluxo_caixa.index')
+        return redirect($this->urlIndex())
             ->with('success', 'Tipo de fluxo de caixa criado com sucesso!');
     }
 
     public function show(string $id)
     {
+        $id = CryptHelper::decrypt($id);
         $tipoFluxo = TipoFluxoCaixa::findOrFail($id);
-        return view('view_tipo_fluxo_caixa.show', compact('tipoFluxo'));
+
+        return view('view_tipo_fluxo_caixa.show', [
+            'tipoFluxo' => $tipoFluxo,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
     public function edit(string $id)
     {
+        $id = CryptHelper::decrypt($id);
         $tipoFluxo = TipoFluxoCaixa::findOrFail($id);
-        $movimentacoes = Movimentacao::all();
 
-        return view('view_tipo_fluxo_caixa.edit', compact('tipoFluxo', 'movimentacoes'));
+        return view('view_tipo_fluxo_caixa.edit', [
+            'tipoFluxo' => $tipoFluxo,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
     public function update(Request $request, string $id)
     {
+        $id = CryptHelper::decrypt($id);
+        $tipoFluxo = TipoFluxoCaixa::findOrFail($id);
+
         $validatedData = $request->validate([
             'tipo_flu_nome' => 'required|string|max:120',
-            'tipo_despesa' => 'required|string|max:90',
+            'tipo_despesa' => 'required|in:Fixa,Variavel',
             'tipo_desc' => 'required|string|max:180',
         ]);
 
-        $tipoFluxo = TipoFluxoCaixa::findOrFail($id);
         $tipoFluxo->update($validatedData);
 
-        return redirect()->route('tipo_fluxo_caixa.index')
+        return redirect($this->urlIndex())
             ->with('success', 'Tipo de fluxo de caixa atualizado com sucesso!');
     }
 
     public function destroy(string $id)
     {
+        $id = CryptHelper::decrypt($id);
         $tipoFluxo = TipoFluxoCaixa::findOrFail($id);
+
         $tipoFluxo->delete();
 
         return redirect()->route('tipo_fluxo_caixa.index')

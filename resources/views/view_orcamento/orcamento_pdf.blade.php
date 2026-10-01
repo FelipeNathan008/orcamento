@@ -297,6 +297,7 @@
                 <tr>
                     <td>
                         {{ $detalhe->det_cod }} -
+                        {{ $detalhe->det_nome }} -
                         {{ $detalhe->det_categoria }} -
                         {{ $detalhe->det_modelo }} -
                         {{ $detalhe->det_cor }} -

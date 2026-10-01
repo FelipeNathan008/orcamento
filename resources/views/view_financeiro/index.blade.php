@@ -20,95 +20,158 @@
 
     </div>
 
-    {{-- Sucesso --}}
-    @if (session('success'))
-    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-md relative mb-4">
-        <strong class="font-bold">Sucesso!</strong>
-        <span class="block sm:inline">{{ session('success') }}</span>
-    </div>
-    @endif
+    <x-alert-flash />
 
     {{-- Formulário de Filtros --}}
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+    <form method="GET" action="{{ route('financeiro.index') }}" class="mb-6">
 
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
 
-            {{-- Buscar Orçamento --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Buscar Orçamento
-                </label>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
-                <input
-                    type="text"
-                    id="searchFinanceiroOrcamento"
-                    placeholder="ID do orçamento..."
-                    class="w-full h-10 pl-3 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-            </div>
-            {{-- Buscar Cliente --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Pesquisar Cliente
-                </label>
+                {{-- ID Financeiro --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        ID Financeiro
+                    </label>
 
-                <div class="relative">
+                    <input
+                        type="number"
+                        name="id_financeiro"
+                        value="{{ request('id_financeiro') }}"
+                        placeholder="Digite o ID..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                </div>
+
+                {{-- ID Orçamento --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        ID Orçamento
+                    </label>
+
+                    <input
+                        type="number"
+                        name="id_orcamento"
+                        value="{{ request('id_orcamento') }}"
+                        placeholder="Digite o ID..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                </div>
+
+                {{-- Cliente --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Cliente
+                    </label>
+
                     <input
                         type="text"
-                        id="searchFinanceiroInput"
-                        placeholder="Nome do cliente..."
-                        class="w-full h-10 pl-10 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
-
-                    <svg class="absolute top-1/2 left-3 -translate-y-1/2 w-4 h-4 text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd" />
-                    </svg>
+                        name="cliente"
+                        value="{{ request('cliente') }}"
+                        placeholder="Digite o nome..."
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
                 </div>
-            </div>
 
-            {{-- Filtro Status --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Filtrar Status
-                </label>
+                {{-- Status --}}
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Status
+                    </label>
 
-                <select
-                    id="searchFinanceiroStatus"
-                    class="w-full h-10 pl-3 pr-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
+                    <select
+                        name="status"
+                        class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500">
 
-                    <option value="">Todos</option>
-                    <option value="Aguardando pagamento">Aguardando pagamento</option>
-                    <option value="Pagamento realizado">Pagamento realizado</option>
-                    <option value="Análise pedido">Análise pedido</option>
-                    <option value="Pedido fábrica">Pedido fábrica</option>
-                    <option value="Transportadora">Transportadora</option>
-                    <option value="Entregue">Entregue</option>
+                        <option value="">Todos</option>
 
-                </select>
-            </div>
+                        <option value="Aguardando pagamento"
+                            {{ request('status') == 'Aguardando pagamento' ? 'selected' : '' }}>
+                            Aguardando pagamento
+                        </option>
 
-            {{-- Botão limpar --}}
-            <div class="flex md:justify-end items-end">
-                <button
-                    type="button"
-                    id="clearFiltersBtn"
-                    class="inline-flex items-center px-4 py-2 h-10 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">
-                    Limpar Busca
-                </button>
+                        <option value="Pagamento realizado"
+                            {{ request('status') == 'Pagamento realizado' ? 'selected' : '' }}>
+                            Pagamento realizado
+                        </option>
+
+                        <option value="Análise pedido"
+                            {{ request('status') == 'Análise pedido' ? 'selected' : '' }}>
+                            Análise pedido
+                        </option>
+
+                        <option value="Pedido fábrica"
+                            {{ request('status') == 'Pedido fábrica' ? 'selected' : '' }}>
+                            Pedido fábrica
+                        </option>
+
+                        <option value="Transportadora"
+                            {{ request('status') == 'Transportadora' ? 'selected' : '' }}>
+                            Transportadora
+                        </option>
+
+                        <option value="Entregue"
+                            {{ request('status') == 'Entregue' ? 'selected' : '' }}>
+                            Entregue
+                        </option>
+
+                    </select>
+                </div>
+
+                {{-- Buscar --}}
+                <div class="flex items-end">
+                    <button
+                        type="submit"
+                        class="w-full h-10 text-white rounded-md hover:opacity-90 transition"
+                        style="background-color:#EA792D;">
+                        Buscar
+                    </button>
+                </div>
+
+                {{-- Limpar --}}
+                <div class="flex items-end">
+                    <a
+                        href="{{ route('financeiro.index') }}"
+                        class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
+                        Limpar
+                    </a>
+                </div>
+
             </div>
 
         </div>
-    </div>
+
+    </form>
 
 
-    {{-- SE ESTIVER VAZIO --}}
+
     @if ($financeiro->isEmpty())
-    <p class="text-gray-600 text-center py-8">Nenhum registro encontrado.</p>
+
+    @if(
+    request('id_financeiro') ||
+    request('id_orcamento') ||
+    request('cliente') ||
+    request('status')
+    )
+
+    <div class="text-center py-8">
+        <p class="text-gray-600 text-lg">
+            Nenhum registro financeiro encontrado com os filtros informados.
+        </p>
+
+        <a href="{{ route('financeiro.index') }}"
+            class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
+            Limpar filtros
+        </a>
+    </div>
 
     @else
 
+    <p class="text-gray-600 text-center py-8">
+        Nenhum registro financeiro cadastrado ainda.
+    </p>
+
+    @endif
+
+    @else
     {{-- TABELA --}}
     <div class="w-full rounded-lg shadow-table-shadow-image mb-4 overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -170,11 +233,12 @@
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
                         {{ $fin->orcamento_id_orcamento }}
                     </td>
+
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
                         {{ $fin->fin_nome_cliente }}
                     </td>
 
-                    <td class="px-6 py-4 text-sm text-gray-700">
+                    <td class="px-4 py-4 text-sm text-right font-semibold text-gray-900 font-poppins whitespace-nowrap">
                         R$ {{ number_format($fin->fin_valor_total, 2, ',', '.') }}
                     </td>
 
@@ -206,7 +270,7 @@
                         break;
 
                         case 'entregue':
-                        $statusClass = 'bg-gray-400';
+                        $statusClass = 'bg-green-600';
                         break;
 
                         default:
@@ -239,16 +303,28 @@
                                 Status
                             </button>
 
-                            @if($fin->fin_status == 'Análise pedido')
+                            @php
+                            $temFracionado = $orcamento && $orcamento->fracionados->isNotEmpty();
+
+                            $statusPermitidosComFracionado = ['Pedido fábrica', 'Transportadora', 'Entregue', 'Análise pedido'];
+
+                            $statusPermitidosSemFracionado = ['Análise pedido'];
+                            @endphp
+
+                            @if(
+                            ($temFracionado && in_array($fin->fin_status, $statusPermitidosComFracionado))
+                            ||
+                            (!$temFracionado && in_array($fin->fin_status, $statusPermitidosSemFracionado))
+                            )
                             <a href="{{ route('orcamento.fracionado.index', $fin->orcamento_id_orcamento) }}"
-                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-budget-bg hover:bg-button-budget-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-button-budget-bg transition duration-150 ease-in-out">
+                                class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-button-budget-bg hover:bg-button-budget-hover">
                                 Fracionar
                             </a>
                             @endif
 
                             {{-- Forma Pagamento --}}
                             @if($fin->fin_status !== 'Entregue')
-                            <a href="{{ url('/forma_pagamento?' . $fin->id_fin) }}"
+                            <a href="{{ route('forma_pagamento.index', ['id_fin' => $fin->id_fin]) }}"
                                 class="px-2 py-1 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                 Forma Pagamento
                             </a>
@@ -262,65 +338,33 @@
                             @endphp
 
                             @php
+                            $temFracionado = $orcamento && $orcamento->fracionados->isNotEmpty();
+                            @endphp
 
-                            $formasDoFinanceiro = \App\Models\FormaPagamento::where('financeiro_id_fin',$fin->id_fin)->get();
-                            $valorEntrada = $formasDoFinanceiro->where('forma_prazo', 'Entrada')->sum('forma_valor');
+                            @if(
+                            !$temFracionado &&
+                            $fin->fin_status !== 'Aguardando pagamento' &&
+                            $fin->fin_status !== 'Entregue'
+                            )
 
-                            $valorNegociado = $formasDoFinanceiro->where('forma_prazo', '!=', 'Entrada')->sum('forma_valor');
+                            <form action="{{ route('financeiro.prosseguir', $fin->id_fin) }}"
+                                method="POST"
+                                class="form-prosseguir"
+                                data-status="{{ $fin->fin_status }}">
 
-                            $valorCompletado = $valorEntrada + $valorNegociado;
+                                @csrf
 
-                            $pagamentoCompleto = abs((float) $valorCompletado - (float) $fin->fin_valor_total) < 0.01;
+                                <button type="button"
+                                    class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                                    data-id-fin="{{ $fin->id_fin }}"
+                                    data-valor="{{ $fin->fin_valor_total }}"
+                                    data-orcamento="{{ $fin->orcamento_id_orcamento }}">
+                                    Prosseguir Status
+                                </button>
 
-                                @endphp
+                            </form>
 
-                                @if(
-                                $fin->fin_status !== 'Aguardando pagamento' &&
-                                $fin->fin_status !== 'Entregue' &&
-                                $pagamentoCompleto
-                                )
-
-                                <form action="{{ route('financeiro.prosseguir', $fin->id_fin) }}"
-                                    method="POST"
-                                    class="form-prosseguir"
-                                    data-status="{{ $fin->fin_status }}"
-                                    data-pagamento-completo="{{ $pagamentoCompleto ? '1' : '0' }}">
-
-                                    @csrf
-
-                                    @if($fin->orcamento->fracionados->isEmpty())
-
-                                    <button type="button"
-                                        class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                                        data-id-fin="{{ $fin->id_fin }}"
-                                        data-valor="{{ $fin->fin_valor_total }}"
-                                        data-orcamento="{{ $fin->orcamento_id_orcamento }}">
-                                        Prosseguir Status
-                                    </button>
-
-                                    @elseif($fracionadoValido)
-
-                                    <button type="button"
-                                        class="btn-prosseguir px-2 py-1 text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                                        data-id-fin="{{ $fin->id_fin }}"
-                                        data-valor="{{ $fin->fin_valor_total }}"
-                                        data-orcamento="{{ $fin->orcamento_id_orcamento }}">
-                                        Prosseguir Status
-                                    </button>
-
-                                    @else
-
-                                    <button type="button"
-                                        class="btn-prosseguir-bloqueado px-2 py-1 text-xs font-medium rounded-md text-white bg-gray-400 cursor-not-allowed"
-                                        data-diferenca="{{ number_format(abs($diferencaFracionado), 2, ',', '.') }}"
-                                        data-tipo="{{ $diferencaFracionado > 0 ? 'falta' : 'excesso' }}">
-                                        Prosseguir Status
-                                    </button>
-
-                                    @endif
-                                </form>
-
-                                @endif
+                            @endif
 
                         </div>
                     </td>
@@ -359,6 +403,14 @@
             </tbody>
         </table>
     </div>
+    <x-pagination-compact :paginator="$financeiro" />
+
+    <x-modal-confirmacao
+        id="modalConfirmarPedidoFabrica"
+        titulo="Prosseguir para Pedido Fábrica"
+        mensagem="Para prosseguir para Pedido Fábrica, é necessário confirmar com a fábrica que todos os produtos estão separados e disponíveis em estoque, garantindo que a compra possa ser efetivada."
+        textoConfirmar="Sim, Prosseguir"
+        textoCancelar="Cancelar" />
 
     <div id="modalAnalise" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center overflow-auto">
 
@@ -484,6 +536,7 @@
                                 <option value="RC">Recibo (RC)</option>
                                 <option value="CF">Cupom Fiscal (CF)</option>
                                 <option value="BO">Boleto (BO)</option>
+                                <option value="CD">Cartão de Crédito (CD)</option>
                                 <option value="OUT">Outros</option>
                             </select>
                         </div>
@@ -530,6 +583,7 @@
     @endif
 
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
 
@@ -539,6 +593,10 @@
         const btnCancelar = document.getElementById('cancelarModal');
         const formModal = document.getElementById('formModalFluxo');
 
+        // Modal de confirmação exclusivo para "prosseguir status -> Pedido Fábrica"
+        const modalConfirmarFabrica = document.getElementById('modalConfirmarPedidoFabrica');
+        const btnConfirmarFabrica = modalConfirmarFabrica.querySelector('.btn-confirmar-confirmacao');
+        const btnCancelarFabrica = modalConfirmarFabrica.querySelector('.btn-cancelar-confirmacao');
 
         // DATA AUTOMÁTICA
         document.getElementById('modalData').value =
@@ -553,19 +611,43 @@
 
                 if (status === 'análise pedido' || status === 'analise pedido') {
 
-                    document.getElementById('idFinanceiroModal').value =
-                        btn.dataset.idFin;
+                    // guarda os dados do botão clicado para usar após a confirmação
+                    formProsseguir = {
+                        idFin: btn.dataset.idFin,
+                        orcamento: btn.dataset.orcamento
+                    };
 
-                    document.getElementById('orcamentoModal').textContent = btn.dataset.orcamento;
+                    modalConfirmarFabrica.classList.remove('hidden');
+                    modalConfirmarFabrica.classList.add('flex');
 
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
                 } else {
                     if (confirm('Tem certeza que deseja prosseguir o status?')) {
                         form.submit();
                     }
                 }
             });
+        });
+
+        // CONFIRMOU avanço para Pedido Fábrica -> fecha a confirmação e abre o modal de fluxo de caixa
+        btnConfirmarFabrica.addEventListener('click', function() {
+
+            modalConfirmarFabrica.classList.add('hidden');
+            modalConfirmarFabrica.classList.remove('flex');
+
+            if (!formProsseguir) return;
+
+            document.getElementById('idFinanceiroModal').value = formProsseguir.idFin;
+            document.getElementById('orcamentoModal').textContent = formProsseguir.orcamento;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        });
+
+        // CANCELOU a confirmação
+        btnCancelarFabrica.addEventListener('click', function() {
+            modalConfirmarFabrica.classList.add('hidden');
+            modalConfirmarFabrica.classList.remove('flex');
+            formProsseguir = null;
         });
 
         const valorInput = document.getElementById('valorMask');
@@ -648,76 +730,6 @@
         });
     });
 
-    document.addEventListener('DOMContentLoaded', function() {
-
-        const searchInput = document.getElementById('searchFinanceiroInput');
-        const searchStatusSelect = document.getElementById('searchFinanceiroStatus');
-        const searchOrcamentoInput = document.getElementById('searchFinanceiroOrcamento');
-        const clearBtn = document.getElementById('clearFiltersBtn');
-        const tableBody = document.getElementById('financeiroTableBody');
-
-        const filterTable = () => {
-
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const selectedStatus = searchStatusSelect.value.toLowerCase().trim();
-            const searchOrcamento = searchOrcamentoInput.value.toLowerCase().trim();
-            const rows = tableBody.querySelectorAll('tr');
-
-            rows.forEach(row => {
-
-                // Ignora linha oculta de status
-                if (row.id && row.id.startsWith('status-')) return;
-
-                const clienteNome = row.children[2]?.textContent.toLowerCase().trim() ?? '';
-                const orcamentoId = row.children[1]?.textContent.toLowerCase().trim() ?? '';
-                const statusText = row.dataset.status ?? '';
-                const matchClient = clienteNome.includes(searchTerm);
-                const matchStatus =
-                    selectedStatus === '' ||
-                    statusText === selectedStatus;
-
-                const matchOrcamento =
-                    searchOrcamento === '' ||
-                    orcamentoId.includes(searchOrcamento);
-
-                if (matchClient && matchStatus && matchOrcamento) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-
-                    // Fecha linha de status aberta
-                    const id = row.querySelector('.status-btn')?.dataset.id;
-                    const statusRow = document.getElementById('status-' + id);
-                    if (statusRow) statusRow.classList.add('hidden');
-                }
-            });
-        };
-
-        // Eventos filtro
-        searchInput.addEventListener('input', filterTable);
-        searchStatusSelect.addEventListener('change', filterTable);
-        searchOrcamentoInput.addEventListener('input', filterTable);
-
-        // Botão limpar filtros
-        clearBtn.addEventListener('click', function() {
-
-            searchInput.value = '';
-            searchStatusSelect.value = '';
-            searchOrcamentoInput.value = '';
-
-            const rows = tableBody.querySelectorAll('tr');
-
-            rows.forEach(row => {
-                row.style.display = '';
-
-                // Fecha todas linhas de status
-                if (row.id && row.id.startsWith('status-')) {
-                    row.classList.add('hidden');
-                }
-            });
-        });
-
-    });
 
     document.addEventListener('DOMContentLoaded', function() {
 

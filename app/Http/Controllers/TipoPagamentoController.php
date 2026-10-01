@@ -2,105 +2,95 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CryptHelper;
 use App\Models\TipoPagamento;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class TipoPagamentoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    private const SESSION_KEY = 'tipo_pagamento.index_url';
+
+    private function urlIndex(): string
     {
-        $tiposPagamento  = TipoPagamento::all();
+        return session(self::SESSION_KEY, route('tipo_pagamento.index'));
+    }
+
+    public function index(Request $request)
+    {
+        session([self::SESSION_KEY => $request->fullUrl()]);
+
+        $tiposPagamento = TipoPagamento::query()
+            ->when($request->tipo, function ($query) use ($request) {
+                $query->where('tipo_plano_fin', 'like', '%' . $request->tipo . '%');
+            })
+            ->orderBy('id_tipo_pagamento')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('view_tipo_pagamento.index', compact('tiposPagamento'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return view('view_tipo_pagamento.create');
+        return view('view_tipo_pagamento.create', [
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'tipo_plano_fin' => 'required|string|max:45'
-            ]);
+        $validated = $request->validate([
+            'tipo_plano_fin' => 'required|string|max:45',
+        ]);
 
-            TipoPagamento::create($validated);
+        TipoPagamento::create($validated);
 
-            return redirect()->route('tipo_pagamento.index')
-                ->with('success', 'Tipo de pagamento criado com sucesso!');
-        } catch (ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Erro ao criar tipo de pagamento: ' . $e->getMessage())
-                ->withInput();
-        }
+        return redirect($this->urlIndex())
+            ->with('success', 'Tipo de pagamento criado com sucesso!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
+    public function show(string $id)
     {
+        $id = CryptHelper::decrypt($id);
         $tipo = TipoPagamento::findOrFail($id);
-        return view('tipo_pagamento.show', compact('tipo'));
+
+        return view('view_tipo_pagamento.show', [
+            'tipo' => $tipo,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit($id)
+    public function edit(string $id)
     {
+        $id = CryptHelper::decrypt($id);
         $tipo = TipoPagamento::findOrFail($id);
-        return view('view_tipo_pagamento.edit', compact('tipo'));
+
+        return view('view_tipo_pagamento.edit', [
+            'tipo' => $tipo,
+            'urlVoltar' => $this->urlIndex(),
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, string $id)
     {
-        try {
-            $tipo = TipoPagamento::findOrFail($id);
-
-            $validated = $request->validate([
-                'tipo_plano_fin' => 'required|string|max:45'
-            ]);
-
-            $tipo->update($validated);
-
-            return redirect()->route('tipo_pagamento.index', $id)
-                ->with('success', 'Tipo de pagamento atualizado com sucesso!');
-        } catch (ValidationException $e) {
-            return redirect()->back()
-                ->withErrors($e->errors())
-                ->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Erro ao atualizar tipo de pagamento: ' . $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id)
-    {
+        $id = CryptHelper::decrypt($id);
         $tipo = TipoPagamento::findOrFail($id);
+
+        $validated = $request->validate([
+            'tipo_plano_fin' => 'required|string|max:45',
+        ]);
+
+        $tipo->update($validated);
+
+        return redirect($this->urlIndex())
+            ->with('success', 'Tipo de pagamento atualizado com sucesso!');
+    }
+
+    public function destroy(string $id)
+    {
+        $id = CryptHelper::decrypt($id);
+        $tipo = TipoPagamento::findOrFail($id);
+
         $tipo->delete();
 
         return redirect()->route('tipo_pagamento.index')
