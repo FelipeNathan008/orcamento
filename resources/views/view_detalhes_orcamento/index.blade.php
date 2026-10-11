@@ -79,6 +79,10 @@ strtolower(trim($orcamento->orc_status)),
 
             <x-summary-cards :cards="[
                 [
+                    'title' => 'Total de Itens',
+                    'value' => $totalItens,
+                ],
+                [
                     'title' => 'Total dos Itens',
                     'value' => 'R$ ' . number_format($totalDetalhes, 2, ',', '.'),
                 ],
@@ -93,6 +97,7 @@ strtolower(trim($orcamento->orc_status)),
                     'size' => 'xl',
                 ],
             ]" />
+
             <form method="GET" action="{{ route('detalhes_orcamento.index', CryptHelper::encrypt($orcamento->id_orcamento)) }}" class="mt-6">
                 <x-filter-card>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -100,23 +105,29 @@ strtolower(trim($orcamento->orc_status)),
                             <label for="produto" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Produto</label>
                             <input type="text" id="produto" name="produto" value="{{ request('produto') }}" placeholder="Digite o nome..." class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
                         </div>
+
                         <div>
                             <label for="categoria" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Categoria</label>
                             <input type="text" id="categoria" name="categoria" value="{{ request('categoria') }}" placeholder="Digite a categoria..." class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
                         </div>
+
                         <div>
                             <label for="cod_ref" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Código Ref.</label>
                             <input type="text" id="cod_ref" name="cod_ref" value="{{ request('cod_ref') }}" placeholder="Digite o código..." class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
                         </div>
+
                         <div>
                             <label for="familia" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Família</label>
                             <select id="familia" name="familia" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
                                 <option value="">Todas</option>
                                 @foreach($familias as $familia)
-                                <option value="{{ $familia }}" {{ request('familia') == $familia ? 'selected' : '' }}>{{ $familia }}</option>
+                                <option value="{{ $familia }}" {{ request('familia') == $familia ? 'selected' : '' }}>
+                                    {{ $familia }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
+
                         <div class="flex items-end">
                             <x-primary-button class="w-full h-11">
                                 <x-icons.search />
@@ -124,6 +135,27 @@ strtolower(trim($orcamento->orc_status)),
                             </x-primary-button>
                         </div>
                     </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
+                        <div>
+                            <label for="repetidos" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Repetidos</label>
+                            <select id="repetidos" name="repetidos" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                                <option value="">Todos</option>
+                                <option value="sim" {{ request('repetidos') === 'sim' ? 'selected' : '' }}>Repetidos</option>
+                                <option value="nao" {{ request('repetidos') === 'nao' ? 'selected' : '' }}>Não repetidos</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="aguardando_customizacao" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">Customização</label>
+                            <select id="aguardando_customizacao" name="aguardando_customizacao" class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                                <option value="">Todos</option>
+                                <option value="sim" {{ request('aguardando_customizacao') === 'sim' ? 'selected' : '' }}>Aguardando</option>
+                                <option value="nao" {{ request('aguardando_customizacao') === 'nao' ? 'selected' : '' }}>Não aguardando</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
                         <a href="{{ route('detalhes_orcamento.index', CryptHelper::encrypt($orcamento->id_orcamento)) }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-200 hover:text-gray-800 transition">
                             <x-icons.reset />
@@ -144,7 +176,7 @@ strtolower(trim($orcamento->orc_status)),
             </div>
 
             @if($detalhesOrcamento->isEmpty())
-            @if(request('produto') || request('categoria') || request('cod_ref') || request('familia'))
+            @if(request('produto') || request('categoria') || request('cod_ref') || request('familia') || request('repetidos') || request('aguardando_customizacao'))
             <x-empty-state
                 title="Nenhum detalhe encontrado"
                 message="Não existem itens correspondentes aos filtros informados."
@@ -183,46 +215,79 @@ strtolower(trim($orcamento->orc_status)),
                                 <th class="px-5 py-4 text-center text-[11px] font-bold text-white uppercase tracking-wider">Ações</th>
                             </tr>
                         </thead>
+
                         <tbody class="bg-white divide-y divide-gray-100">
                             @foreach($detalhesOrcamento as $detalhe)
-                            <tr class="group transition hover:bg-orange-50/40">
+                            @php
+                            $itemDuplicado = $detalhesDuplicados->contains($detalhe->id_det);
+                            $itemAguardandoCustomizacao = $detalhe->det_status === 'Aguardando Customização';
+                            @endphp
+
+                            <tr class="group transition {{ $itemDuplicado ? 'bg-orange-100 hover:bg-orange-200' : 'hover:bg-orange-50/40' }}">
                                 <td class="px-5 py-5">
-                                    <span class="text-sm font-bold text-gray-800">{{ $detalhe->det_nome ?? $detalhe->produto->prod_nome ?? 'N/A' }}</span>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-sm font-bold text-gray-800">
+                                            {{ $detalhe->det_nome ?? $detalhe->produto->prod_nome ?? 'N/A' }}
+                                        </span>
+
+                                        @if($itemDuplicado)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-orange-200 text-orange-800 text-[10px] font-bold uppercase tracking-wide">
+                                            Repetido
+                                        </span>
+                                        @endif
+
+                                        @if($itemAguardandoCustomizacao)
+                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-yellow-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                                            Aguardando customização
+                                        </span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-5 py-5 whitespace-nowrap">
                                     <span class="text-sm text-gray-700">{{ $detalhe->det_cod ?: 'N/D' }}</span>
                                 </td>
+
                                 <td class="px-5 py-5 whitespace-nowrap">
                                     <span class="text-sm text-gray-700">{{ $detalhe->det_categoria ?: 'N/D' }}</span>
                                 </td>
+
                                 <td class="px-5 py-5 whitespace-nowrap">
                                     <span class="text-sm text-gray-700">{{ $detalhe->det_tamanho ?: 'N/D' }}</span>
                                 </td>
+
                                 <td class="px-5 py-5 text-right whitespace-nowrap">
                                     <span class="text-sm text-gray-700">{{ $detalhe->det_quantidade }}</span>
                                 </td>
+
                                 <td class="px-5 py-5 text-right whitespace-nowrap">
-                                    <span class="text-sm font-semibold text-gray-700">R$ {{ number_format($detalhe->det_valor_unit, 2, ',', '.') }}</span>
+                                    <span class="text-sm font-semibold text-gray-700">
+                                        R$ {{ number_format($detalhe->det_valor_unit, 2, ',', '.') }}
+                                    </span>
                                 </td>
 
                                 <td class="px-5 py-5 text-center whitespace-nowrap">
                                     <x-table-actions
                                         :show-route="route('detalhes_orcamento.show', [
-                                                'id' => CryptHelper::encrypt($detalhe->id_det),
-                                                'return_url' => request()->fullUrl(),
-                                            ])"
+                                            'id' => CryptHelper::encrypt($detalhe->id_det),
+                                            'return_url' => request()->fullUrl(),
+                                        ])"
                                         show-text="Ver"
                                         :edit-route="!$orcamentoBloqueado ? route('detalhes_orcamento.edit', [
                                             'detalhes_orcamento' => CryptHelper::encrypt($detalhe->id_det),
                                             'return_url' => request()->fullUrl(),
                                         ]) : null"
                                         edit-text="Editar"
-                                        :delete-action="!$orcamentoBloqueado ? route('detalhes_orcamento.destroy', CryptHelper::encrypt($detalhe->id_det)) : null"
-                                        delete-id="formExcluirDetalhe{{ $detalhe->id_det }}"
-                                        delete-modal="modalExcluirDetalhe"
                                         :budgets-route="route('customizacao.index', CryptHelper::encrypt($detalhe->id_det))"
                                         budgets-text="Customizações"
-                                        :budgets-count="$detalhe->customizacoes->count()" />
+                                        :budgets-count="$detalhe->customizacoes->count()"
+                                        :status-action="!$orcamentoBloqueado ? route('detalhes_orcamento.status', CryptHelper::encrypt($detalhe->id_det)) : null"
+                                        status-text="Aguardando Customização"
+                                        :status-active="$detalhe->det_status === 'Aguardando Customização'"
+                                        :status-id="$detalhe->id_det"
+                                        :delete-action="!$orcamentoBloqueado ? route('detalhes_orcamento.destroy', CryptHelper::encrypt($detalhe->id_det)) : null"
+                                        delete-id="formExcluirDetalhe{{ $detalhe->id_det }}"
+                                        delete-modal="modalExcluirDetalhe" />
                                 </td>
                             </tr>
                             @endforeach
@@ -244,6 +309,16 @@ strtolower(trim($orcamento->orc_status)),
     titulo="Excluir detalhe do orçamento"
     mensagem="Deseja realmente apagar este detalhe?"
     textoConfirmar="Excluir" />
+
+@foreach($detalhesOrcamento as $detalhe)
+<x-modal-confirmacao
+    id="modalStatus{{ $detalhe->id_det }}"
+    titulo="{{ $detalhe->det_status === 'Aguardando Customização' ? 'Remover aguardando customização' : 'Marcar como aguardando customização' }}"
+    mensagem="{{ $detalhe->det_status === 'Aguardando Customização'
+        ? 'Deseja realmente remover o status de aguardando customização deste detalhe?'
+        : 'Deseja realmente marcar este detalhe como aguardando customização?' }}"
+    textoConfirmar="{{ $detalhe->det_status === 'Aguardando Customização' ? 'Remover' : 'Confirmar' }}" />
+@endforeach
 
 @push('scripts')
 <script>

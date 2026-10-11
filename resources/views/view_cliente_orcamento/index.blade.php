@@ -134,6 +134,8 @@ use App\Helpers\CryptHelper;
                                             :contacts-route="route('contato_cliente.index', CryptHelper::encrypt($cliente->id_co))"
                                             contacts-text="Contatos"
                                             :budgets-route="route('orcamento.index', CryptHelper::encrypt($cliente->id_co))"
+                                            budgets-text="Orçamentos"
+                                            :budgets-count="$cliente->orcamentos_count"
                                             :show-route="route('cliente_orcamento.show', CryptHelper::encrypt($cliente->id_co))"
                                             :edit-route="route('cliente_orcamento.edit', CryptHelper::encrypt($cliente->id_co))"
                                             :delete-action="route('cliente_orcamento.destroy', CryptHelper::encrypt($cliente->id_co))"

@@ -16,80 +16,53 @@ use App\Models\Movimentacao;
 use App\Models\SaldoConta;
 use App\Models\TipoFluxoCaixa;
 use App\Services\AtualizarStatusParcelas;
+use App\Helpers\CryptHelper;
 
 class FormaPagamentoController extends Controller
 {
-    public function index(Request $request, AtualizarStatusParcelas $atualizarStatusParcelas)
+    public function index(Request $request, AtualizarStatusParcelas $atualizarStatusParcelas, string $id)
     {
-
         $atualizarStatusParcelas->executar();
 
-        $id = $request->query('id_fin');
+        $id = CryptHelper::decrypt($id);
 
         if (!$id) {
             return redirect()->route('financeiro.index');
         }
 
         $contas = ContaBancaria::all();
-
         $financeiros = Financeiro::with('orcamento')->get();
 
         $formasPagamento = FormaPagamento::where('financeiro_id_fin', $id)
-            ->with([
-                'financeiro',
-                'tipoPagamento',
-                'detalhes',
-                'conta'
-            ])
+            ->with(['financeiro', 'tipoPagamento', 'detalhes', 'conta'])
             ->get();
 
         foreach ($formasPagamento as $forma) {
             foreach ($forma->detalhes as $parcela) {
-
-                $diasAtraso = Carbon::parse($parcela->det_forma_data_venc)
-                    ->diffInDays(now(), false);
-
+                $diasAtraso = Carbon::parse($parcela->det_forma_data_venc)->diffInDays(now(), false);
                 $parcela->dias_atraso = $diasAtraso;
-
                 $parcela->classe_vencimento = '';
 
                 if (!in_array($parcela->det_situacao, ['Pago', 'Quitado'])) {
-
                     if ($diasAtraso > 3) {
-                        $parcela->classe_vencimento =
-                            'bg-red-200 text-red-800 font-semibold';
+                        $parcela->classe_vencimento = 'bg-red-200 text-red-800 font-semibold';
                     } elseif ($diasAtraso > 0) {
-                        $parcela->classe_vencimento =
-                            'bg-yellow-200 text-yellow-800 font-semibold';
+                        $parcela->classe_vencimento = 'bg-yellow-200 text-yellow-800 font-semibold';
                     }
                 }
 
                 $parcela->status_exibicao = $parcela->det_situacao;
-
                 $parcela->cor_status = match ($parcela->status_exibicao) {
-                    'Pago', 'Quitado' =>
-                    'bg-green-100 text-green-700',
-
-                    'Não Pago' =>
-                    'bg-yellow-100 text-yellow-700',
-
-                    'Acordo' =>
-                    'bg-blue-100 text-blue-700',
-
-                    'Atrasado', 'Inadimplencia' =>
-                    'bg-red-100 text-red-700',
-
-                    default =>
-                    'bg-gray-100 text-gray-700',
+                    'Pago', 'Quitado' => 'bg-green-100 text-green-700',
+                    'Não Pago' => 'bg-yellow-100 text-yellow-700',
+                    'Acordo' => 'bg-blue-100 text-blue-700',
+                    'Atrasado', 'Inadimplencia' => 'bg-red-100 text-red-700',
+                    default => 'bg-gray-100 text-gray-700',
                 };
             }
         }
 
-        $financeiroSelecionado = $financeiros->firstWhere(
-            'id_fin',
-            $id
-        );
-
+        $financeiroSelecionado = $financeiros->firstWhere('id_fin', $id);
         $valorTotal = $financeiroSelecionado->fin_valor_total ?? 0;
 
         $entrada = $formasPagamento
@@ -106,14 +79,11 @@ class FormaPagamentoController extends Controller
             (float) $valorCompletado - (float) $valorTotal
         ) < 0.01;
 
-        // Valor pago:
-        // 1) Entrada com qtd_parcela = 1 -> conta o forma_valor inteiro (pagamento único)
         $pagoEntradaUnica = $formasPagamento
             ->where('forma_prazo', 'Entrada')
             ->where('forma_qtd_parcela', 1)
             ->sum('forma_valor');
 
-        // 2) Entrada com qtd_parcela > 1 OU Parcelado -> soma só as parcelas com situação Pago/Quitado
         $pagoParcelado = $formasPagamento
             ->filter(function ($forma) {
                 return $forma->forma_prazo === 'Parcelado'
@@ -125,38 +95,33 @@ class FormaPagamentoController extends Controller
                     ->sum('det_forma_valor_parcela');
             });
 
-        // 3) À vista
         $pagoAVista = $formasPagamento
             ->where('forma_prazo', 'À vista')
             ->where('forma_qtd_parcela', 1)
             ->sum('forma_valor');
 
         $valorPago = $pagoEntradaUnica + $pagoParcelado + $pagoAVista;
-
-        // Saldo devedor
         $valorFaltante = max($valorTotal - $valorPago, 0);
 
-        return view(
-            'view_forma_pagamento.index',
-            compact(
-                'formasPagamento',
-                'financeiros',
-                'id',
-                'contas',
-                'financeiroSelecionado',
-                'valorPago',
-                'valorTotal',
-                'valorFaltante',
-                'entrada',
-                'valorNegociado',
-                'valorCompletado',
-                'pagamentoCompleto'
-            )
-        );
+        return view('view_forma_pagamento.index', compact(
+            'formasPagamento',
+            'financeiros',
+            'id',
+            'contas',
+            'financeiroSelecionado',
+            'valorPago',
+            'valorTotal',
+            'valorFaltante',
+            'entrada',
+            'valorNegociado',
+            'valorCompletado',
+            'pagamentoCompleto'
+        ));
     }
 
     public function darBaixa(Request $request, $id)
     {
+        $id = CryptHelper::decrypt($id);
         $parcela = DetalhesFormaPag::find($id);
 
         if (!$parcela) {
@@ -164,14 +129,9 @@ class FormaPagamentoController extends Controller
         }
 
         $parcela->det_forma_data_pagamento = $request->data_pagamento;
-
-        if (in_array($parcela->det_situacao, ['Acordo', 'Inadimplencia'])) {
-            $novoStatus = 'Quitado';
-        } else {
-            $novoStatus = 'Pago';
-        }
-
-        $parcela->det_situacao = $novoStatus;
+        $parcela->det_situacao = in_array($parcela->det_situacao, ['Acordo', 'Inadimplencia'])
+            ? 'Quitado'
+            : 'Pago';
         $parcela->save();
 
         $forma = $parcela->formaPagamento;
@@ -193,22 +153,19 @@ class FormaPagamentoController extends Controller
             $mov = Movimentacao::find($fluxo->flu_id_movimentacao);
 
             $saldoConta = SaldoConta::firstOrCreate(
-                [
-                    'id_conta_bancaria_id' => $forma->conta_bancaria_id
-                ],
-                [
-                    'saldo_conta_valor' => 0
-                ]
+                ['id_conta_bancaria_id' => $forma->conta_bancaria_id],
+                ['saldo_conta_valor' => 0]
             );
 
-            $nomeMov = strtolower(trim($mov->mov_nome));
+            if ($mov) {
+                $nomeMov = strtolower(trim($mov->mov_nome));
 
-            if (str_contains($nomeMov, 'entrada')) {
+                if (str_contains($nomeMov, 'entrada')) {
+                    $saldoConta->saldo_conta_valor += $parcela->det_forma_valor_parcela;
+                }
 
-                $saldoConta->saldo_conta_valor += $parcela->det_forma_valor_parcela;
+                $saldoConta->save();
             }
-
-            $saldoConta->save();
         }
 
         return back()->with('success', 'Parcela baixada com sucesso!');
@@ -216,26 +173,20 @@ class FormaPagamentoController extends Controller
 
     public function voltarNaoPago($id)
     {
+        $id = CryptHelper::decrypt($id);
         $parcela = DetalhesFormaPag::findOrFail($id);
 
         if ($parcela->det_situacao === 'Quitado') {
-            return back()->with(
-                'error',
-                'Parcelas com status Quitado não podem voltar para Não Pago.'
-            );
+            return back()->with('error', 'Parcelas com status Quitado não podem voltar para Não Pago.');
         }
 
         if ($parcela->det_situacao !== 'Pago') {
-            return back()->with(
-                'error',
-                'Somente parcelas com status Pago podem voltar para Não Pago.'
-            );
+            return back()->with('error', 'Somente parcelas com status Pago podem voltar para Não Pago.');
         }
 
         $forma = $parcela->formaPagamento;
 
         if ($forma) {
-
             $financeiro = $forma->financeiro;
 
             $fluxo = FluxoCaixa::where('flu_num_doc', $financeiro->orcamento_id_orcamento)
@@ -245,11 +196,9 @@ class FormaPagamentoController extends Controller
                 ->first();
 
             if ($fluxo) {
-
                 $mov = Movimentacao::find($fluxo->flu_id_movimentacao);
 
                 if ($mov && $forma->conta_bancaria_id) {
-
                     $nomeMov = strtolower(trim($mov->mov_nome));
 
                     $saldoConta = SaldoConta::where(
@@ -258,15 +207,11 @@ class FormaPagamentoController extends Controller
                     )->first();
 
                     if ($saldoConta) {
-
                         if (str_contains($nomeMov, 'entrada')) {
                             $saldoConta->saldo_conta_valor -= $fluxo->flu_valor;
                         }
 
-                        if (
-                            str_contains($nomeMov, 'saída') ||
-                            str_contains($nomeMov, 'saida')
-                        ) {
+                        if (str_contains($nomeMov, 'saída') || str_contains($nomeMov, 'saida')) {
                             $saldoConta->saldo_conta_valor += $fluxo->flu_valor;
                         }
 
@@ -282,14 +227,13 @@ class FormaPagamentoController extends Controller
         $parcela->det_forma_data_pagamento = null;
         $parcela->save();
 
-        return back()->with(
-            'success',
-            'Parcela voltou para Não Pago e o fluxo de caixa foi removido.'
-        );
+        return back()->with('success', 'Parcela voltou para Não Pago e o fluxo de caixa foi removido.');
     }
 
-    public function create(Request $request)
+    public function create(string $financeiro_id)
     {
+        $financeiroId = CryptHelper::decrypt($financeiro_id);
+
         $financeiros = Financeiro::all();
         $tiposPagamento = TipoPagamento::all();
         $formasPagamento = FormaPagamento::with(['financeiro', 'tipoPagamento'])->get();
@@ -299,7 +243,8 @@ class FormaPagamentoController extends Controller
             'financeiros',
             'tiposPagamento',
             'formasPagamento',
-            'contas'
+            'contas',
+            'financeiroId'
         ));
     }
 
@@ -310,7 +255,6 @@ class FormaPagamentoController extends Controller
                 'forma_valor' => trim(str_replace(['R$', '.', ','], ['', '', '.'], $request->forma_valor))
             ]);
 
-            // Determina o comportamento real com base em prazo + qtd de parcelas
             $qtdParcelas = (int) $request->forma_qtd_parcela;
             $usaParcelas = $request->forma_prazo === 'Parcelado'
                 || ($request->forma_prazo === 'Entrada' && $qtdParcelas > 1);
@@ -325,7 +269,7 @@ class FormaPagamentoController extends Controller
                 'forma_mes' => 'required|integer|min:1|max:12',
                 'forma_descricao' => 'required|string|max:120',
                 'forma_prazo' => 'required|in:À vista,Parcelado,Entrada',
-                'forma_qtd_parcela' => ['required', 'integer', 'between:1,50',],
+                'forma_qtd_parcela' => ['required', 'integer', 'between:1,50'],
                 'forma_data' => $usaDataUnica
                     ? 'required|date|before_or_equal:today'
                     : 'nullable|date',
@@ -341,11 +285,9 @@ class FormaPagamentoController extends Controller
                 'forma_qtd_parcela.required' => 'Informe a quantidade de parcelas.',
                 'forma_qtd_parcela.integer' => 'A quantidade de parcelas deve ser um número inteiro.',
                 'forma_qtd_parcela.between' => 'A quantidade de parcelas deve estar entre 1 e 50.',
-
                 'forma_qtd_parcela.min' => 'A quantidade mínima de parcelas é 1.',
                 'forma_qtd_parcela.max' => 'A quantidade máxima de parcelas é 50.',
             ]);
-
 
             return DB::transaction(function () use ($request, $validatedData, $usaParcelas, $usaDataUnica) {
                 $dadosForma = [
@@ -364,11 +306,7 @@ class FormaPagamentoController extends Controller
                 }
 
                 $formapag = FormaPagamento::create($dadosForma);
-
                 $financeiro = Financeiro::findOrFail($validatedData['financeiro_id_fin']);
-
-                // Mudança de Status
-
                 $valorTotal = (float) $financeiro->fin_valor_total;
 
                 $formas = FormaPagamento::where(
@@ -376,17 +314,15 @@ class FormaPagamentoController extends Controller
                     $validatedData['financeiro_id_fin']
                 )->get();
 
-                // Valor Entrada
                 $valorEntrada = $formas
                     ->where('forma_prazo', 'Entrada')
                     ->sum('forma_valor');
-                // Valor Negociado
+
                 $valorNegociado = $formas
                     ->where('forma_prazo', '!=', 'Entrada')
                     ->sum('forma_valor');
 
                 $valorCompletado = $valorEntrada + $valorNegociado;
-
                 $pagamentoCompleto = abs($valorCompletado - $valorTotal) < 0.01;
 
                 $aguardando = DB::table('status_mercadoria')
@@ -397,15 +333,9 @@ class FormaPagamentoController extends Controller
                     ->where('id_status_merc', 2)
                     ->value('status_merc_nome');
 
-                if ($pagamentoCompleto) {
-                    $financeiro->fin_status = $realizado;
-                } else {
-                    $financeiro->fin_status = $aguardando;
-                }
-
+                $financeiro->fin_status = $pagamentoCompleto ? $realizado : $aguardando;
                 $financeiro->save();
 
-                // Atualiza o log do status "Pagamento realizado"
                 DB::table('log_status')
                     ->where('log_id_orcamento', $financeiro->orcamento_id_orcamento)
                     ->where('status_mercadoria_id_status', 2)
@@ -413,7 +343,6 @@ class FormaPagamentoController extends Controller
                         'log_situacao' => $pagamentoCompleto ? 1 : 0
                     ]);
 
-                // Pagamento único (À vista OU Entrada com 1 parcela)
                 if ($usaDataUnica) {
                     $tipoVenda = TipoFluxoCaixa::where('tipo_flu_nome', 'Venda')->first();
 
@@ -454,7 +383,6 @@ class FormaPagamentoController extends Controller
                     }
                 }
 
-                // Múltiplas parcelas (Parcelado OU Entrada com 2+ parcelas)
                 if ($usaParcelas) {
                     foreach ($validatedData['datas_parcelas'] as $i => $dataParcela) {
                         DetalhesFormaPag::create([
@@ -467,11 +395,11 @@ class FormaPagamentoController extends Controller
                     }
                 }
 
-                return redirect('/forma_pagamento?' . $validatedData['financeiro_id_fin'])
+                return redirect()->route('forma_pagamento.index', CryptHelper::encrypt($validatedData['financeiro_id_fin']))
                     ->with('success', 'Forma de Pagamento criada com sucesso!');
             });
         } catch (ValidationException $e) {
-            return redirect('/forma_pagamento?' . $request->financeiro_id_fin)
+            return redirect()->route('forma_pagamento.create', CryptHelper::encrypt($request->financeiro_id_fin))
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
@@ -481,14 +409,19 @@ class FormaPagamentoController extends Controller
         }
     }
 
-    public function show($id)
+    public function show(string $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $formaPagamento = FormaPagamento::findOrFail($id);
+
         return view('view_forma_pagamento.show', compact('formaPagamento'));
     }
 
-    public function destroy($id)
+    public function destroy(string $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $formaPagamento = FormaPagamento::findOrFail($id);
         $financeiroId = $formaPagamento->financeiro_id_fin;
 
@@ -496,8 +429,8 @@ class FormaPagamentoController extends Controller
         $formaPagamento->delete();
 
         $financeiro = Financeiro::findOrFail($financeiroId);
-
         $valorTotal = (float) $financeiro->fin_valor_total;
+
         $formas = FormaPagamento::where(
             'financeiro_id_fin',
             $financeiroId
@@ -506,12 +439,12 @@ class FormaPagamentoController extends Controller
         $valorEntrada = $formas
             ->where('forma_prazo', 'Entrada')
             ->sum('forma_valor');
+
         $valorNegociado = $formas
             ->where('forma_prazo', '!=', 'Entrada')
             ->sum('forma_valor');
 
         $valorCompletado = $valorEntrada + $valorNegociado;
-
         $pagamentoCompleto = abs($valorCompletado - $valorTotal) < 0.01;
 
         $aguardando = DB::table('status_mercadoria')
@@ -522,10 +455,7 @@ class FormaPagamentoController extends Controller
             ->where('id_status_merc', 2)
             ->value('status_merc_nome');
 
-        $financeiro->fin_status = $pagamentoCompleto
-            ? $realizado
-            : $aguardando;
-
+        $financeiro->fin_status = $pagamentoCompleto ? $realizado : $aguardando;
         $financeiro->save();
 
         DB::table('log_status')
@@ -535,7 +465,7 @@ class FormaPagamentoController extends Controller
                 'log_situacao' => $pagamentoCompleto ? 1 : 0
             ]);
 
-        return redirect('/forma_pagamento?' . $financeiroId)
+        return redirect()->route('forma_pagamento.index', CryptHelper::encrypt($financeiroId))
             ->with('success', 'Forma de Pagamento removida com sucesso!');
     }
 }

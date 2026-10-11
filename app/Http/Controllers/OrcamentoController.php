@@ -476,10 +476,7 @@ class OrcamentoController extends Controller
 
             $novoStatus = $validatedData['orc_status'] ?? $statusAnterior;
 
-            if (
-                $novoStatus === 'aprovado' &&
-                (float) $orcamento->total_com_desconto <= 0
-            ) {
+            if ($novoStatus === 'aprovado' && (float) $orcamento->total_com_desconto <= 0) {
                 return redirect()
                     ->back()
                     ->with(
@@ -487,6 +484,25 @@ class OrcamentoController extends Controller
                         'Este orçamento não pode ser aprovado porque seu valor total é R$ 0,00.'
                     )
                     ->withInput();
+            }
+
+            if ($novoStatus !== $statusAnterior) {
+                $temCustomizacaoPendente = $orcamento->detalhesOrcamento()
+                    ->where('det_status', 'Aguardando Customização')
+                    ->exists();
+
+                if (
+                    $temCustomizacaoPendente &&
+                    in_array($novoStatus, ['aprovado', 'rejeitado', 'finalizado'])
+                ) {
+                    return redirect()
+                        ->back()
+                        ->with(
+                            'error',
+                            'Este orçamento não pode ter o status alterado enquanto houver detalhes aguardando customização.'
+                        )
+                        ->withInput();
+                }
             }
 
             if ($statusAnterior === 'finalizado' && $novoStatus !== 'finalizado') {

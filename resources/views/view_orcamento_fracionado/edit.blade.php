@@ -2,219 +2,132 @@
 
 @section('title', 'Editar Orçamento Fracionado')
 
-@section('content')
-
 @php
+use App\Helpers\CryptHelper;
+
 $statusAtual = old('orc_status', $orcamentoFracionado->orc_status);
+$urlVoltar = route('orcamento.fracionado.index', CryptHelper::encrypt($orcamentoFracionado->orcamento_id_orcamento));
 @endphp
 
-<div class="max-w-6xl mx-auto p-8 mt-10 mb-10 font-poppins">
+@section('content')
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <x-page-header title="Editar Orçamento Fracionado" :back-url="$urlVoltar" />
 
-    <h1 class="text-3xl font-bold text-custom-dark-text mb-8 text-center">
-        Editar Orçamento Fracionado #{{ $orcamentoFracionado->orc_fracao }}
-    </h1>
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
+        </div>
 
-    <x-alert-flash />
+        <form id="orcamentoFracionadoForm"
+            action="{{ route('orcamento.fracionado.update', CryptHelper::encrypt($orcamentoFracionado->id_orcamento_fracionado)) }}"
+            method="POST"
+            data-status-anterior="{{ $orcamentoFracionado->orc_status }}"
+            class="px-6 sm:px-8 pt-6 pb-8">
+            @csrf
+            @method('PUT')
 
-    @if(isset($orcamentoFracionado))
-    <div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
+            <x-info-card
+                title="Informações do orçamento fracionado"
+                :name="'Fração #' . $orcamentoFracionado->orc_fracao"
+                type="Orçamento Fracionado"
+                :fields="[
+                    [
+                        'label' => 'ID',
+                        'value' => $orcamentoFracionado->id_orcamento_fracionado,
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'Cliente',
+                        'value' => $orcamentoFracionado->clienteOrcamento->clie_orc_nome ?? 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Código interno',
+                        'value' => $orcamentoFracionado->orc_cod_interno ?: 'Não informado',
+                    ],
+                    [
+                        'label' => 'Código da fábrica',
+                        'value' => $orcamentoFracionado->orc_cod_fabrica ?: 'Não informado',
+                    ],
+                ]" />
 
-        <h2 class="text-lg font-bold text-orange-700 mb-4">
-            Informações do Orçamento Fracionado
-        </h2>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 sm:p-6 mt-6">
+                <div class="flex items-center gap-3 pb-5 mb-6 border-b border-gray-200">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-100 text-orange-600">
+                        <x-icons.document class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Dados do orçamento fracionado</h2>
+                        <p class="text-xs text-gray-500 mt-0.5">Atualize as informações do orçamento fracionado.</p>
+                    </div>
+                </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-
-            <div>
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label for="orc_cod_interno" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Código Interno
+                        </label>
+                        <input type="text" name="orc_cod_interno" id="orc_cod_interno" maxlength="60"
+                            placeholder="Código interno"
+                            value="{{ old('orc_cod_interno', $orcamentoFracionado->orc_cod_interno) }}"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                                          </div>
 
                     <div>
-                        <p class="text-gray-600">ID</p>
-                        <p class="font-semibold">
-                            {{ $orcamentoFracionado->id_orcamento_fracionado }}
-                        </p>
+                        <label for="orc_cod_fabrica" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Código da Fábrica
+                            @if($orcamentoFracionado->orc_status !== 'pendente')
+                            <span class="text-red-600">*</span>
+                            @endif
+                        </label>
+                        <input type="text" name="orc_cod_fabrica" id="orc_cod_fabrica" maxlength="60"
+                            placeholder="Código da fábrica"
+                            value="{{ old('orc_cod_fabrica', $orcamentoFracionado->orc_cod_fabrica) }}"
+                            class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                            @if($orcamentoFracionado->orc_status !== 'pendente') required @endif>
+   
                     </div>
 
-                    <div>
-                        <p class="text-gray-600">Cód. Fábrica</p>
-                        <p class="font-semibold">
-                            {{ $orcamentoFracionado->orc_cod_fabrica ?: 'N/D' }}
-                        </p>
-                    </div>
+                    <div class="md:col-span-2">
+                        <label for="orc_anotacao_geral" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                            Anotação Geral
+                        </label>
+                        <textarea name="orc_anotacao_geral" id="orc_anotacao_geral" rows="4" maxlength="1000"
+                            class="w-full px-3 py-2.5 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100 resize-none"
+                            placeholder="Digite uma anotação geral">{{ old('orc_anotacao_geral', $orcamentoFracionado->orc_anotacao_geral) }}</textarea>
 
-                    <div>
-                        <p class="text-gray-600">Cód. Interno</p>
-                        <p class="font-semibold">
-                            {{ $orcamentoFracionado->orc_cod_interno ?: 'N/D' }}
-                        </p>
                     </div>
-
                 </div>
             </div>
 
-            <div>
-                <p class="text-gray-600">Cliente</p>
-                <p class="font-semibold text-gray-900">
-                    {{ $orcamentoFracionado->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
-                </p>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-gray-200">
+                <x-secondary-button :href="$urlVoltar">
+                    Voltar para a lista
+                </x-secondary-button>
+                <x-primary-button type="submit" id="btnAtualizarFracionado" class="px-6">
+                    <span id="textoAtualizarFracionado">Atualizar orçamento</span>
+                </x-primary-button>
             </div>
-
-            <div>
-                <p class="text-gray-600">Fração</p>
-                <p class="font-semibold text-gray-900">
-                    #{{ $orcamentoFracionado->orc_fracao }}
-                </p>
-            </div>
-
-            <div>
-                <p class="text-gray-600">Status</p>
-                <p class="font-semibold text-gray-900">
-                    {{ ucfirst($orcamentoFracionado->orc_status) }}
-                </p>
-            </div>
-
-        </div>
+        </form>
     </div>
-    @endif
-
-    <form
-        action="{{ route('orcamento.fracionado.update', $orcamentoFracionado->id_orcamento_fracionado) }}"
-        method="POST"
-        class="space-y-6">
-
-        @csrf
-        @method('PUT')
-
-
-        <div class="space-y-6">
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
-                <div>
-                    <label for="orc_cod_interno" class="block text-sm font-medium mb-1">
-                        Código Interno
-                    </label>
-
-                    <input
-                        type="text"
-                        name="orc_cod_interno"
-                        id="orc_cod_interno"
-                        maxlength="60"
-                        placeholder="Código Interno"
-                        value="{{ old('orc_cod_interno', $orcamentoFracionado->orc_cod_interno) }}"
-                        class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300">
-
-                    @error('orc_cod_interno')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-
-                <div>
-                    <label for="orc_cod_fabrica" class="block text-sm font-medium mb-1">
-                        Código da Fábrica
-                        @if($orcamentoFracionado->orc_status !== 'pendente')
-                        <span class="text-red-600">*</span>
-                        @endif
-                    </label>
-
-                    <input
-                        type="text"
-                        name="orc_cod_fabrica"
-                        id="orc_cod_fabrica"
-                        maxlength="60"
-                        placeholder="Código Fábrica"
-                        value="{{ old('orc_cod_fabrica', $orcamentoFracionado->orc_cod_fabrica) }}"
-                        class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                        @if($orcamentoFracionado->orc_status !== 'pendente') required @endif>
-
-                    @error('orc_cod_fabrica')
-                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <div>
-            <label for="orc_anotacao_geral" class="block text-sm font-medium mb-1">
-                Anotação Geral
-            </label>
-
-            <textarea
-                name="orc_anotacao_geral"
-                id="orc_anotacao_geral"
-                rows="4"
-                class="block w-full px-4 py-2 bg-white rounded-md border border-gray-300"
-                placeholder="Digite uma anotação geral">{{ old('orc_anotacao_geral', $orcamentoFracionado->orc_anotacao_geral) }}</textarea>
-
-            @error('orc_anotacao_geral')
-            <p class="mt-2 text-sm text-red-600">
-                {{ $message }}
-            </p>
-            @enderror
-        </div>
-
-        <div class="flex justify-center gap-3 mt-8">
-
-            <button
-                type="submit"
-                class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-button-edit-bg hover:bg-button-edit-hover transition">
-                ATUALIZAR
-            </button>
-
-            <a
-                href="{{ route('orcamento.fracionado.index', $orcamento->id_orcamento) }}"
-                class="inline-flex justify-center py-2 px-6 shadow-sm text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition">
-                VOLTAR
-            </a>
-
-        </div>
-
-    </form>
-
 </div>
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('orcamentoFracionadoForm');
+        const btn = document.getElementById('btnAtualizarFracionado');
+        const texto = document.getElementById('textoAtualizarFracionado');
 
-        const form = document.querySelector('form[data-status-anterior]');
-        const status = document.getElementById('orc_status');
+        if (!form || !btn) return;
 
-        if (!form) return;
-
-        form.addEventListener('submit', (e) => {
-
-            const statusAnterior = form.dataset.statusAnterior;
-            const novoStatus = status?.value || statusAnterior;
-
-            if (
-                novoStatus === 'aprovado' &&
-                statusAnterior !== 'aprovado' &&
-                !confirm(
-                    'Você deseja colocar este orçamento fracionado como APROVADO?'
-                )
-            ) {
-                e.preventDefault();
-                return;
-            }
-
-            if (
-                novoStatus === 'finalizado' &&
-                statusAnterior !== 'finalizado' &&
-                !confirm(
-                    'Você deseja colocar este orçamento fracionado como FINALIZADO?'
-                )
-            ) {
-                e.preventDefault();
-            }
+        form.addEventListener('submit', function() {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            texto.textContent = 'Atualizando...';
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
         });
-
     });
 </script>
 @endpush
-
 @endsection

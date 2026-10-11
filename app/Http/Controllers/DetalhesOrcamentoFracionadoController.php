@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CryptHelper;
 use App\Models\DetalhesOrcamentoFracionado;
 use App\Models\OrcamentoFracionado;
 use App\Models\Orcamento;
@@ -11,55 +12,36 @@ use App\Models\CustomizacaoFracionada;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class DetalhesOrcamentoFracionadoController extends Controller
 {
     public function index(Request $request, $id): View|RedirectResponse
     {
+        $id = CryptHelper::decrypt($id);
         $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
 
         $orcamento = Orcamento::with('clienteOrcamento')
             ->where('id_orcamento', $orcamentoFracionado->orcamento_id_orcamento)
             ->firstOrFail();
 
-        $query = DetalhesOrcamentoFracionado::with([
-            'customizacoes'
-        ])->where(
-            'orcamento_fracionado_id',
-            $orcamentoFracionado->id_orcamento_fracionado
-        );
+        $query = DetalhesOrcamentoFracionado::with('customizacoes')
+            ->where('orcamento_fracionado_id', $orcamentoFracionado->id_orcamento_fracionado);
 
         if ($request->filled('produto')) {
-            $query->where(
-                'det_nome',
-                'like',
-                '%' . trim($request->produto) . '%'
-            );
+            $query->where('det_nome', 'like', '%' . trim($request->produto) . '%');
         }
 
         if ($request->filled('categoria')) {
-            $query->where(
-                'det_categoria',
-                'like',
-                '%' . trim($request->categoria) . '%'
-            );
+            $query->where('det_categoria', 'like', '%' . trim($request->categoria) . '%');
         }
 
         if ($request->filled('cod_ref')) {
-            $query->where(
-                'det_cod',
-                'like',
-                '%' . trim($request->cod_ref) . '%'
-            );
+            $query->where('det_cod', 'like', '%' . trim($request->cod_ref) . '%');
         }
 
         if ($request->filled('familia')) {
-            $query->where(
-                'det_familia',
-                $request->familia
-            );
+            $query->where('det_familia', $request->familia);
         }
 
         $detalhesOrcamento = $query
@@ -69,21 +51,17 @@ class DetalhesOrcamentoFracionadoController extends Controller
 
         $familias = DetalhesOrcamentoFracionado::query()
             ->whereNotNull('det_familia')
-            ->where(
-                'orcamento_fracionado_id',
-                $orcamentoFracionado->id_orcamento_fracionado
-            )
+            ->where('orcamento_fracionado_id', $orcamentoFracionado->id_orcamento_fracionado)
             ->select('det_familia')
             ->distinct()
             ->orderBy('det_familia')
             ->pluck('det_familia');
 
         $todosDetalhes = DetalhesOrcamentoFracionado::with('customizacoes')
-            ->where(
-                'orcamento_fracionado_id',
-                $orcamentoFracionado->id_orcamento_fracionado
-            )
+            ->where('orcamento_fracionado_id', $orcamentoFracionado->id_orcamento_fracionado)
             ->get();
+
+        $totalItens = $todosDetalhes->count();
 
         $totalDetalhes = 0;
         $totalCustomizacoes = 0;
@@ -91,61 +69,47 @@ class DetalhesOrcamentoFracionadoController extends Controller
         foreach ($todosDetalhes as $detalhe) {
             $quantidade = (int) ($detalhe->det_quantidade ?? 0);
             $valorUnitario = (float) ($detalhe->det_valor_unit ?? 0);
-
             $totalDetalhes += $quantidade * $valorUnitario;
 
             foreach ($detalhe->customizacoes as $customizacao) {
-                $valorCustomizacao = (float) ($customizacao->cust_valor ?? 0);
-
-                $totalCustomizacoes += $quantidade * $valorCustomizacao;
+                $totalCustomizacoes += $quantidade * (float) ($customizacao->cust_valor ?? 0);
             }
         }
 
         $totalGeral = $totalDetalhes + $totalCustomizacoes;
 
-        return view(
-            'view_detalhes_orcamento_fracionado.index',
-            compact(
-                'detalhesOrcamento',
-                'orcamentoFracionado',
-                'orcamento',
-                'familias',
-                'totalDetalhes',
-                'totalCustomizacoes',
-                'totalGeral'
-            )
-        );
+        return view('view_detalhes_orcamento_fracionado.index', compact(
+            'detalhesOrcamento',
+            'orcamentoFracionado',
+            'orcamento',
+            'familias',
+            'totalItens',
+            'totalDetalhes',
+            'totalCustomizacoes',
+            'totalGeral'
+        ));
     }
 
     public function create(Request $request, $id): View|RedirectResponse
     {
+        $id = CryptHelper::decrypt($id);
         $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
 
         if ($orcamentoFracionado->orc_status !== 'pendente') {
             return redirect()
-                ->route(
-                    'detalhes_orcamento_fracionado.index',
-                    $orcamentoFracionado->id_orcamento_fracionado
-                )
-                ->with(
-                    'error',
-                    'Não é possível adicionar detalhes a um orçamento fracionado que já avançou do status pendente.'
-                );
+                ->route('detalhes_orcamento_fracionado.index', CryptHelper::encrypt($orcamentoFracionado->id_orcamento_fracionado))
+                ->with('error', 'Não é possível adicionar detalhes a um orçamento fracionado que já avançou do status pendente.');
         }
 
         $orcamento = Orcamento::with('clienteOrcamento')
             ->where('id_orcamento', $orcamentoFracionado->orcamento_id_orcamento)
             ->firstOrFail();
 
-        // Subquery com a soma já alocada de cada item original em QUALQUER fracionado
         $alocadosSub = DetalhesOrcamentoFracionado::query()
             ->select('detalhes_orcamento_id_det')
             ->selectRaw('SUM(det_quantidade) as qtd_alocada')
             ->groupBy('detalhes_orcamento_id_det');
 
-        // Query dos detalhes do orçamento ORIGINAL, com os mesmos filtros do molde,
-        // já descontando o que está alocado em qualquer fracionado e escondendo
-        // os itens 100% alocados (não sobra nada para incluir).
         $query = DetalhesOrcamento::with(['produto', 'customizacoes'])
             ->where('detalhes_orcamento.orcamento_id_orcamento', $orcamento->id_orcamento)
             ->leftJoinSub($alocadosSub, 'alocados', function ($join) {
@@ -156,40 +120,24 @@ class DetalhesOrcamentoFracionadoController extends Controller
             ->whereRaw('detalhes_orcamento.det_quantidade > COALESCE(alocados.qtd_alocada, 0)');
 
         if ($request->filled('produto')) {
-
             $query->whereHas('produto', function ($q) use ($request) {
-                $q->where(
-                    'prod_nome',
-                    'like',
-                    '%' . trim($request->produto) . '%'
-                );
+                $q->where('prod_nome', 'like', '%' . trim($request->produto) . '%');
             });
         }
 
         if ($request->filled('categoria')) {
-
             $query->whereHas('produto', function ($q) use ($request) {
-                $q->where(
-                    'prod_categoria',
-                    'like',
-                    '%' . trim($request->categoria) . '%'
-                );
+                $q->where('prod_categoria', 'like', '%' . trim($request->categoria) . '%');
             });
         }
 
         if ($request->filled('cod_ref')) {
-
             $query->whereHas('produto', function ($q) use ($request) {
-                $q->where(
-                    'prod_cod',
-                    'like',
-                    '%' . trim($request->cod_ref) . '%'
-                );
+                $q->where('prod_cod', 'like', '%' . trim($request->cod_ref) . '%');
             });
         }
 
         if ($request->filled('familia')) {
-
             $query->whereHas('produto', function ($q) use ($request) {
                 $q->where('prod_familia', $request->familia);
             });
@@ -207,37 +155,26 @@ class DetalhesOrcamentoFracionadoController extends Controller
             ->orderBy('prod_familia')
             ->pluck('prod_familia');
 
-        return view(
-            'view_detalhes_orcamento_fracionado.create',
-            compact(
-                'orcamento',
-                'orcamentoFracionado',
-                'detalhesOrcamento',
-                'familias'
-            )
-        );
+        return view('view_detalhes_orcamento_fracionado.create', compact(
+            'orcamento',
+            'orcamentoFracionado',
+            'detalhesOrcamento',
+            'familias'
+        ));
     }
 
     public function store(Request $request, $id): RedirectResponse
     {
+        $id = CryptHelper::decrypt($id);
         $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
 
         if ($orcamentoFracionado->orc_status !== 'pendente') {
             return redirect()
-                ->route(
-                    'detalhes_orcamento_fracionado.index',
-                    $orcamentoFracionado->id_orcamento_fracionado
-                )
-                ->with(
-                    'error',
-                    'Não é possível adicionar detalhes a um orçamento fracionado que já avançou do status pendente.'
-                );
+                ->route('detalhes_orcamento_fracionado.index', CryptHelper::encrypt($orcamentoFracionado->id_orcamento_fracionado))
+                ->with('error', 'Não é possível adicionar detalhes a um orçamento fracionado que já avançou do status pendente.');
         }
 
-        $orcamento = Orcamento::where(
-            'id_orcamento',
-            $orcamentoFracionado->orcamento_id_orcamento
-        )->firstOrFail();
+        $orcamento = Orcamento::where('id_orcamento', $orcamentoFracionado->orcamento_id_orcamento)->firstOrFail();
 
         $validator = Validator::make($request->all(), [
             'itens' => 'required|array|min:1',
@@ -246,32 +183,20 @@ class DetalhesOrcamentoFracionadoController extends Controller
             'itens.required' => 'Selecione ao menos um item para adicionar ao fracionado.',
         ]);
 
-        // Validação "manual" das quantidades: nunca confiamos no que veio do
-        // front (max do input pode ter sido alterado no navegador), então
-        // recalculamos o restante disponível de cada item no servidor.
         $validator->after(function ($validator) use ($request) {
-
             $itens = $request->input('itens', []);
             $quantidades = $request->input('quantidades', []);
 
             foreach ($itens as $itemId) {
-
                 $quantidadeInformada = $quantidades[$itemId] ?? null;
 
-                // Campo vazio -> não avança de jeito nenhum
                 if ($quantidadeInformada === null || trim((string) $quantidadeInformada) === '') {
-                    $validator->errors()->add(
-                        "quantidades.$itemId",
-                        'Informe a quantidade deste item.'
-                    );
+                    $validator->errors()->add("quantidades.$itemId", 'Informe a quantidade deste item.');
                     continue;
                 }
 
                 if (!is_numeric($quantidadeInformada) || (int) $quantidadeInformada < 1) {
-                    $validator->errors()->add(
-                        "quantidades.$itemId",
-                        'Quantidade inválida.'
-                    );
+                    $validator->errors()->add("quantidades.$itemId", 'Quantidade inválida.');
                     continue;
                 }
 
@@ -309,13 +234,9 @@ class DetalhesOrcamentoFracionadoController extends Controller
         $validated = $validator->validated();
 
         foreach ($validated['itens'] as $idDetOriginal) {
-
-            $detalheOriginal = DetalhesOrcamento::with('customizacoes')
-                ->findOrFail($idDetOriginal);
-
+            $detalheOriginal = DetalhesOrcamento::with('customizacoes')->findOrFail($idDetOriginal);
             $quantidade = (int) $request->input("quantidades.$idDetOriginal");
 
-            // Trava final de segurança (redundante com a validação acima)
             $alocado = DetalhesOrcamentoFracionado::where(
                 'detalhes_orcamento_id_det',
                 $idDetOriginal
@@ -328,9 +249,6 @@ class DetalhesOrcamentoFracionadoController extends Controller
                 continue;
             }
 
-            // Se esse MESMO item original já existe dentro DESTE fracionado,
-            // apenas soma a quantidade no registro existente — não duplica
-            // o detalhe nem as customizações.
             $detalheFracionadoExistente = DetalhesOrcamentoFracionado::where(
                 'orcamento_fracionado_id',
                 $orcamentoFracionado->id_orcamento_fracionado
@@ -339,10 +257,7 @@ class DetalhesOrcamentoFracionadoController extends Controller
                 ->first();
 
             if ($detalheFracionadoExistente) {
-
                 $detalheFracionadoExistente->increment('det_quantidade', $quantidade);
-
-                // Segue para o próximo item sem recriar customizações
                 continue;
             }
 
@@ -367,8 +282,6 @@ class DetalhesOrcamentoFracionadoController extends Controller
                 'detalhes_orcamento_id_det' => $detalheOriginal->id_det,
             ]);
 
-            // Copia automaticamente todas as customizações do item original
-            // (só na primeira vez que este item entra neste fracionado)
             foreach ($detalheOriginal->customizacoes as $customizacao) {
                 CustomizacaoFracionada::create([
                     'detalhes_orcamento_fracionado_id' => $novoDetalhe->id_det_fracionado,
@@ -385,43 +298,38 @@ class DetalhesOrcamentoFracionadoController extends Controller
         }
 
         return redirect()
-            ->route('detalhes_orcamento_fracionado.index', $orcamentoFracionado->id_orcamento_fracionado)
+            ->route('detalhes_orcamento_fracionado.index', CryptHelper::encrypt($orcamentoFracionado->id_orcamento_fracionado))
             ->with('success', 'Item(ns) adicionado(s) ao orçamento fracionado com sucesso!');
     }
 
-    public function show($id): View
+    public function show(Request $request, $id): View
     {
+        $id = CryptHelper::decrypt($id);
+
         $detalheOrcamento = DetalhesOrcamentoFracionado::with([
             'produto',
             'customizacoes',
             'orcamentoFracionado'
         ])->findOrFail($id);
 
-        // Busca o orçamento fracionado
         $orcamentoFracionado = OrcamentoFracionado::findOrFail(
             $detalheOrcamento->orcamento_fracionado_id
         );
 
-        // Busca o orçamento principal
         $orcamento = Orcamento::with('clienteOrcamento')
-            ->where(
-                'id_orcamento',
-                $orcamentoFracionado->orcamento_id_orcamento
-            )
+            ->where('id_orcamento', $orcamentoFracionado->orcamento_id_orcamento)
             ->firstOrFail();
 
-        return view(
-            'view_detalhes_orcamento_fracionado.show',
-            compact(
-                'detalheOrcamento',
-                'orcamentoFracionado',
-                'orcamento'
-            )
-        );
+        return view('view_detalhes_orcamento_fracionado.show', compact(
+            'detalheOrcamento',
+            'orcamentoFracionado',
+            'orcamento'
+        ));
     }
 
     public function destroy($id): RedirectResponse
     {
+        $id = CryptHelper::decrypt($id);
         $detalhe = DetalhesOrcamentoFracionado::findOrFail($id);
 
         $orcamentoFracionado = OrcamentoFracionado::findOrFail(
@@ -435,16 +343,13 @@ class DetalhesOrcamentoFracionadoController extends Controller
             );
         }
 
-        $orcamentoFracionadoId = $detalhe->orcamento_fracionado_id;
-
         $detalhe->customizacoes()->delete();
-
         $detalhe->delete();
 
         return redirect()
             ->route(
                 'detalhes_orcamento_fracionado.index',
-                $orcamentoFracionadoId
+                CryptHelper::encrypt($orcamentoFracionado->id_orcamento_fracionado)
             )
             ->with(
                 'success',

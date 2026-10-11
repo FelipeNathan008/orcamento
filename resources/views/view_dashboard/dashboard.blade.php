@@ -18,8 +18,13 @@
     <h1 class="text-3xl font-bold text-gray-800">Dashboard de {{$mesNome}}</h1>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow p-6">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">🛍️ Produtos</h2>
+        <a href="{{ route('dashboard.produtos.mais-vendidos') }}"
+            class="block bg-white rounded-xl shadow p-6 border border-gray-100 hover:shadow-md hover:border-indigo-200 transition">
+
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Produtos</h2>
+                <span class="text-sm font-semibold text-indigo-600">Ver detalhes →</span>
+            </div>
 
             <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
                 <p class="text-sm text-gray-600">Família mais vendida</p>
@@ -33,7 +38,7 @@
                     @endif
                 </p>
             </div>
-        </div>
+        </a>
 
         <a href="{{ route('dashboard.mapa.financeiro', ['mes' => now()->month, 'ano' => now()->year]) }}"
             class="block bg-orange-50 border border-orange-200 rounded-xl p-6 hover:shadow-md hover:brightness-95 transition">
@@ -188,8 +193,17 @@
                 </p>
             </a>
 
-            {{-- Espaço restante --}}
-            <div class="bg-violet-50 border border-violet-200 rounded-lg p-4"></div>
+            {{-- Aguardando Customização --}}
+            <a href="{{ route('dashboard.orcamentos.customizacao') }}"
+                class="block bg-orange-50 border border-orange-200 rounded-lg p-4 hover:shadow-md hover:brightness-95 transition">
+                <b class="text-sm text-gray-600">
+                    Aguardando Customização
+                </b>
+
+                <p class="text-3xl font-bold text-orange-700">
+                    {{ $orcamentoAguardandoCustomizacao }}
+                </p>
+            </a>
 
         </div>
 

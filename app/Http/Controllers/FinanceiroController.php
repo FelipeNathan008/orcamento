@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-
+use App\Helpers\CryptHelper;
 
 class FinanceiroController extends Controller
 {
@@ -124,6 +124,8 @@ class FinanceiroController extends Controller
 
     public function prosseguir(Request $request, string $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $financeiro = Financeiro::with('orcamento.fracionados')
             ->findOrFail($id);
 
@@ -219,63 +221,5 @@ class FinanceiroController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Não foi possível criar o registro financeiro: ' . $e->getMessage())->withInput();
         }
-    }
-
-
-    public function show($id)
-    {
-        $financeiro = Financeiro::findOrFail($id);
-        return view('view_financeiro.show', compact('financeiro'));
-    }
-
-
-    public function edit($id)
-    {
-        $financeiro = Financeiro::findOrFail($id);
-
-        return view('view_financeiro.edit', compact('financeiro'));
-    }
-
-
-    public function update(Request $request, $id)
-    {
-        try {
-            $financeiro = Financeiro::findOrFail($id);
-
-            $validatedData = $request->validate([
-                'orcamento_id_orcamento' => 'sometimes|required|integer|exists:orcamento,id_orcamento',
-                'id_orcamento' => 'sometimes|required|integer',
-                'id_cliente' => 'sometimes|required|integer',
-                'fin_nome_cliente' => 'sometimes|required|string|max:90',
-                'fin_valor_total' => 'sometimes|required|numeric|min:0',
-                'fin_status' => 'sometimes|required|string|max:45',
-            ]);
-
-            $financeiro->update($validatedData);
-
-            return redirect()->route('financeiro.show', $financeiro->id_fin)->with('success', 'Registro financeiro atualizado com sucesso!');
-        } catch (ValidationException $e) {
-            return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Não foi possível atualizar o registro financeiro: ' . $e->getMessage())->withInput();
-        }
-    }
-
-
-    public function destroy($id)
-    {
-        // Buscar financeiro
-        $financeiro = Financeiro::findOrFail($id);
-
-        // Apagar logs vinculados ao orçamento
-        DB::table('log_status')
-            ->where('log_id_orcamento', $financeiro->id_orcamento)
-            ->delete();
-
-        // Apagar registro do financeiro
-        $financeiro->delete();
-
-        return redirect()->route('financeiro.index')
-            ->with('success', 'Registro financeiro excluídos com sucesso!');
     }
 }

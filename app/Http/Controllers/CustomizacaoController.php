@@ -175,6 +175,32 @@ class CustomizacaoController extends Controller
         return view('view_customizacao.create', compact('detalhe', 'precos', 'customizacoes', 'urlVoltar'));
     }
 
+    private function validarLocalPosicaoUnicos(Request $request, ?int $customizacaoId = null): void
+    {
+        $detalheId = (int) $request->input('detalhes_orcamento_id_det');
+
+        if (!$detalheId) {
+            return;
+        }
+
+        $query = Customizacao::where(
+            'detalhes_orcamento_id_det',
+            $detalheId
+        )
+            ->where('cust_local', trim((string) $request->input('cust_local')))
+            ->where('cust_posicao', trim((string) $request->input('cust_posicao')));
+
+        if ($customizacaoId) {
+            $query->where('id_customizacao', '!=', $customizacaoId);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'cust_posicao' => 'Já existe uma customização cadastrada neste local e posição.',
+            ]);
+        }
+    }
+
     public function store(Request $request)
     {
         try {
@@ -193,6 +219,8 @@ class CustomizacaoController extends Controller
                 'cust_imagem.mimes' => 'A imagem deve estar no formato JPEG, PNG, JPG ou GIF.',
                 'cust_imagem.max' => 'A imagem não pode ser maior que 5 MB.',
             ]);
+
+            $this->validarLocalPosicaoUnicos($request);
 
             $customizacaoData = $validatedData;
 
@@ -328,13 +356,17 @@ class CustomizacaoController extends Controller
                 'cust_formatacao' => 'sometimes|required|string|max:45',
                 'cust_valor' => 'sometimes|required|string',
                 'cust_descricao' => 'nullable|string|max:90',
-
                 'cust_imagem' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
             ], [
                 'cust_imagem.image' => 'O arquivo enviado deve ser uma imagem.',
                 'cust_imagem.mimes' => 'A imagem deve estar no formato JPEG, PNG, JPG ou GIF.',
                 'cust_imagem.max' => 'A imagem não pode ser maior que 5 MB.',
             ]);
+
+            $this->validarLocalPosicaoUnicos(
+                $request,
+                $customizacao->id_customizacao
+            );
 
             $customizacaoData = $validatedData;
 

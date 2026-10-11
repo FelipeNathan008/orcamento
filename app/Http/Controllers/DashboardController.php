@@ -221,6 +221,10 @@ class DashboardController extends Controller
             ->whereYear('det_forma_data_venc', $anoAtual)
             ->sum('det_forma_valor_parcela');
 
+        $orcamentoAguardandoCustomizacao = Orcamento::whereHas('detalhesOrcamento', function ($query) {
+            $query->where('det_status', 'Aguardando Customização');
+        })->count();
+
         return view('view_dashboard.dashboard', compact(
             'familiaMaisVendida',
             'orcamentosMes',
@@ -250,7 +254,85 @@ class DashboardController extends Controller
             'previsaoDoDiaPago',
             'previsaoDoDiaNaoPago',
             'valorAtrasoNaoPago',
-            'valorTotalMes'
+            'valorTotalMes',
+            'orcamentoAguardandoCustomizacao'
+        ));
+    }
+
+    public function produtosMaisVendidos(Request $request)
+    {
+        $request->validate([
+            'mes' => ['nullable', 'integer', 'between:1,12'],
+            'ano' => ['nullable', 'integer', 'between:1900,2100'],
+        ]);
+
+        $mes = $request->filled('mes')
+            ? (int) $request->mes
+            : now('America/Sao_Paulo')->month;
+
+        $ano = $request->filled('ano')
+            ? (int) $request->ano
+            : now('America/Sao_Paulo')->year;
+
+        $base = DB::table('detalhes_orcamento as d')
+            ->join('orcamento as o', 'o.id_orcamento', '=', 'd.orcamento_id_orcamento')
+            ->whereMonth('o.orc_data_inicio', $mes)
+            ->whereYear('o.orc_data_inicio', $ano)
+            ->whereIn('o.orc_status', ['aprovado', 'finalizado']);
+
+        $totalUnidades = (clone $base)
+            ->sum(DB::raw('COALESCE(d.det_quantidade, 0)'));
+
+        $totalCodigos = (clone $base)
+            ->whereNotNull('d.det_cod')
+            ->where('d.det_cod', '<>', '')
+            ->distinct()
+            ->count('d.det_cod');
+
+        $rankingCodigos = (clone $base)
+            ->select(
+                'd.det_cod',
+                DB::raw('SUM(COALESCE(d.det_quantidade, 0)) as total_vendido')
+            )
+            ->whereNotNull('d.det_cod')
+            ->where('d.det_cod', '<>', '')
+            ->groupBy('d.det_cod')
+            ->orderByDesc('total_vendido')
+            ->orderBy('d.det_cod')
+            ->get();
+
+        $rankingFamilias = (clone $base)
+            ->select(
+                'd.det_familia',
+                DB::raw('SUM(COALESCE(d.det_quantidade, 0)) as total_vendido')
+            )
+            ->whereNotNull('d.det_familia')
+            ->where('d.det_familia', '<>', '')
+            ->groupBy('d.det_familia')
+            ->orderByDesc('total_vendido')
+            ->orderBy('d.det_familia')
+            ->get();
+
+        $rankingCategorias = (clone $base)
+            ->select(
+                'd.det_categoria',
+                DB::raw('SUM(COALESCE(d.det_quantidade, 0)) as total_vendido')
+            )
+            ->whereNotNull('d.det_categoria')
+            ->where('d.det_categoria', '<>', '')
+            ->groupBy('d.det_categoria')
+            ->orderByDesc('total_vendido')
+            ->orderBy('d.det_categoria')
+            ->get();
+
+        return view('view_dashboard.produtos_mais_vendidos', compact(
+            'mes',
+            'ano',
+            'totalUnidades',
+            'totalCodigos',
+            'rankingCodigos',
+            'rankingFamilias',
+            'rankingCategorias'
         ));
     }
 
@@ -355,6 +437,84 @@ class DashboardController extends Controller
 
         return view(
             'view_dashboard.orcamentos',
+            compact('orcamentos')
+        );
+    }
+
+    public function orcamentosCustomizacao(Request $request)
+    {
+        $query = Orcamento::with([
+            'clienteOrcamento',
+            'detalhesOrcamento.customizacoes'
+        ])->whereHas('detalhesOrcamento', function ($query) {
+            $query->where('det_status', 'Aguardando Customização');
+        });
+
+        if ($request->filled('id_orcamento')) {
+            $query->where(
+                'id_orcamento',
+                $request->id_orcamento
+            );
+        }
+
+        if ($request->filled('orc_cod_fabrica')) {
+            $query->where(
+                'orc_cod_fabrica',
+                'like',
+                '%' . trim($request->orc_cod_fabrica) . '%'
+            );
+        }
+
+        if ($request->filled('orc_cod_interno')) {
+            $query->where(
+                'orc_cod_interno',
+                'like',
+                '%' . trim($request->orc_cod_interno) . '%'
+            );
+        }
+
+        if ($request->filled('data_inicio')) {
+            $query->whereDate(
+                'orc_data_inicio',
+                $request->data_inicio
+            );
+        }
+
+        if ($request->filled('data_fim')) {
+            $query->whereDate(
+                'orc_data_fim',
+                $request->data_fim
+            );
+        }
+
+        if ($request->filled('mes')) {
+            $query->whereMonth(
+                'orc_data_inicio',
+                $request->mes
+            );
+        }
+
+        if ($request->filled('ano')) {
+            $query->whereYear(
+                'orc_data_inicio',
+                $request->ano
+            );
+        }
+
+        if ($request->filled('status_query')) {
+            $query->where(
+                'orc_status',
+                $request->status_query
+            );
+        }
+
+        $orcamentos = $query
+            ->orderByDesc('id_orcamento')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view(
+            'view_dashboard.orcamentos_customizacao',
             compact('orcamentos')
         );
     }

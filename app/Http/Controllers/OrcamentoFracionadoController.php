@@ -15,13 +15,17 @@ use App\Models\Financeiro;
 use App\Models\LogStatus;
 use App\Models\StatusMercadoria;
 use App\Traits\SincronizaStatusFinanceiro;
+use App\Helpers\CryptHelper;
 use Exception;
 
 class OrcamentoFracionadoController extends Controller
 {
     use SincronizaStatusFinanceiro;
-    public function index($id)
+
+    public function index(string $id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $orcamento = Orcamento::with([
             'clienteOrcamento',
             'detalhesOrcamento.customizacoes',
@@ -33,9 +37,7 @@ class OrcamentoFracionadoController extends Controller
         ])->findOrFail($id);
 
         $contas = ContaBancaria::all();
-
         $tipos = TipoFluxoCaixa::all();
-
         $movimentacoes = Movimentacao::all();
 
         $tipoDespesaUP = TipoFluxoCaixa::where(
@@ -61,13 +63,12 @@ class OrcamentoFracionadoController extends Controller
         );
     }
 
-    public function store($orcamento)
+    public function store(string $orcamento)
     {
-        $orcamentoId = $orcamento;
+        $orcamentoId = CryptHelper::decrypt($orcamento);
 
         try {
             DB::transaction(function () use ($orcamentoId) {
-
                 $orcamento = Orcamento::with('fracionados')
                     ->findOrFail($orcamentoId);
 
@@ -81,8 +82,7 @@ class OrcamentoFracionadoController extends Controller
 
                 if (abs($diferenca) < 0.01) {
                     throw ValidationException::withMessages([
-                        'orcamento' =>
-                        'Não é possível criar um novo orçamento fracionado, pois todo o valor do orçamento principal já foi fracionado.'
+                        'orcamento' => 'Não é possível criar um novo orçamento fracionado, pois todo o valor do orçamento principal já foi fracionado.'
                     ]);
                 }
 
@@ -104,28 +104,25 @@ class OrcamentoFracionadoController extends Controller
             });
 
             return redirect()
-                ->route('orcamento.fracionado.index', $orcamentoId)
-                ->with(
-                    'success',
-                    'Orçamento fracionado criado com sucesso!'
-                );
+                ->route(
+                    'orcamento.fracionado.index',
+                    CryptHelper::encrypt($orcamentoId)
+                )
+                ->with('success', 'Orçamento fracionado criado com sucesso!');
         } catch (ValidationException $e) {
-
-            return back()
-                ->withErrors($e->errors());
+            return back()->withErrors($e->errors());
         } catch (Exception $e) {
-
-            return back()
-                ->with(
-                    'error',
-                    'Não foi possível criar o orçamento fracionado: ' .
-                        $e->getMessage()
-                );
+            return back()->with(
+                'error',
+                'Não foi possível criar o orçamento fracionado: ' . $e->getMessage()
+            );
         }
     }
 
     public function edit($id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $orcamentoFracionado = OrcamentoFracionado::with([
             'clienteOrcamento',
             'orcamento'
@@ -147,24 +144,17 @@ class OrcamentoFracionadoController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $id = CryptHelper::decrypt($id);
             $orcamento = OrcamentoFracionado::findOrFail($id);
 
             $regrasCodigoFabrica = [
                 'string',
                 'max:60',
-
-                Rule::unique(
-                    'orcamento_fracionado',
-                    'orc_cod_fabrica'
-                )->ignore(
+                Rule::unique('orcamento_fracionado', 'orc_cod_fabrica')->ignore(
                     $orcamento->id_orcamento_fracionado,
                     'id_orcamento_fracionado'
                 ),
-
-                Rule::unique(
-                    'orcamento',
-                    'orc_cod_fabrica'
-                ),
+                Rule::unique('orcamento', 'orc_cod_fabrica'),
             ];
 
             if ($orcamento->orc_status === 'pendente') {
@@ -175,46 +165,27 @@ class OrcamentoFracionadoController extends Controller
 
             $validatedData = $request->validate([
                 'orc_cod_fabrica' => $regrasCodigoFabrica,
-
                 'orc_cod_interno' => [
                     'nullable',
                     'string',
                     'max:60',
-
-                    Rule::unique(
-                        'orcamento_fracionado',
-                        'orc_cod_interno'
-                    )->ignore(
+                    Rule::unique('orcamento_fracionado', 'orc_cod_interno')->ignore(
                         $orcamento->id_orcamento_fracionado,
                         'id_orcamento_fracionado'
                     ),
-
-                    Rule::unique(
-                        'orcamento',
-                        'orc_cod_interno'
-                    ),
+                    Rule::unique('orcamento', 'orc_cod_interno'),
                 ],
-
                 'orc_anotacao_geral' => [
                     'nullable',
                     'string',
                     'max:1000',
                 ],
             ], [
-                'orc_cod_fabrica.required' =>
-                'O código de fábrica é obrigatório quando o status não está pendente.',
-
-                'orc_cod_fabrica.unique' =>
-                'Este código de fábrica já está cadastrado em um orçamento.',
-
-                'orc_cod_fabrica.max' =>
-                'O código de fábrica não pode ter mais de 60 caracteres.',
-
-                'orc_cod_interno.unique' =>
-                'Este código interno já está cadastrado em um orçamento.',
-
-                'orc_cod_interno.max' =>
-                'O código interno não pode ter mais de 60 caracteres.',
+                'orc_cod_fabrica.required' => 'O código de fábrica é obrigatório quando o status não está pendente.',
+                'orc_cod_fabrica.unique' => 'Este código de fábrica já está cadastrado em um orçamento.',
+                'orc_cod_fabrica.max' => 'O código de fábrica não pode ter mais de 60 caracteres.',
+                'orc_cod_interno.unique' => 'Este código interno já está cadastrado em um orçamento.',
+                'orc_cod_interno.max' => 'O código interno não pode ter mais de 60 caracteres.',
             ]);
 
             $orcamento->update([
@@ -226,24 +197,16 @@ class OrcamentoFracionadoController extends Controller
             return redirect()
                 ->route(
                     'orcamento.fracionado.index',
-                    $orcamento->orcamento_id_orcamento
+                    CryptHelper::encrypt($orcamento->orcamento_id_orcamento)
                 )
-                ->with(
-                    'success',
-                    'Orçamento fracionado atualizado com sucesso!'
-                );
+                ->with('success', 'Orçamento fracionado atualizado com sucesso!');
         } catch (ValidationException $e) {
-
-            return back()
-                ->withErrors($e->errors())
-                ->withInput();
+            return back()->withErrors($e->errors())->withInput();
         } catch (Exception $e) {
-
             return back()
                 ->with(
                     'error',
-                    'Não foi possível atualizar o orçamento fracionado: ' .
-                        $e->getMessage()
+                    'Não foi possível atualizar o orçamento fracionado: ' . $e->getMessage()
                 )
                 ->withInput();
         }
@@ -251,6 +214,8 @@ class OrcamentoFracionadoController extends Controller
 
     public function visualizar($id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $orcamento = OrcamentoFracionado::with([
             'clienteOrcamento',
             'detalhesOrcamentoFracionado.customizacoes'
@@ -269,6 +234,8 @@ class OrcamentoFracionadoController extends Controller
 
     public function prosseguir($id)
     {
+        $id = CryptHelper::decrypt($id);
+
         $fracionado = OrcamentoFracionado::findOrFail($id);
 
         $valorAtual = (float) ($fracionado->total_bruto ?? 0);
@@ -296,7 +263,6 @@ class OrcamentoFracionadoController extends Controller
         }
 
         DB::transaction(function () use ($fracionado, $proximosStatus, $statusAtual) {
-
             $fracionado->update([
                 'orc_status' => $proximosStatus[$statusAtual],
             ]);
@@ -314,7 +280,11 @@ class OrcamentoFracionadoController extends Controller
 
     public function destroy($id)
     {
-        $orcamentoFracionado = OrcamentoFracionado::findOrFail($id);
+        $id = CryptHelper::decrypt($id);
+
+        $orcamentoFracionado = OrcamentoFracionado::with(
+            'detalhesOrcamentoFracionado.customizacoes'
+        )->findOrFail($id);
 
         if ($orcamentoFracionado->orc_status !== 'pendente') {
             return back()->with(
@@ -324,19 +294,10 @@ class OrcamentoFracionadoController extends Controller
         }
 
         DB::transaction(function () use ($orcamentoFracionado) {
+            $orcamentoId = $orcamentoFracionado->orcamento_id_orcamento;
 
-            $orcamentoId =
-                $orcamentoFracionado->orcamento_id_orcamento;
-
-            foreach (
-                $orcamentoFracionado->detalhesOrcamentoFracionado
-                as $detalhe
-            ) {
-
-                if (method_exists($detalhe, 'customizacoes')) {
-                    $detalhe->customizacoes()->delete();
-                }
-
+            foreach ($orcamentoFracionado->detalhesOrcamentoFracionado as $detalhe) {
+                $detalhe->customizacoes()->delete();
                 $detalhe->delete();
             }
 
@@ -356,11 +317,9 @@ class OrcamentoFracionadoController extends Controller
             }
         });
 
-        return redirect()
-            ->back()
-            ->with(
-                'success',
-                'Orçamento fracionado excluído!'
-            );
+        return back()->with(
+            'success',
+            'Orçamento fracionado excluído!'
+        );
     }
 }

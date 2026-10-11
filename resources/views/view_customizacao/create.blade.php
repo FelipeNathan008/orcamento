@@ -198,8 +198,6 @@ use App\Helpers\CryptHelper;
 
 <div id="precos-data" data-precos="{{ $precos->toJson() }}"></div>
 
-<div id="precos-data" data-precos='@json($precos)'></div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('customizacaoForm');

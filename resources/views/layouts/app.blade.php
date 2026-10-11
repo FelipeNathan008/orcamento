@@ -51,6 +51,10 @@
     request()->is('produto*') ||
     request()->is('preco_customizacao*') ||
     request()->is('tipo_fluxo_caixa*') ||
+    request()->is('tipo_grupo_principal*') ||
+    request()->is('tipo_sub_grupo*') ||
+    request()->is('tipo_categoria*') ||
+    request()->is('tipo_sub_categoria*') ||
     request()->is('tipo_pagamento*') ||
     request()->is('users*');
     @endphp
@@ -193,12 +197,12 @@
                                     Preço Customização
                                 </a>
 
-                                <a href="{{ route('tipo_fluxo_caixa.index') }}"
+                                <a href="{{ route('tipo_grupo_principal.index') }}"
                                     class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 19V5m0 14h16M8 16l3-3 3 2 5-6" />
                                     </svg>
-                                    Tipo Fluxo Caixa / Nota Fiscal
+                                    Tipo FLuxo de Caixa
                                 </a>
 
                                 <a href="{{ route('tipo_pagamento.index') }}"

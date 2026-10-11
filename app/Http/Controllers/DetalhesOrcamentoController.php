@@ -35,6 +35,64 @@ class DetalhesOrcamentoController extends Controller
             session(['detalhes_orcamento.index_scroll' => (int) $request->input('scroll')]);
         }
 
+        $detalhesTodos = $orcamento->detalhesOrcamento;
+
+        $gruposItens = [];
+
+        foreach ($detalhesTodos as $detalhe) {
+            $customizacoes = $detalhe->customizacoes
+                ->map(function ($customizacao) {
+                    $imagem = '';
+
+                    if ($customizacao->cust_imagem) {
+                        $caminhoImagem = public_path(
+                            'images_customizacoes/' . $customizacao->cust_imagem
+                        );
+
+                        if (file_exists($caminhoImagem)) {
+                            $imagem = md5_file($caminhoImagem);
+                        }
+                    }
+
+                    return [
+                        'tipo' => trim((string) $customizacao->cust_tipo),
+                        'local' => trim((string) $customizacao->cust_local),
+                        'posicao' => trim((string) $customizacao->cust_posicao),
+                        'tamanho' => trim((string) $customizacao->cust_tamanho),
+                        'formatacao' => trim((string) $customizacao->cust_formatacao),
+                        'valor' => (float) ($customizacao->cust_valor ?? 0),
+                        'imagem' => $imagem,
+                    ];
+                })
+                ->sortBy(function ($customizacao) {
+                    return implode('|', $customizacao);
+                })
+                ->values()
+                ->toArray();
+
+            $assinatura = json_encode([
+                'produto' => $detalhe->produto_id_produto,
+                'nome' => trim((string) $detalhe->det_nome),
+                'codigo' => trim((string) $detalhe->det_cod),
+                'categoria' => trim((string) $detalhe->det_categoria),
+                'modelo' => trim((string) $detalhe->det_modelo),
+                'cor' => trim((string) $detalhe->det_cor),
+                'tamanho' => trim((string) $detalhe->det_tamanho),
+                'genero' => trim((string) $detalhe->det_genero),
+                'caracteristicas' => trim((string) $detalhe->det_caract),
+                'customizacoes' => $customizacoes,
+            ]);
+
+            $gruposItens[$assinatura][] = $detalhe->id_det;
+        }
+
+        $detalhesDuplicados = collect($gruposItens)
+            ->filter(fn($ids) => count($ids) > 1)
+            ->flatten()
+            ->values();
+
+        $totalItens = count($gruposItens);
+
         $detalhesOrcamento = $this->queryDetalhesOrcamento(
             $request,
             $orcamento->id_orcamento
@@ -63,7 +121,9 @@ class DetalhesOrcamentoController extends Controller
             'detalhesOrcamento',
             'orcamento',
             'familias',
-            'urlOrcamento'
+            'urlOrcamento',
+            'totalItens',
+            'detalhesDuplicados'
         ));
     }
 
@@ -111,6 +171,71 @@ class DetalhesOrcamentoController extends Controller
                     $request->familia
                 );
             });
+        }
+
+        if ($request->filled('aguardando_customizacao')) {
+            if ($request->aguardando_customizacao === 'sim') {
+                $query->where('det_status', 'Aguardando Customização');
+            } elseif ($request->aguardando_customizacao === 'nao') {
+                $query->where(function ($q) {
+                    $q->whereNull('det_status')
+                        ->orWhere('det_status', '!=', 'Aguardando Customização');
+                });
+            }
+        }
+
+        if ($request->filled('repetidos')) {
+            $detalhes = DetalhesOrcamento::where(
+                'orcamento_id_orcamento',
+                $orcamentoId
+            )->with('customizacoes')->get();
+
+            $grupos = [];
+
+            foreach ($detalhes as $detalhe) {
+                $customizacoes = $detalhe->customizacoes
+                    ->map(function ($customizacao) {
+                        return [
+                            'tipo' => trim((string) $customizacao->cust_tipo),
+                            'local' => trim((string) $customizacao->cust_local),
+                            'posicao' => trim((string) $customizacao->cust_posicao),
+                            'tamanho' => trim((string) $customizacao->cust_tamanho),
+                            'formatacao' => trim((string) $customizacao->cust_formatacao),
+                            'valor' => (float) ($customizacao->cust_valor ?? 0),
+                        ];
+                    })
+                    ->sortBy(function ($customizacao) {
+                        return implode('|', $customizacao);
+                    })
+                    ->values()
+                    ->toArray();
+
+                $assinatura = json_encode([
+                    'produto' => $detalhe->produto_id_produto,
+                    'nome' => trim((string) $detalhe->det_nome),
+                    'codigo' => trim((string) $detalhe->det_cod),
+                    'categoria' => trim((string) $detalhe->det_categoria),
+                    'modelo' => trim((string) $detalhe->det_modelo),
+                    'cor' => trim((string) $detalhe->det_cor),
+                    'tamanho' => trim((string) $detalhe->det_tamanho),
+                    'genero' => trim((string) $detalhe->det_genero),
+                    'caracteristicas' => trim((string) $detalhe->det_caract),
+                    'customizacoes' => $customizacoes,
+                ]);
+
+                $grupos[$assinatura][] = $detalhe->id_det;
+            }
+
+            $idsRepetidos = collect($grupos)
+                ->filter(fn($ids) => count($ids) > 1)
+                ->flatten()
+                ->values();
+
+            if ($request->repetidos === 'sim') {
+                $query->whereIn('id_det', $idsRepetidos);
+            } elseif ($request->repetidos === 'nao') {
+                $query->whereNotIn('id_det', $idsRepetidos);
+            }
         }
 
         return $query;
@@ -447,6 +572,31 @@ class DetalhesOrcamentoController extends Controller
                 )
                 ->withInput();
         }
+    }
+
+    public function alterarStatus(Request $request, $id)
+    {
+        $id = CryptHelper::decrypt($id);
+
+        $detalheOrcamento = DetalhesOrcamento::findOrFail($id);
+
+        if ($detalheOrcamento->det_status === 'Aguardando Customização') {
+            $detalheOrcamento->update([
+                'det_status' => null,
+            ]);
+
+            $mensagem = 'Status de customização removido com sucesso!';
+        } else {
+            $detalheOrcamento->update([
+                'det_status' => 'Aguardando Customização',
+            ]);
+
+            $mensagem = 'Detalhe marcado como aguardando customização!';
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', $mensagem);
     }
 
     public function destroy($id)

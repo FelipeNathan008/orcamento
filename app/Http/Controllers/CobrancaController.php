@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use App\Services\AtualizarStatusParcelas;
+use App\Helpers\CryptHelper;
 
 class CobrancaController extends Controller
 {
@@ -126,8 +127,9 @@ class CobrancaController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $detalhe = DetalhesFormaPag::findOrFail($id);
+        $id = CryptHelper::decrypt($id);
 
+        $detalhe = DetalhesFormaPag::findOrFail($id);
         $jurosMulta = JurosMulta::first();
 
         $filtros = $request->only([
@@ -148,6 +150,7 @@ class CobrancaController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $id = CryptHelper::decrypt($id);
             $detalhe = DetalhesFormaPag::findOrFail($id);
 
             $validated = $request->validate([
@@ -161,13 +164,8 @@ class CobrancaController extends Controller
 
             $valorOriginal = (float) $detalhe->det_forma_valor_original;
 
-            $dataOriginal = Carbon::parse(
-                $detalhe->det_forma_data_venc
-            );
-
-            $novaData = Carbon::parse(
-                $validated['det_forma_data_venc']
-            );
+            $dataOriginal = Carbon::parse($detalhe->det_forma_data_venc);
+            $novaData = Carbon::parse($validated['det_forma_data_venc']);
 
             $diasAtraso = max(
                 0,
@@ -179,13 +177,9 @@ class CobrancaController extends Controller
             $indiceMulta = (float) ($jurosMulta->indice_multa ?? 2);
             $indiceJuros = (float) ($jurosMulta->indice_juros ?? 1);
 
-            $multaCalculada =
-                $valorOriginal * ($indiceMulta / 100);
+            $multaCalculada = $valorOriginal * ($indiceMulta / 100);
 
-            $jurosCalculado =
-                $valorOriginal *
-                ($indiceJuros / 100 / 30) *
-                $diasAtraso;
+            $jurosCalculado = $valorOriginal * ($indiceJuros / 100 / 30) * $diasAtraso;
 
             $descontoMulta = min(
                 $multaCalculada,
@@ -197,16 +191,10 @@ class CobrancaController extends Controller
                 max(0, (float) ($validated['desconto_juros'] ?? 0))
             );
 
-            $multaFinal =
-                max(0, $multaCalculada - $descontoMulta);
+            $multaFinal = max(0, $multaCalculada - $descontoMulta);
+            $jurosFinal = max(0, $jurosCalculado - $descontoJuros);
 
-            $jurosFinal =
-                max(0, $jurosCalculado - $descontoJuros);
-
-            $valorFinal =
-                $valorOriginal +
-                $multaFinal +
-                $jurosFinal;
+            $valorFinal = $valorOriginal + $multaFinal + $jurosFinal;
 
             $detalhe->update([
                 'det_forma_valor_parcela' => $valorFinal,
@@ -224,13 +212,11 @@ class CobrancaController extends Controller
                 ]))
                 ->with('success', 'Acordo realizado com sucesso!');
         } catch (ValidationException $e) {
-
             return redirect()
                 ->back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
-
             return redirect()
                 ->back()
                 ->with('error', 'Erro ao realizar acordo: ' . $e->getMessage())

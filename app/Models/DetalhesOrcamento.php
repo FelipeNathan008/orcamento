@@ -40,6 +40,7 @@ class DetalhesOrcamento extends Model
         'det_caract',
         'det_observacao',
         'det_anotacao',
+        'det_status',
     ];
 
     protected $casts = [

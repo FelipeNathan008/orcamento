@@ -44,6 +44,7 @@ class ClienteOrcamentoController extends Controller
         }
 
         $clientesOrcamento = $query
+            ->withCount('orcamentos')
             ->orderBy('clie_orc_nome')
             ->paginate(10)
             ->withQueryString();

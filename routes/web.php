@@ -33,6 +33,11 @@ use App\Http\Controllers\OrcamentoFracionadoController;
 use App\Http\Controllers\DetalhesOrcamentoFracionadoController;
 use App\Http\Controllers\CustomizacaoFracionadaController;
 use App\Http\Controllers\DashboardFinanceiroController;
+use App\Http\Controllers\TipoGrupoPrincipalController;
+use App\Http\Controllers\TipoSubGrupoController;
+use App\Http\Controllers\TipoCategoriaController;
+use App\Http\Controllers\TipoSubCategoriaController;
+
 
 
 // ROTAS PÚBLICAS
@@ -64,6 +69,8 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::get('/dashboard/parcelas-financeiro', [DashboardFinanceiroController::class, 'parcelas'])->name('dashboard.parcelas.financeiro');
     Route::get('/dashboard/mapa-financeiro', [DashboardFinanceiroController::class, 'mapaFinanceiro'])->name('dashboard.mapa.financeiro');
     Route::get('/dashboard/mapa-financeiro/parcelas', [DashboardFinanceiroController::class, 'parcelasDia'])->name('dashboard.mapa.financeiro.parcelas');
+    Route::get('/dashboard/orcamentos/customizacao', [DashboardController::class, 'orcamentosCustomizacao'])->name('dashboard.orcamentos.customizacao');
+    Route::get('/dashboard/produtos-mais-vendidos', [DashboardController::class, 'produtosMaisVendidos'])->name('dashboard.produtos.mais-vendidos');
 
     //EMPRESA E CLIENTE
     Route::get('/empresa_prospeccao', function () {
@@ -100,6 +107,7 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::get('/detalhes_orcamento/item/{id}', [DetalhesOrcamentoController::class, 'show'])->name('detalhes_orcamento.show');
     Route::resource('detalhes_orcamento', DetalhesOrcamentoController::class)->except(['index', 'create', 'show']);
     Route::get('/detalhes-orcamento/buscar-produtos', [DetalhesOrcamentoController::class, 'buscarProdutos'])->name('detalhes_orcamento.buscar_produtos');
+    Route::patch('/detalhes-orcamento/{id}/status', [DetalhesOrcamentoController::class, 'alterarStatus'])->name('detalhes_orcamento.status');
 
     // CUSTOMIZAÇÕES
     Route::get('/customizacao/detalhe/{id}', [CustomizacaoController::class, 'index'])->name('customizacao.index');
@@ -171,15 +179,17 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::resource('produto', ProdutoController::class);
     //PREÇO CUSTOMIZAÇÃO
     Route::resource('preco_customizacao', PrecoCustomizacaoController::class);
+
     //TIPO PAGAMENTO
     Route::resource('tipo_pagamento', TipoPagamentoController::class);
 
+    // CLASSIFICAÇÃO FINANCEIRA
+    Route::resource('tipo_grupo_principal', TipoGrupoPrincipalController::class);
+    Route::resource('tipo_sub_grupo', TipoSubGrupoController::class);
+    Route::resource('tipo_categoria', TipoCategoriaController::class);
+    Route::resource('tipo_sub_categoria', TipoSubCategoriaController::class);
 
-
-    /* 
-        MÓDULO FINANCEIRO
-    */
-
+    /* MÓDULO FINANCEIRO*/
     Route::get('/financeiro', function () {
         return view('financeiro');
     });
@@ -187,30 +197,48 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::resource('financeiro', FinanceiroController::class);
 
     // PAGAMENTOS
-    Route::resource('forma_pagamento', FormaPagamentoController::class);
+    Route::get('/forma_pagamento/{id}/create', [FormaPagamentoController::class, 'create'])->name('forma_pagamento.create');
+    Route::post('/forma_pagamento', [FormaPagamentoController::class, 'store'])->name('forma_pagamento.store');
+    Route::get('/forma_pagamento/show/{id}', [FormaPagamentoController::class, 'show'])->name('forma_pagamento.show');
+    Route::delete('/forma_pagamento/{id}', [FormaPagamentoController::class, 'destroy'])->name('forma_pagamento.destroy');
+    Route::get('/forma_pagamento/{id}', [FormaPagamentoController::class, 'index'])->name('forma_pagamento.index');
 
     // PARCELAS
     Route::post('/parcelas/{id}/dar-baixa', [FormaPagamentoController::class, 'darBaixa'])->name('parcelas.darBaixa');
-    Route::post('/parcelas/{id}/voltar-nao-pago', [FormaPagamentoController::class, 'voltarNaoPago'])->name('parcelas.voltarNaoPago');
+    Route::delete('/parcelas/{id}/voltar-nao-pago', [FormaPagamentoController::class, 'voltarNaoPago'])->name('parcelas.voltarNaoPago');
 
     //STATUS E NOTIFICAÇÕES
     Route::resource('log_status', LogStatusController::class);
     Route::resource('status_mercadoria', StatusMercadoriaController::class);
-    Route::resource('notificacao', NotificacaoController::class);
+
+    Route::get('/notificacao/{id_det_forma?}', [NotificacaoController::class, 'index'])->name('notificacao.index');
+    Route::get('/notificacao/create/{id_det_forma}', [NotificacaoController::class, 'create'])->name('notificacao.create');
+    Route::post('/notificacao', [NotificacaoController::class, 'store'])->name('notificacao.store');
+    Route::get('/notificacao/show/{id}', [NotificacaoController::class, 'show'])->name('notificacao.show');
+    Route::get('/notificacao/{id}/edit', [NotificacaoController::class, 'edit'])->name('notificacao.edit');
+    Route::put('/notificacao/{id}', [NotificacaoController::class, 'update'])->name('notificacao.update');
+    Route::delete('/notificacao/{id}', [NotificacaoController::class, 'destroy'])->name('notificacao.destroy');
 
     //COBRANCAS
     Route::resource('cobranca', CobrancaController::class);
 
     // ORÇAMENTO FRACIONADO
-    Route::get('/orcamento-fracionado/{id}/create', [OrcamentoFracionadoController::class, 'create'])->name('orcamento.fracionado.create');
-    Route::post('/orcamento/{orcamento}/fracionado', [OrcamentoFracionadoController::class, 'store'])->name('orcamento.fracionado.store');
-    Route::get('/orcamento-fracionado/visualizar/{id}', [OrcamentoFracionadoController::class, 'visualizar'])->name('orcamento.fracionado.visualizar');
-    Route::delete('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'destroy'])->name('orcamento.fracionado.destroy');
-    Route::get('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'index'])->name('orcamento.fracionado.index');
-    Route::get('/orcamento-fracionado/{id}/editar', [OrcamentoFracionadoController::class, 'edit'])->name('orcamento.fracionado.edit');
-    Route::put('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'update'])->name('orcamento.fracionado.update');
-    Route::post('/orcamento-fracionado/{id}/desconto', [OrcamentoFracionadoController::class, 'aplicarDesconto'])->name('orcamento.fracionado.desconto');
-    Route::post('/orcamento-fracionado/{id}/prosseguir', [OrcamentoFracionadoController::class, 'prosseguir'])->name('orcamento.fracionado.prosseguir');
+    Route::post('/orcamento/{orcamento}/fracionado', [OrcamentoFracionadoController::class, 'store'])
+        ->name('orcamento.fracionado.store');
+    Route::get('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'index'])
+        ->name('orcamento.fracionado.index');
+    Route::get('/orcamento-fracionado/{id}/editar', [OrcamentoFracionadoController::class, 'edit'])
+        ->name('orcamento.fracionado.edit');
+    Route::put('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'update'])
+        ->name('orcamento.fracionado.update');
+    Route::get('/orcamento-fracionado/visualizar/{id}', [OrcamentoFracionadoController::class, 'visualizar'])
+        ->name('orcamento.fracionado.visualizar');
+    Route::post('/orcamento-fracionado/{id}/desconto', [OrcamentoFracionadoController::class, 'aplicarDesconto'])
+        ->name('orcamento.fracionado.desconto');
+    Route::post('/orcamento-fracionado/{id}/prosseguir', [OrcamentoFracionadoController::class, 'prosseguir'])
+        ->name('orcamento.fracionado.prosseguir');
+    Route::delete('/orcamento-fracionado/{id}', [OrcamentoFracionadoController::class, 'destroy'])
+        ->name('orcamento.fracionado.destroy');
 
     // DETALHES DO ORÇAMENTO FRACIONADO
     Route::get('/detalhes-orcamento-fracionado/{id}/create', [DetalhesOrcamentoFracionadoController::class, 'create'])->name('detalhes_orcamento_fracionado.create');
@@ -221,9 +249,12 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
 
     // CUSTOMIZAÇÕES DO ORÇAMENTO FRACIONADO
-    Route::get('/customizacao-fracionada', [CustomizacaoFracionadaController::class, 'index'])->name('customizacao_fracionado.index');
-    Route::post('/customizacao-fracionada', [CustomizacaoFracionadaController::class, 'store'])->name('customizacao_fracionado.store');
-    Route::get('/customizacao-fracionada/{customizacaoFracionada}', [CustomizacaoFracionadaController::class, 'show'])->name('customizacao_fracionado.show');
+    Route::get('/customizacao-fracionada/{id}', [CustomizacaoFracionadaController::class, 'index'])
+        ->name('customizacao_fracionado.index');
+    Route::post('/customizacao-fracionada', [CustomizacaoFracionadaController::class, 'store'])
+        ->name('customizacao_fracionado.store');
+    Route::get('/customizacao-fracionada/customizacao/{id}', [CustomizacaoFracionadaController::class, 'show'])
+        ->name('customizacao_fracionado.show');
 });
 
 

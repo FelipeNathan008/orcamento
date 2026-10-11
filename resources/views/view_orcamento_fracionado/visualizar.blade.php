@@ -1,19 +1,20 @@
 @extends('layouts.app_financeiro')
 
 @section('title', 'Detalhes do Orçamento Fracionado')
-
+@php
+use App\Helpers\CryptHelper;
+@endphp
 @section('content')
 <div class="max-w-6xl mx-auto mt-10 mb-4 text-right">
     {{-- Voltar para a lista de fracionados do orçamento principal --}}
-    <a href="{{ route('orcamento.fracionado.index', $orcamento->orcamento_id_orcamento) }}"
+    <a href="{{ route('orcamento.fracionado.index',CryptHelper::encrypt($orcamento->orcamento_id_orcamento)) }}"
         class="inline-flex items-center bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-colors duration-300 transform hover:scale-105 mr-2">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
         </svg>
         Voltar
     </a>
-
-    <a href="{{ route('orcamento.fracionado.edit', $orcamento->id_orcamento_fracionado) }}"
+    <a href="{{ route('orcamento.fracionado.edit', CryptHelper::encrypt($orcamento->id_orcamento_fracionado)) }}"
         class="inline-flex items-center bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-colors duration-300 transform hover:scale-105 mr-2">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -198,7 +199,7 @@
             R$ {{ number_format($totalBrutoCalculado, 2, ',', '.') }}
         </p>
     </div>
-    
+
     @else
     <p class="mt-8 text-gray-600 text-center text-xl">Este orçamento fracionado ainda não possui detalhes cadastrados.</p>
     @endif

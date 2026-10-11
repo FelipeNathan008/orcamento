@@ -1,336 +1,420 @@
 @extends('layouts.app_financeiro')
 
-@section('title', 'Adicionar Itens ao Orçamento Fracionado')
+@php
+use App\Helpers\CryptHelper;
 
+$idOrcamentoFracionado = CryptHelper::encrypt($orcamentoFracionado->id_orcamento_fracionado);
+@endphp
+
+@section('title', 'Adicionar Itens ao Orçamento Fracionado')
 @section('content')
 
-{{-- CABEÇALHO --}}
-<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-    <h1 class="text-3xl sm:text-[32px] font-bold leading-tight text-custom-dark-text font-bai-jamjuree">
-        Adicionar Itens ao Fracionado #{{ $orcamentoFracionado->orc_fracao }}
-    </h1>
-    <a href="{{ route('detalhes_orcamento_fracionado.index', $orcamentoFracionado->id_orcamento_fracionado) }}"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition">
-        VOLTAR
-    </a>
-</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-poppins">
+    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <x-page-header
+            title="Adicionar Itens ao Fracionado #{{ $orcamentoFracionado->orc_fracao }}"
+            :back-url="route('detalhes_orcamento_fracionado.index', $idOrcamentoFracionado)">
+        </x-page-header>
 
-@if(isset($orcamentoFracionado))
-<div class="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
-
-    <h2 class="text-lg font-bold text-orange-700 mb-4">
-        Informações do Orçamento Fracionado
-    </h2>
-
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-
-        <div>
-            <div class="grid grid-cols-3 gap-4">
-
-                <div>
-                    <p class="text-gray-600">ID</p>
-                    <p class="font-semibold">
-                        {{ $orcamentoFracionado->id_orcamento_fracionado }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-gray-600">Cód. Fábrica</p>
-                    <p class="font-semibold">
-                        {{ $orcamentoFracionado->orc_cod_fabrica ?: 'N/D' }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-gray-600">Cód. Interno</p>
-                    <p class="font-semibold">
-                        {{ $orcamentoFracionado->orc_cod_interno ?: 'N/D' }}
-                    </p>
-                </div>
-
-            </div>
+        <div class="px-6 sm:px-8 pt-6">
+            <x-alert-flash />
         </div>
 
-        <div>
-            <p class="text-gray-600">Cliente</p>
-            <p class="font-semibold text-gray-900">
-                {{ $orcamentoFracionado->clienteOrcamento->clie_orc_nome ?? 'N/A' }}
-            </p>
+        @if(isset($orcamentoFracionado))
+        <div class="px-6 sm:px-8 pt-4">
+            <x-info-card
+                title="Orçamento fracionado selecionado"
+                :name="'Fração #' . $orcamentoFracionado->orc_fracao"
+                type="Orçamento Fracionado"
+                :fields="[
+                    [
+                        'label' => 'ID',
+                        'value' => $orcamentoFracionado->id_orcamento_fracionado,
+                        'bold' => true,
+                    ],
+                    [
+                        'label' => 'Cliente',
+                        'value' => $orcamentoFracionado->clienteOrcamento->clie_orc_nome ?? 'Não informado',
+                        'break' => true,
+                    ],
+                    [
+                        'label' => 'Cód. Fábrica',
+                        'value' => $orcamentoFracionado->orc_cod_fabrica ?: 'Não informado',
+                    ],
+                    [
+                        'label' => 'Cód. Interno',
+                        'value' => $orcamentoFracionado->orc_cod_interno ?: 'Não informado',
+                    ],
+                    [
+                        'label' => 'Status',
+                        'value' => ucfirst($orcamentoFracionado->orc_status),
+                    ],
+                ]" />
         </div>
+        @endif
 
-        <div>
-            <p class="text-gray-600">Fração</p>
-            <p class="font-semibold text-gray-900">
-                #{{ $orcamentoFracionado->orc_fracao }}
-            </p>
-        </div>
-
-        <div>
-            <p class="text-gray-600">Status</p>
-            <p class="font-semibold text-gray-900">
-                {{ ucfirst($orcamentoFracionado->orc_status) }}
-            </p>
-        </div>
-
-    </div>
-</div>
-@endif
-
-<x-alert-flash />
-
-@if ($errors->any())
-<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-    <p class="text-red-700 font-semibold mb-2">Corrija os itens abaixo:</p>
-    <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
-        @foreach ($errors->all() as $error)
-        <li>{{ $error }}</li>
-        @endforeach
-    </ul>
-</div>
-@endif
-
-<p class="text-sm text-gray-600 mb-4">
-    Selecione abaixo os itens do orçamento original que farão parte deste fracionado.
-    É obrigatório informar a quantidade de cada item selecionado — nunca é possível
-    incluir mais do que a quantidade disponível. Itens já totalmente alocados em outros
-    fracionados não aparecem nesta lista.
-    As customizações de cada item selecionado serão copiadas automaticamente.
-</p>
-
-{{-- FILTROS --}}
-<form method="GET" action="{{ route('detalhes_orcamento_fracionado.create', $orcamentoFracionado->id_orcamento_fracionado) }}" class="mb-6">
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Produto
-                </label>
-                <input
-                    type="text"
-                    name="produto"
-                    value="{{ request('produto') }}"
-                    placeholder="Digite o nome..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Categoria
-                </label>
-                <input
-                    type="text"
-                    name="categoria"
-                    value="{{ request('categoria') }}"
-                    placeholder="Digite a categoria..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Código Ref.
-                </label>
-                <input
-                    type="text"
-                    name="cod_ref"
-                    value="{{ request('cod_ref') }}"
-                    placeholder="Digite o código..."
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
-                    Família
-                </label>
-                <select
-                    name="familia"
-                    class="w-full h-10 px-3 text-sm border border-gray-300 rounded-md">
-                    <option value="">Todas</option>
-                    @foreach($familias as $familia)
-                    <option
-                        value="{{ $familia }}"
-                        {{ request('familia') == $familia ? 'selected' : '' }}>
-                        {{ $familia }}
-                    </option>
+        @if ($errors->any())
+        <div class="px-6 sm:px-8 pt-4">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p class="text-red-700 font-semibold mb-2">Corrija os itens abaixo:</p>
+                <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
                     @endforeach
-                </select>
-            </div>
-            {{-- Buscar --}}
-            <div class="flex items-end">
-                <button
-                    type="submit"
-                    class="w-full h-10 text-white rounded-md"
-                    style="background-color:#EA792D;">
-                    Buscar
-                </button>
-            </div>
-            {{-- Limpar --}}
-            <div class="flex items-end">
-                <a
-                    href="{{ route('detalhes_orcamento_fracionado.create', $orcamentoFracionado->id_orcamento_fracionado) }}"
-                    class="w-full h-10 bg-gray-300 rounded-md text-gray-800 flex items-center justify-center hover:bg-gray-400 transition">
-                    Limpar
-                </a>
+                </ul>
             </div>
         </div>
+        @endif
+
+        <div class="px-6 sm:px-8 pt-5">
+            <div class="bg-orange-50 border border-orange-100 rounded-xl px-5 py-4">
+                <p class="text-sm text-orange-800 leading-relaxed">
+                    Selecione os itens do orçamento original que farão parte deste fracionado.
+                    É obrigatório informar a quantidade de cada item selecionado e nunca será
+                    possível incluir uma quantidade maior que a disponível. Itens já totalmente
+                    alocados em outros fracionados não aparecem nesta lista. As customizações dos
+                    itens selecionados serão copiadas automaticamente.
+                </p>
+            </div>
+        </div>
+
+        <div class="px-6 sm:px-8 pt-5">
+            <div class="px-6 sm:px-8 pt-5">
+                <form method="GET" action="{{ route('detalhes_orcamento_fracionado.create', $idOrcamentoFracionado) }}">
+                    <x-filter-card>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div>
+                                <label for="produto" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                    Produto
+                                </label>
+                                <input
+                                    type="text"
+                                    id="produto"
+                                    name="produto"
+                                    value="{{ request('produto') }}"
+                                    placeholder="Nome do produto..."
+                                    class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                            </div>
+
+                            <div>
+                                <label for="categoria" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                    Categoria
+                                </label>
+                                <input
+                                    type="text"
+                                    id="categoria"
+                                    name="categoria"
+                                    value="{{ request('categoria') }}"
+                                    placeholder="Categoria..."
+                                    class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                            </div>
+
+                            <div>
+                                <label for="cod_ref" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                    Código Ref.
+                                </label>
+                                <input
+                                    type="text"
+                                    id="cod_ref"
+                                    name="cod_ref"
+                                    value="{{ request('cod_ref') }}"
+                                    placeholder="Código de referência..."
+                                    class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                            </div>
+
+                            <div>
+                                <label for="familia" class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                                    Família
+                                </label>
+                                <select
+                                    id="familia"
+                                    name="familia"
+                                    class="w-full h-11 px-3 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100">
+                                    <option value="">Todas</option>
+                                    @foreach($familias as $familia)
+                                    <option value="{{ $familia }}" {{ request('familia') == $familia ? 'selected' : '' }}>
+                                        {{ $familia }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="flex items-end">
+                                <x-primary-button class="w-full h-11">
+                                    <x-icons.search />
+                                    Buscar
+                                </x-primary-button>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
+                            <a
+                                href="{{ route('detalhes_orcamento_fracionado.create', $idOrcamentoFracionado) }}"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-200 hover:text-gray-800 transition">
+                                <x-icons.reset />
+                                Limpar filtros
+                            </a>
+                        </div>
+                    </x-filter-card>
+                </form>
+            </div>
+        </div>
+
+        <div class="px-6 sm:px-8 pt-6 pb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 class="text-lg font-bold text-gray-800">
+                    Itens disponíveis
+                </h2>
+
+                @if(!$detalhesOrcamento->isEmpty())
+                <div class="inline-flex items-center gap-2 self-start px-3 py-2 rounded-lg bg-orange-50 border border-orange-100">
+                    <span class="w-2 h-2 rounded-full" style="background-color:#EA792D;"></span>
+                    <span class="text-xs font-semibold text-orange-700">
+                        {{ $detalhesOrcamento->total() }} item(ns)
+                    </span>
+                </div>
+                @endif
+            </div>
+
+            @if ($detalhesOrcamento->isEmpty())
+
+            @if(request('produto') || request('categoria') || request('cod_ref') || request('familia'))
+            <x-empty-state
+                title="Nenhum item encontrado"
+                message="Não existem itens correspondentes aos filtros informados."
+                route="detalhes_orcamento_fracionado.create"
+                :route-params="['id' => $idOrcamentoFracionado]"
+                button-text="Limpar filtros" />
+            @else
+            <x-empty-state
+                title="Nenhum item encontrado"
+                message="Não existem itens correspondentes aos filtros informados."
+                route="detalhes_orcamento_fracionado.create"
+                :route-params="['id' => $idOrcamentoFracionado]"
+                button-text="Limpar filtros" />
+            @endif
+
+            @else
+
+            <form
+                action="{{ route('detalhes_orcamento_fracionado.store', $idOrcamentoFracionado) }}"
+                method="POST"
+                id="formAdicionarItens">
+                @csrf
+
+                <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-auto divide-y divide-gray-200">
+                            <thead style="background-color:#343A40;">
+                                <tr>
+                                    <th class="px-3 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider w-10">
+                                        <input type="checkbox" id="selecionarTodos" class="rounded">
+                                    </th>
+                                    <th class="px-3 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Produto
+                                    </th>
+                                    <th class="px-3 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Cód.
+                                    </th>
+                                    <th class="px-3 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Categoria
+                                    </th>
+                                    <th class="px-3 py-3 text-left text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Tam.
+                                    </th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Qtd.
+                                    </th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Alocado
+                                    </th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Disp.
+                                    </th>
+                                    <th class="px-3 py-3 text-right text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Valor Unit.
+                                    </th>
+                                    <th class="px-3 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Qtd. Incluir
+                                    </th>
+                                    <th class="px-3 py-3 text-center text-[10px] font-bold text-white uppercase tracking-wider">
+                                        Customizações
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                @foreach($detalhesOrcamento as $detalhe)
+                                @php
+                                $qtdAlocada = (int) ($detalhe->qtd_alocada ?? 0);
+                                $restante = $detalhe->det_quantidade - $qtdAlocada;
+
+                                $customizacoesJson = $detalhe->customizacoes->map(function ($c) {
+                                return [
+                                'tipo' => $c->cust_tipo,
+                                'local' => $c->cust_local,
+                                'posicao' => $c->cust_posicao,
+                                'tamanho' => $c->cust_tamanho,
+                                'formatacao' => $c->cust_formatacao,
+                                'descricao' => $c->cust_descricao,
+                                'valor' => $c->cust_valor,
+                                ];
+                                });
+
+                                $checkedOld = collect(old('itens', []))->contains($detalhe->id_det);
+                                $qtdOld = old("quantidades.{$detalhe->id_det}");
+                                $erroQtd = $errors->first("quantidades.{$detalhe->id_det}");
+                                @endphp
+
+                                <tr class="group hover:bg-orange-50/40 transition {{ $qtdAlocada > 0 ? 'bg-yellow-50/40' : '' }}">
+                                    <td class="px-3 py-4 text-center">
+                                        <input
+                                            type="checkbox"
+                                            name="itens[]"
+                                            value="{{ $detalhe->id_det }}"
+                                            class="rounded item-checkbox"
+                                            {{ $checkedOld ? 'checked' : '' }}>
+                                    </td>
+
+                                    <td class="px-3 py-4">
+                                        <div class="min-w-0">
+                                            <span class="text-sm font-semibold text-gray-800 break-words">
+                                                {{ $detalhe->det_nome ?? 'N/A' }}
+                                            </span>
+
+                                            @if($qtdAlocada > 0)
+                                            <div class="mt-1">
+                                                <span class="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-yellow-100 text-yellow-700 whitespace-nowrap">
+                                                    Parcialmente alocado
+                                                </span>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <td class="px-3 py-4">
+                                        <span class="text-xs font-semibold text-gray-700 break-all">
+                                            {{ $detalhe->det_cod ?: 'N/D' }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4">
+                                        <span class="text-xs text-gray-700 break-words">
+                                            {{ $detalhe->det_categoria ?: 'N/D' }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4">
+                                        <span class="text-xs text-gray-700">
+                                            {{ $detalhe->det_tamanho ?? 'N/D' }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4 text-right">
+                                        <span class="text-sm font-semibold text-gray-700">
+                                            {{ $detalhe->det_quantidade }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4 text-right">
+                                        <span class="text-sm font-semibold {{ $qtdAlocada > 0 ? 'text-yellow-700' : 'text-gray-400' }}">
+                                            {{ $qtdAlocada }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4 text-right">
+                                        <span class="text-sm font-bold text-green-700">
+                                            {{ $restante }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4 text-right whitespace-nowrap">
+                                        <span class="text-xs font-bold text-gray-800">
+                                            R$ {{ number_format($detalhe->det_valor_unit, 2, ',', '.') }}
+                                        </span>
+                                    </td>
+
+                                    <td class="px-3 py-4 text-center">
+                                        <input
+                                            type="number"
+                                            name="quantidades[{{ $detalhe->id_det }}]"
+                                            min="1"
+                                            max="{{ $restante }}"
+                                            data-max="{{ $restante }}"
+                                            value="{{ $checkedOld ? $qtdOld : '' }}"
+                                            placeholder="Máx. {{ $restante }}"
+                                            class="w-20 h-9 px-1 text-xs border rounded-lg text-center outline-none transition qtd-input {{ $erroQtd ? 'border-red-500 focus:ring-2 focus:ring-red-100' : 'border-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-100' }}"
+                                            {{ $checkedOld ? '' : 'disabled' }}>
+
+                                        @if($erroQtd)
+                                        <p class="text-red-600 text-[10px] mt-1">{{ $erroQtd }}</p>
+                                        @endif
+                                    </td>
+
+                                    <td class="px-3 py-4 text-center">
+                                        @if($detalhe->customizacoes->count() > 0)
+                                        <button
+                                            type="button"
+                                            class="btn-ver-customizacoes inline-flex items-center justify-center px-2.5 py-1.5 text-[11px] font-semibold rounded-lg bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition whitespace-nowrap"
+                                            data-produto="{{ $detalhe->det_nome ?? 'Item' }}"
+                                            data-customizacoes="{{ $customizacoesJson->toJson() }}">
+                                            {{ $detalhe->customizacoes->count() }} customização(ões)
+                                        </button>
+                                        @else
+                                        <span class="text-xs text-gray-400">
+                                            Nenhuma
+                                        </span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <x-pagination-compact :paginator="$detalhesOrcamento" />
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center gap-3 mt-6">
+                    <button
+                        type="submit"
+                        id="btnSalvarItens"
+                        class="inline-flex items-center justify-center gap-2 px-6 py-3 border border-transparent text-sm font-semibold rounded-lg text-white hover:brightness-90 transition"
+                        style="background-color:#EA792D;">
+                        Adicionar Itens Selecionados
+                    </button>
+
+                    <a
+                        href="{{ route('detalhes_orcamento_fracionado.index', $idOrcamentoFracionado) }}"
+                        class="inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 transition">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+
+            @endif
+        </div>
     </div>
-</form>
-
-@if ($detalhesOrcamento->isEmpty())
-
-@if(request('produto') || request('categoria') || request('cod_ref') || request('familia'))
-<div class="text-center py-8">
-    <p class="text-gray-600">
-        Nenhum item encontrado para os filtros informados.
-    </p>
-    <a href="{{ route('detalhes_orcamento_fracionado.create', $orcamentoFracionado->id_orcamento_fracionado) }}"
-        class="inline-block mt-3 text-orange-600 hover:text-orange-700 font-medium">
-        Limpar filtros
-    </a>
 </div>
-@else
-<p class="text-gray-600 text-center py-8">
-    Não há itens disponíveis para incluir neste fracionado — todos já foram
-    totalmente alocados ou o orçamento original não possui detalhes cadastrados.
-</p>
-@endif
 
-@else
-
-<form action="{{ route('detalhes_orcamento_fracionado.store', $orcamentoFracionado->id_orcamento_fracionado) }}"
-    method="POST" id="formAdicionarItens">
-    @csrf
-
-    <div class="w-full rounded-lg shadow-table-shadow-image overflow-x-auto mb-4">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-table-header-bg">
-                <tr>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase w-10">
-                        <input type="checkbox" id="selecionarTodos" class="rounded">
-                    </th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Produto</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Cód.</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Categoria</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-white uppercase">Tam.</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-white uppercase">Qtd. Total</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-white uppercase">Já Alocado</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-white uppercase">Disponível</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-white uppercase">Valor Unit.</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase">Qtd. a Incluir</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase">Customizações</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach($detalhesOrcamento as $detalhe)
-                @php
-                $qtdAlocada = (int) ($detalhe->qtd_alocada ?? 0);
-                $restante = $detalhe->det_quantidade - $qtdAlocada;
-
-                $customizacoesJson = $detalhe->customizacoes->map(function ($c) {
-                return [
-                'tipo' => $c->cust_tipo,
-                'local' => $c->cust_local,
-                'posicao' => $c->cust_posicao,
-                'tamanho' => $c->cust_tamanho,
-                'formatacao' => $c->cust_formatacao,
-                'descricao' => $c->cust_descricao,
-                'valor' => $c->cust_valor,
-                ];
-                });
-
-                $checkedOld = collect(old('itens', []))->contains($detalhe->id_det);
-                $qtdOld = old("quantidades.{$detalhe->id_det}");
-                $erroQtd = $errors->first("quantidades.{$detalhe->id_det}");
-                @endphp
-                <tr class="hover:bg-gray-50 transition {{ $qtdAlocada > 0 ? 'bg-yellow-50' : '' }}">
-                    <td class="px-4 py-4 text-center">
-                        <input type="checkbox"
-                            name="itens[]"
-                            value="{{ $detalhe->id_det }}"
-                            class="rounded item-checkbox"
-                            {{ $checkedOld ? 'checked' : '' }}>
-                    </td>
-                    <td class="px-4 py-4 text-sm">
-                        {{ $detalhe->det_nome ?? 'N/A' }}
-                        @if($qtdAlocada > 0)
-                        <span class="ml-1 inline-block px-2 py-0.5 text-xs rounded-full bg-yellow-200 text-yellow-800">
-                            parcialmente alocado
-                        </span>
-                        @endif
-                    </td>
-                    <td class="px-4 py-4 text-sm">{{ $detalhe->det_cod }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $detalhe->det_categoria }}</td>
-                    <td class="px-4 py-4 text-sm">{{ $detalhe->det_tamanho ?? 'N/A' }}</td>
-                    <td class="px-4 py-4 text-sm text-right">{{ $detalhe->det_quantidade }}</td>
-                    <td class="px-4 py-4 text-sm text-right {{ $qtdAlocada > 0 ? 'text-yellow-700 font-semibold' : 'text-gray-400' }}">
-                        {{ $qtdAlocada }}
-                    </td>
-                    <td class="px-4 py-4 text-sm text-right font-semibold text-green-700">
-                        {{ $restante }}
-                    </td>
-                    <td class="px-4 py-4 text-sm text-right">
-                        R$ {{ number_format($detalhe->det_valor_unit, 2, ',', '.') }}
-                    </td>
-                    <td class="px-4 py-4 text-center">
-                        <input type="number"
-                            name="quantidades[{{ $detalhe->id_det }}]"
-                            min="1"
-                            max="{{ $restante }}"
-                            data-max="{{ $restante }}"
-                            value="{{ $checkedOld ? $qtdOld : '' }}"
-                            placeholder="Máx: {{ $restante }}"
-                            class="w-24 px-2 py-1 text-sm border rounded-md text-center qtd-input {{ $erroQtd ? 'border-red-500' : 'border-gray-300' }}"
-                            {{ $checkedOld ? '' : 'disabled' }}>
-                        @if($erroQtd)
-                        <p class="text-red-600 text-xs mt-1">{{ $erroQtd }}</p>
-                        @endif
-                    </td>
-                    <td class="px-4 py-4 text-center text-sm">
-                        @if($detalhe->customizacoes->count() > 0)
-                        <button type="button"
-                            class="btn-ver-customizacoes inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 transition"
-                            data-produto="{{ $detalhe->det_nome ?? 'Item' }}"
-                            data-customizacoes="{{ $customizacoesJson->toJson() }}">
-                            {{ $detalhe->customizacoes->count() }} customização(ões)
-                        </button>
-                        @else
-                        <span class="text-gray-400 text-xs">nenhuma</span>
-                        @endif
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    <div class="mb-6">
-        <x-pagination-compact :paginator="$detalhesOrcamento" />
-    </div>
-
-    <div class="flex justify-center gap-3">
-        <button type="submit" id="btnSalvarItens"
-            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white hover:brightness-90 transition"
-            style="background-color:#EA792D;">
-            Adicionar Itens Selecionados
-        </button>
-        <a href="{{ route('detalhes_orcamento_fracionado.index', $orcamentoFracionado->id_orcamento_fracionado) }}"
-            class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-custom-dark-text bg-gray-300 hover:bg-gray-400 transition">
-            Cancelar
-        </a>
-    </div>
-</form>
-
-@endif
-
-{{-- MODAL DE CUSTOMIZAÇÕES --}}
-<div id="modalCustomizacoes" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-    <div class="bg-white w-full max-w-2xl rounded-lg shadow-lg p-6 max-h-[85vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-800">
+<div id="modalCustomizacoes" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-gray-100 max-h-[85vh] overflow-hidden">
+        <div class="flex justify-between items-center px-6 py-5 border-b border-gray-200">
+            <h2 class="text-lg font-bold text-gray-800">
                 Customizações — <span id="modalCustomizacoesProduto"></span>
             </h2>
-            <button type="button" id="fecharModalCustomizacoes" class="text-red-600 font-bold text-lg leading-none">
+
+            <button
+                type="button"
+                id="fecharModalCustomizacoes"
+                class="flex items-center justify-center w-9 h-9 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-red-600 transition text-xl">
                 &times;
             </button>
         </div>
 
-        <div id="modalCustomizacoesConteudo" class="space-y-3"></div>
+        <div id="modalCustomizacoesConteudo" class="p-6 space-y-3 overflow-y-auto max-h-[70vh]"></div>
     </div>
 </div>
 
@@ -354,9 +438,6 @@
             const qtdInput = linha.querySelector('.qtd-input');
 
             qtdInput.disabled = !checkbox.checked;
-
-            // Sempre que (des)marcar, a quantidade volta vazia -> obriga
-            // o usuário a escolher explicitamente um valor.
             qtdInput.value = '';
             limparErroVisual(qtdInput);
         }
@@ -418,9 +499,11 @@
                 if (temErro) {
                     e.preventDefault();
                     alert('Informe uma quantidade válida (maior que zero e dentro do disponível) para todos os itens selecionados.');
+
                     if (primeiroCampoComErro) {
                         primeiroCampoComErro.focus();
                     }
+
                     return false;
                 }
 
@@ -430,7 +513,6 @@
             });
         }
 
-        // ---- Modal de customizações ----
         const modalCustom = document.getElementById('modalCustomizacoes');
         const modalCustomProduto = document.getElementById('modalCustomizacoesProduto');
         const modalCustomConteudo = document.getElementById('modalCustomizacoesConteudo');
@@ -454,27 +536,26 @@
                     modalCustomConteudo.innerHTML = '<p class="text-gray-500 text-sm">Nenhuma customização encontrada.</p>';
                 } else {
                     customizacoes.forEach(function(c, index) {
-                        const valorFormatado = parseFloat(c.valor || 0)
-                            .toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            });
+                        const valorFormatado = parseFloat(c.valor || 0).toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
 
                         const bloco = document.createElement('div');
-                        bloco.className = 'border border-gray-200 rounded-md p-4 bg-gray-50';
+                        bloco.className = 'border border-gray-200 rounded-xl p-4 bg-gray-50';
 
                         bloco.innerHTML = `
-                            <p class="text-sm font-semibold text-gray-800 mb-2">Customização ${index + 1}</p>
-                            <div class="grid grid-cols-2 gap-2 text-sm text-gray-700">
-                                <p><span class="text-gray-500">Tipo:</span> ${c.tipo ?? 'N/A'}</p>
-                                <p><span class="text-gray-500">Local:</span> ${c.local ?? 'N/A'}</p>
-                                <p><span class="text-gray-500">Posição:</span> ${c.posicao ?? 'N/A'}</p>
-                                <p><span class="text-gray-500">Tamanho:</span> ${c.tamanho ?? 'N/A'}</p>
-                                <p><span class="text-gray-500">Formatação:</span> ${c.formatacao ?? 'N/A'}</p>
-                                <p><span class="text-gray-500">Valor:</span> R$ ${valorFormatado}</p>
-                            </div>
-                            ${c.descricao ? `<p class="text-sm text-gray-700 mt-2"><span class="text-gray-500">Descrição:</span> ${c.descricao}</p>` : ''}
-                        `;
+                        <p class="text-sm font-bold text-gray-800 mb-3">Customização ${index + 1}</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-700">
+                            <p><span class="text-gray-500">Tipo:</span> ${c.tipo ?? 'N/A'}</p>
+                            <p><span class="text-gray-500">Local:</span> ${c.local ?? 'N/A'}</p>
+                            <p><span class="text-gray-500">Posição:</span> ${c.posicao ?? 'N/A'}</p>
+                            <p><span class="text-gray-500">Tamanho:</span> ${c.tamanho ?? 'N/A'}</p>
+                            <p><span class="text-gray-500">Formatação:</span> ${c.formatacao ?? 'N/A'}</p>
+                            <p><span class="text-gray-500">Valor:</span> R$ ${valorFormatado}</p>
+                        </div>
+                        ${c.descricao ? `<p class="text-sm text-gray-700 mt-3"><span class="text-gray-500">Descrição:</span> ${c.descricao}</p>` : ''}
+                    `;
 
                         modalCustomConteudo.appendChild(bloco);
                     });

@@ -28,14 +28,11 @@ use App\Helpers\CryptHelper;
 
         $statusAtual = old('orc_status', $orcamento->orc_status);
         $valorOrcamento = (float) ($orcamento->total_com_desconto ?? 0);
+        $temCustomizacaoPendente = $orcamento->detalhesOrcamento()
+        ->where('det_status', 'Aguardando Customização')
+        ->exists();
         $statusBloqueado = in_array($orcamento->orc_status, ['finalizado', 'rejeitado']);
-
-        $anotacoes = old(
-        'anotacoes',
-        $orcamento->orc_anotacao_espec
-        ? explode("\n", $orcamento->orc_anotacao_espec)
-        : ['', '', '']
-        );
+        $anotacoes = old('anotacoes', $orcamento->orc_anotacao_espec ? explode("\n", $orcamento->orc_anotacao_espec) : ['', '', '']);
         @endphp
 
         <form id="orcamentoForm" action="{{ route('orcamento.update', CryptHelper::encrypt($orcamento->id_orcamento)) }}" method="POST" data-status-anterior="{{ $orcamento->orc_status }}" class="px-6 sm:px-8 pt-6 pb-8">
@@ -102,12 +99,17 @@ use App\Helpers\CryptHelper;
                             <option value="">Selecione</option>
                             <option value="pendente" {{ $statusAtual === 'pendente' ? 'selected' : '' }}>Pendente</option>
                             <option value="para aprovacao" {{ $statusAtual === 'para aprovacao' ? 'selected' : '' }}>Para Aprovação</option>
-                            @if ($valorOrcamento > 0)
+
+                            @if (!$temCustomizacaoPendente && $valorOrcamento > 0)
                             <option value="aprovado" {{ $statusAtual === 'aprovado' ? 'selected' : '' }}>Aprovado</option>
                             @endif
+
+                            @if (!$temCustomizacaoPendente)
                             <option value="rejeitado" {{ $statusAtual === 'rejeitado' ? 'selected' : '' }}>Rejeitado</option>
+
                             @if (!$financeiroPendente)
                             <option value="finalizado" {{ $statusAtual === 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                            @endif
                             @endif
                             @endif
                         </select>
@@ -122,8 +124,14 @@ use App\Helpers\CryptHelper;
                         <p class="mt-2 text-xs text-gray-500">Este orçamento foi rejeitado e seu status não pode mais ser alterado.</p>
                         @elseif ($orcamento->orc_status === 'aprovado')
                         <p class="mt-2 text-xs text-orange-600">Um orçamento aprovado só pode ser finalizado ou rejeitado.</p>
+                        @elseif ($temCustomizacaoPendente)
+                        <p class="mt-2 text-xs text-orange-600">
+                            Este orçamento possui detalhes aguardando customização e não pode ser aprovado .
+                        </p>
                         @elseif ($valorOrcamento <= 0)
-                            <p class="mt-2 text-xs text-orange-600">Este orçamento possui valor total igual a R$ 0,00 e não pode ser aprovado.</p>
+                            <p class="mt-2 text-xs text-red-600">
+                            Este orçamento possui valor total igual a R$ 0,00 e não pode ser aprovado.
+                            </p>
                             @endif
                     </div>
 
